@@ -49,6 +49,16 @@ export class RedisService {
         }
     }
 
+    async expire(key: string, seconds: number) {
+        try {
+            this.logger.debug(`设置键值过期时间: ${key}, ${seconds}秒`);
+            return await this.redisClient.expire(key, seconds);
+        } catch (error) {
+            this.logger.error(`设置键值过期时间失败 [${key}]`, error);
+            return false;
+        }
+    }
+
     async isConnected(): Promise<boolean> {
         try {
             // 执行一个简单的PING命令检查连接状态

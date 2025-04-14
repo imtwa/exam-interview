@@ -23,7 +23,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true, // 自动移除非DTO中的属性
       transform: true, // 自动转换类型
-      forbidNonWhitelisted: true, // 禁止传入非DTO中的字段
+      forbidNonWhitelisted: false, // 允许未定义的属性存在
       transformOptions: {
         enableImplicitConversion: true, // 启用隐式类型转换
       },
@@ -32,7 +32,7 @@ async function bootstrap() {
   
   // 设置监听地址为IPv4
   const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-  const host = process.env.HOST || '127.0.0.1';
+  const host = process.env.HOST || 'localhost';
   
   await app.listen(port, host);
   

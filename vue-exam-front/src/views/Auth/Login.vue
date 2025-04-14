@@ -25,9 +25,9 @@
           </el-form-item>
 
           <!-- 验证码 -->
-          <el-form-item label="验证码" prop="captchaText">
+          <el-form-item label="验证码" prop="captcha">
             <div class="captcha-container">
-              <el-input v-model="loginForm.captchaText" placeholder="请输入验证码" :prefix-icon="Key" />
+              <el-input v-model="loginForm.captcha" placeholder="请输入验证码" :prefix-icon="Key" />
               <div class="captcha-img" @click="refreshCaptcha">
                 <img v-if="captchaImg" :src="captchaImg" alt="验证码" />
                 <div v-else class="loading-captcha">加载中...</div>
@@ -67,9 +67,11 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message, Lock, Key } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { login, getCaptcha } from '@/api/user'
+import { getCaptcha } from '@/api/auth'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loginFormRef = ref(null)
 const isLoading = ref(false)
 const captchaImg = ref('')
@@ -79,7 +81,7 @@ const captchaId = ref('')
 const loginForm = reactive({
   email: '',
   password: '',
-  captchaText: '',
+  captcha: '',
   captchaId: '',
   remember: false
 })
@@ -94,7 +96,7 @@ const loginRules = reactive({
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6个字符', trigger: 'blur' }
   ],
-  captchaText: [
+  captcha: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
     { min: 4, max: 6, message: '验证码长度在4-6个字符之间', trigger: 'blur' }
   ]
@@ -104,8 +106,10 @@ const loginRules = reactive({
 const refreshCaptcha = async () => {
   try {
     const res = await getCaptcha()
+    
     captchaId.value = res.id
-    captchaImg.value = `data:image/svg+xml;base64,${btoa(res.img)}`
+    // 直接使用返回的SVG字符串，使用data URL来显示
+    captchaImg.value = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(res.img)}`
     loginForm.captchaId = captchaId.value
   } catch (error) {
     console.error('获取验证码失败:', error)
@@ -122,21 +126,19 @@ const handleLogin = () => {
       isLoading.value = true
       
       try {
-        // 构造登录请求数据
+        // 直接使用登录表单数据，包含验证码信息
         const loginData = {
           email: loginForm.email,
           password: loginForm.password,
           captchaId: loginForm.captchaId,
-          captchaText: loginForm.captchaText
+          captcha: loginForm.captcha
         }
         
-        const res = await login(loginData)
+        // 使用Pinia store进行登录
+        await userStore.userLogin(loginData)
         
         // 登录成功处理
         ElMessage.success('登录成功')
-        
-        // 存储用户信息
-        localStorage.setItem('userInfo', JSON.stringify(res))
         
         // 如果勾选了记住我，可以存储登录状态
         if (loginForm.remember) {

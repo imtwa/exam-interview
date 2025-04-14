@@ -22,9 +22,15 @@ export class TransformInterceptor<T> implements NestInterceptor<T, ResponseData<
           }`
         );
 
+        // 检查是否已经是标准响应格式
+        if (data && typeof data === 'object' && 'code' in data && 'message' in data && 'data' in data) {
+          // 已经是标准响应格式，直接返回
+          return data;
+        }
+
         // 构造统一响应格式
         return {
-          code: statusCode,
+          code: ResponseCode.SUCCESS,
           data: data || null,
           message: 'Success',
         };

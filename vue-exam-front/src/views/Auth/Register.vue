@@ -53,9 +53,9 @@
           <!-- 同意条款 -->
           <el-form-item prop="agreement">
             <el-checkbox v-model="registerForm.agreement">
-              我已阅读并同意 
+              我已阅读并同意
               <el-button type="text" @click="showTerms">《用户协议》</el-button>
-              和 
+              和
               <el-button type="text" @click="showPrivacy">《隐私政策》</el-button>
             </el-checkbox>
           </el-form-item>
@@ -82,7 +82,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Message, Lock, Key } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { register, sendEmailCode } from '@/api/user'
+import { register, sendEmailCode } from '@/api/auth'
 
 const router = useRouter()
 const registerFormRef = ref(null)
@@ -234,32 +234,27 @@ const sendCaptcha = async () => {
     return
   }
 
-  try {
-    await sendEmailCode(registerForm.email)
-    ElMessage.success('验证码已发送，请查收邮件')
-    
-    // 开始倒计时
-    captchaTimer.value = 60
-    timerInterval.value = setInterval(() => {
-      captchaTimer.value--
-      if (captchaTimer.value <= 0) {
-        clearInterval(timerInterval.value)
-      }
-    }, 1000)
-  } catch (error) {
-    console.error('发送验证码失败:', error)
-    ElMessage.error(error.response?.data?.message || '发送验证码失败，请稍后重试')
-  }
+  await sendEmailCode(registerForm.email)
+  ElMessage.success('验证码已发送，请查收邮件')
+
+  // 开始倒计时
+  captchaTimer.value = 60
+  timerInterval.value = setInterval(() => {
+    captchaTimer.value--
+    if (captchaTimer.value <= 0) {
+      clearInterval(timerInterval.value)
+    }
+  }, 1000)
 }
 
-// 注册处理
+// 处理注册
 const handleRegister = () => {
   if (!registerFormRef.value) return
 
   registerFormRef.value.validate(async (valid) => {
     if (valid) {
       isLoading.value = true
-      
+
       try {
         // 构造注册请求数据
         const registerData = {
@@ -268,16 +263,13 @@ const handleRegister = () => {
           password: registerForm.password,
           code: registerForm.code
         }
-        
-        await register(registerData)
-        
+
+        const result = await register(registerData)
+
         ElMessage.success('注册成功，请登录')
-        
+
         // 注册成功后跳转到登录页
         router.push('/login')
-      } catch (error) {
-        console.error('注册失败:', error)
-        ElMessage.error(error.response?.data?.message || '注册失败，请检查您的信息')
       } finally {
         isLoading.value = false
       }
@@ -386,7 +378,7 @@ onMounted(() => {
       color: #0060ff;
     }
   }
-  
+
   // 覆盖Element Plus的默认按钮间距
   :deep(.el-button + .el-button) {
     margin-left: 0;

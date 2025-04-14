@@ -1,46 +1,35 @@
 import request from './request'
 
-// 获取验证码
-export function getCaptcha() {
+// 获取用户列表
+export function getUserList(params) {
   return request({
-    url: '/user/captcha',
+    url: '/user/page',
     method: 'get',
-    responseType: 'json'
+    params
   })
 }
 
-// 发送邮箱验证码
-export function sendEmailCode(email) {
+// 获取单个用户
+export function getUser(id) {
   return request({
-    url: '/email/code',
-    method: 'get',
-    params: { address: email }
+    url: `/user/${id}`,
+    method: 'get'
   })
 }
 
-// 用户注册
-export function register(data) {
+// 更新用户
+export function updateUser(id, data) {
   return request({
-    url: '/user/register',
-    method: 'post',
+    url: `/user/${id}`,
+    method: 'patch',
     data
   })
 }
 
-// 用户登录
-export function login(data) {
+// 删除用户
+export function deleteUser(id) {
   return request({
-    url: '/user/login',
-    method: 'post',
-    data
-  })
-}
-
-// 重置密码
-export function resetPassword(data) {
-  return request({
-    url: '/user/reset-password',
-    method: 'post',
-    data
+    url: `/user/${id}`,
+    method: 'delete'
   })
 } 

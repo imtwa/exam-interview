@@ -142,41 +142,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Search, Menu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 
-// User state
-const isLoggedIn = ref(false) // Set to true when user is logged in
-const userName = ref('用户名')
-const userAvatar = ref('')
+// 使用 Pinia store 的状态
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+const userName = computed(() => userStore.userInfo?.username || '')
+// 头像使用纯前端生成的SVG，不需要后端存储，根据用户名动态生成
+const userAvatar = computed(() => userStore.avatarUrl)
+
 const searchQuery = ref('')
 const mobileMenuOpen = ref(false)
 
 // 检查用户是否已登录
-const checkLoginStatus = () => {
-  // 实际项目中应该从token或session中检查登录状态
-  // 这里仅作示例
-  const token = localStorage.getItem('token')
-  if (token) {
-    isLoggedIn.value = true
-    // 获取用户信息
-    getUserInfo()
-  } else {
-    isLoggedIn.value = false
+const checkLoginStatus = async () => {
+  if (userStore.token && !userStore.userInfo?.id) {
+    try {
+      await userStore.getInfo()
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+    }
   }
-}
-
-// 获取用户信息
-const getUserInfo = () => {
-  // 实际项目中应该从接口获取用户信息
-  // 这里仅作示例
-  userName.value = localStorage.getItem('userName') || '用户名'
-  userAvatar.value = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
 }
 
 // Toggle mobile menu
@@ -184,18 +177,9 @@ const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
-// Logout function
+// Logout function - 使用 Pinia store 的登出方法
 const logout = () => {
-  // 清除登录状态
-  localStorage.removeItem('token')
-  localStorage.removeItem('userName')
-  isLoggedIn.value = false
-
-  // 提示用户已登出
-  ElMessage.success('退出登录成功')
-
-  // 跳转到首页
-  router.push('/')
+  userStore.logout() // 这个方法会清除token并重定向
 }
 
 // 去登录页

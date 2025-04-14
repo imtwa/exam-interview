@@ -22,7 +22,7 @@ export const createWinstonLoggerConfig = (
   configService: ConfigService,
 ): WinstonModuleOptions => {
   // 从环境变量读取日志路径，默认为项目根目录下的logs
-  const logDirFromEnv = configService.get<string>('LOG_PATH') || 'data/logs';
+  const logDirFromEnv = configService.get<string>('LOG_PATH') || 'logs';
   const logDir = path.join(process.cwd(), logDirFromEnv);
 
   // 确保日志目录存在

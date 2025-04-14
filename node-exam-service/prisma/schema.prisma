@@ -6,7 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  output   = "./generated"
 }
 
 datasource db {
@@ -14,14 +14,159 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model exam_front_user {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  email     String   @unique
+// 用户表
+model FrontUser {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
   password  String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // 关联表
+  documents  Document[] // 用户上传的文档
+  examPapers ExamPaper[] // 用户创建的试卷
+  favorites  Favorite[] // 用户收藏
+  questions  Question[] // 用户创建的题目
 
   @@map("exam_front_user")
 }
 
+// 一级分类表
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String // 分类名称
+  description String?   @db.Text // 分类描述
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // 关联表
+  subCategories SubCategory[] // 二级分类
+  examPapers    ExamPaper[] // 所属试卷
+
+  @@map("exam_front_category")
+}
+
+// 二级分类表
+model SubCategory {
+  id          Int       @id @default(autoincrement())
+  name        String // 二级分类名称
+  description String?   @db.Text // 二级分类描述
+  categoryId  Int // 所属一级分类ID
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // 关联表
+  category   Category    @relation(fields: [categoryId], references: [id])
+  examPapers ExamPaper[] // 所属试卷
+
+  @@map("exam_front_subcategory")
+}
+
+// 文档表 - 用户上传的原始文档
+model Document {
+  id        Int            @id @default(autoincrement())
+  userId    Int // 用户ID
+  filePath  String // 文件路径
+  status    DocumentStatus @default(PENDING) // 文件状态
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+
+  // 关联表
+  user      FrontUser      @relation(fields: [userId], references: [id])
+  questions Question[] // 从文档中提取的题目
+
+  @@map("exam_front_document")
+}
+
+// 题目表
+model Question {
+  id          Int       @id @default(autoincrement())
+  qtype       Int // 题目类型
+  question    String    @db.Text // 题目内容
+  options     String?   @db.Text // 选项，根据类型不同存储不同格式
+  answer      String    @db.Text // 答案，根据类型不同存储不同格式
+  ai_analysis String    @db.Text // AI解析
+  difficulty  Int? // 难度等级
+  userId      Int? // 创建用户ID
+  documentId  Int? // 所属文档ID
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // 关联表
+  user          FrontUser?     @relation(fields: [userId], references: [id])
+  document      Document?      @relation(fields: [documentId], references: [id])
+  examQuestions ExamQuestion[] // 题目与试卷的关联
+
+  @@map("exam_front_question")
+}
+
+// 试卷表
+model ExamPaper {
+  id            Int       @id @default(autoincrement())
+  name          String // 试卷名称
+  description   String?   @db.Text // 试卷描述
+  categoryId    Int // 一级分类ID
+  subCategoryId Int? // 二级分类ID
+  userId        Int // 创建用户ID
+  isPublic      Boolean   @default(true) // 是否公开
+  favoriteCount Int       @default(0) // 收藏数
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // 关联表
+  category      Category       @relation(fields: [categoryId], references: [id])
+  subCategory   SubCategory?   @relation(fields: [subCategoryId], references: [id])
+  user          FrontUser      @relation(fields: [userId], references: [id])
+  examQuestions ExamQuestion[] // 试卷包含的题目
+  favorites     Favorite[] // 收藏记录
+
+  @@map("exam_front_exampaper")
+}
+
+// 试卷题目关联表
+model ExamQuestion {
+  examId     Int // 试卷ID
+  questionId Int // 题目ID
+  order      Int // 题目在试卷中的顺序
+  score      Float // 题目的分值
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  // 关联表
+  examPaper ExamPaper @relation(fields: [examId], references: [id])
+  question  Question  @relation(fields: [questionId], references: [id])
+
+  @@id([examId, questionId])
+  @@map("exam_front_examquestion")
+}
+
+// 用户收藏表
+model Favorite {
+  userId      Int // 用户ID
+  examPaperId Int // 试卷ID
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // 关联表
+  user      FrontUser  @relation(fields: [userId], references: [id])
+  examPaper ExamPaper @relation(fields: [examPaperId], references: [id])
+
+  @@id([userId, examPaperId])
+  @@map("exam_front_favorite")
+}
+
+// 文档状态枚举
+enum DocumentStatus {
+  PENDING @map("pending") // 待处理
+  PARSED  @map("parsed") // 已解析
+  ERROR   @map("error") // 解析错误
+}

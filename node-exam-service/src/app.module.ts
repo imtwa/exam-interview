@@ -6,6 +6,7 @@ import { EmailModule } from './apps/email/email.module';
 import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from './apps/redis/redis.module';
 import { LoggerModule } from './common/logger/logger.module';
+import { AuthModule } from './apps/auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { LoggerModule } from './common/logger/logger.module';
     EmailModule,
     RedisModule,
     LoggerModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

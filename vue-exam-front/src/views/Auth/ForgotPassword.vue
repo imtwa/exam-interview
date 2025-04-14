@@ -75,7 +75,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message, Key } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { sendEmailCode, resetPassword } from '@/api/user'
+import { sendEmailCode, resetPassword } from '@/api/auth'
 
 const router = useRouter()
 const forgotFormRef = ref(null)
@@ -134,7 +134,7 @@ const sendCaptcha = async () => {
   }
 }
 
-// 忘记密码处理
+// 处理重置密码
 const handleForgotPassword = () => {
   if (!forgotFormRef.value) return
 
@@ -149,20 +149,16 @@ const handleForgotPassword = () => {
           code: forgotForm.code
         }
         
-        const res = await resetPassword(resetData)
+        const result = await resetPassword(resetData)
         
+        // 重置成功
         resetSuccess.value = true
-        defaultPassword.value = res.defaultPassword
+        defaultPassword.value = result.password || '********'
         
-        ElMessage.success('密码重置成功，您的新密码已发送至邮箱')
-        
-        // 重置成功后延时跳转到登录页
-        setTimeout(() => {
-          router.push('/login')
-        }, 3000)
+        ElMessage.success('密码重置成功')
       } catch (error) {
         console.error('重置密码失败:', error)
-        ElMessage.error(error.response?.data?.message || '重置密码失败，请检查您的验证码')
+        ElMessage.error(error.response?.data?.message || '重置密码失败，请检查验证码是否正确')
       } finally {
         isLoading.value = false
       }
