@@ -42,7 +42,12 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req) {
-    return req.user;
+  async getProfile(@Request() req) {
+    const userId = req.user.userId;
+    const user = await this.authService.getUserById(userId);
+    return {
+      ...user,
+      password: undefined // 不返回密码
+    };
   }
 } 

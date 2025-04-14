@@ -1,6 +1,6 @@
 import { Injectable, Inject, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaClient } from '../../../generated/prisma/client';
+import { PrismaClient } from '../../../prisma/generated/client';
 import * as bcrypt from 'bcryptjs';
 import * as svgCaptcha from 'svg-captcha';
 import { v4 as uuidv4 } from 'uuid';
@@ -116,6 +116,7 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
+        role: user.role
       },
       access_token: this.jwtService.sign(payload),
     };
@@ -166,8 +167,8 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    const { username, email, password, code } = registerDto;
-    this.logger.log(`用户注册请求: ${email}`);
+    const { username, email, password, code, role } = registerDto;
+    this.logger.log(`用户注册请求: ${email}, 角色: ${role}`);
 
     // 验证邮箱验证码
     const isCodeValid = await this.validateEmailCode(email, code);
@@ -200,9 +201,10 @@ export class AuthService {
         username,
         email,
         password: hashedPassword,
+        role,
       },
     });
-    this.logger.log(`用户注册成功: ${email}, ID: ${user.id}`);
+    this.logger.log(`用户注册成功: ${email}, ID: ${user.id}, 角色: ${user.role}`);
 
     // 清除邮箱验证码
     await this.clearEmailCode(email);
@@ -211,6 +213,7 @@ export class AuthService {
       id: user.id,
       username: user.username,
       email: user.email,
+      role: user.role,
     };
   }
 
@@ -254,5 +257,21 @@ export class AuthService {
       email,
       password: defaultPassword,
     };
+  }
+
+  // 根据用户ID获取用户信息
+  async getUserById(userId: number) {
+    this.logger.log(`获取用户信息: ID ${userId}`);
+    
+    const user = await this.prisma.frontUser.findUnique({
+      where: { id: userId },
+    });
+    
+    if (!user) {
+      this.logger.warn(`获取用户信息失败，用户不存在: ID ${userId}`);
+      throw new BadRequestException('用户不存在');
+    }
+    
+    return user;
   }
 } 

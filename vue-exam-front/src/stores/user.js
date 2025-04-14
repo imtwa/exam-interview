@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { login, getProfile, logout as authLogout } from '@/api/auth'
+import { login, logout as authLogout, getProfile } from '@/api/auth'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
 
-// Token相关常量
+// Token存储的键名
 const TOKEN_KEY = 'exam_token'
+// 用户信息存储的键名
 const USER_INFO_KEY = 'exam_user_info'
 
 export const useUserStore = defineStore('user', () => {
@@ -13,6 +14,11 @@ export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem(TOKEN_KEY) || '')
   const userInfo = ref(JSON.parse(localStorage.getItem(USER_INFO_KEY) || 'null') || {})
   const isLoggedIn = computed(() => !!token.value && !!userInfo.value)
+  
+  // 用户角色相关的计算属性
+  const userRole = computed(() => userInfo.value?.role || '')
+  const isJobSeeker = computed(() => userInfo.value?.role === 'JOB_SEEKER')
+  const isInterviewer = computed(() => userInfo.value?.role === 'INTERVIEWER')
   
   // 生成默认头像 - 纯前端实现，无需后端存储
   // 根据用户名生成唯一的颜色和显示用户名最后一个字符
@@ -87,29 +93,29 @@ export const useUserStore = defineStore('user', () => {
   function generateAvatar(username) {
     if (!username) return ''
     
-    // 提取用户名的第一个字符
-    const char = username.length > 0 ? username.charAt(0) : '?'
-    // const char = username
-    
-    // 生成随机色彩，但对同一用户名保持一致
+    // 根据用户名生成一个hash值
     let hash = 0
     for (let i = 0; i < username.length; i++) {
       hash = username.charCodeAt(i) + ((hash << 5) - hash)
     }
     
-    const hue = Math.abs(hash % 360)
-    const saturation = 70 + Math.abs((hash % 30))
-    const lightness = 45 + Math.abs((hash % 20))
+    // 根据hash值生成颜色
+    let color = '#'
+    for (let i = 0; i < 3; i++) {
+      const value = (hash >> (i * 8)) & 0xFF
+      color += ('00' + value.toString(16)).slice(-2)
+    }
     
-    const backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`
+    // 使用用户名的第一个字符作为头像显示
+    const char = username.charAt(0).toUpperCase()
     
-    // 创建SVG头像
-    const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-      <rect width="100" height="100" fill="${backgroundColor}" />
-      <text x="50" y="50" font-family="Arial" font-size="40" fill="white" text-anchor="middle" dominant-baseline="central">${char}</text>
-    </svg>
-    `
+    // 创建SVG
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="${color}" />
+      <text x="50" y="50" font-family="Arial" font-size="50" fill="white" text-anchor="middle" dominant-baseline="central">
+        ${char}
+      </text>
+    </svg>`
     
     // 转换为Base64
     return `data:image/svg+xml;base64,${btoa(svg)}`
@@ -119,6 +125,9 @@ export const useUserStore = defineStore('user', () => {
     token,
     userInfo,
     isLoggedIn,
+    userRole,
+    isJobSeeker,
+    isInterviewer,
     avatarUrl,
     setToken,
     setUserInfo,

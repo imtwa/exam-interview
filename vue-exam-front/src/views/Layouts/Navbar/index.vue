@@ -62,6 +62,9 @@
                 <div class="navbar__user-info">
                   <el-avatar :size="32" :src="userAvatar" />
                   <span class="navbar__username">{{ userName }}</span>
+                  <span class="role-tag" :class="isJobSeeker ? 'seeker' : 'interviewer'">
+                    {{ isJobSeeker ? '求职者' : '面试官' }}
+                  </span>
                 </div>
                 <template #dropdown>
                   <el-dropdown-menu>
@@ -147,19 +150,56 @@ import { useRouter, useRoute } from 'vue-router'
 import { Search, Menu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const { isLoggedIn, userInfo, userRole, isJobSeeker, isInterviewer } = storeToRefs(userStore)
 
 // 使用 Pinia store 的状态
-const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userName = computed(() => userStore.userInfo?.username || '')
 // 头像使用纯前端生成的SVG，不需要后端存储，根据用户名动态生成
 const userAvatar = computed(() => userStore.avatarUrl)
 
 const searchQuery = ref('')
 const mobileMenuOpen = ref(false)
+
+// 导航菜单类型
+const navActiveIndex = ref('/')
+
+// 导航菜单项
+const navItems = computed(() => {
+  // 基本菜单项
+  const baseItems = [
+    { index: '/', name: '首页' },
+  ]
+  
+  // 根据用户角色添加不同菜单
+  if (isLoggedIn.value) {
+    if (isJobSeeker.value) {
+      // 求职者菜单
+      baseItems.push(
+        { index: '/exams', name: '试卷列表' },
+        { index: '/my-exams', name: '我的考试' }
+      )
+    } else if (isInterviewer.value) {
+      // 面试官菜单
+      baseItems.push(
+        { index: '/question-bank', name: '题库管理' },
+        { index: '/exam-management', name: '试卷管理' }
+      )
+    }
+  }
+
+  return baseItems
+})
+
+// 处理菜单点击
+const handleSelect = (key) => {
+  navActiveIndex.value = key
+  router.push(key)
+}
 
 // 检查用户是否已登录
 const checkLoginStatus = async () => {
@@ -212,6 +252,8 @@ onMounted(() => {
 
   // 检查登录状态
   checkLoginStatus()
+
+  navActiveIndex.value = router.currentRoute.value.path
 })
 
 onUnmounted(() => {
@@ -340,28 +382,11 @@ onUnmounted(() => {
       width: 100%;
 
       .search-input {
-        // :deep(.el-input__inner) {
-        //   height: 36px;
-        //   border-radius: 8px;
-        //   background-color: #f5f7fa;
-        //   border: none;
-        //   padding-right: 35px;
-        //   transition: all 0.3s;
-
-        //   &:focus, &:hover {
-        //     background-color: #edf2fc;
-        //     box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.2);
-        //   }
-        // }
-
         :deep(.el-input__suffix) {
           right: 5px;
 
           .search-icon {
-            // font-size: 16px;
-            // color: #909399;
             cursor: pointer;
-            // padding: 0 8px;
 
             &:hover {
               color: #409eff;
@@ -512,5 +537,24 @@ onUnmounted(() => {
 
 .main-content {
   padding-top: 72px;
+}
+
+.role-tag {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  
+  &.seeker {
+    background-color: #e6f7ff;
+    color: #1890ff;
+    border: 1px solid #91d5ff;
+  }
+  
+  &.interviewer {
+    background-color: #f6ffed;
+    color: #52c41a;
+    border: 1px solid #b7eb8f;
+  }
 }
 </style>

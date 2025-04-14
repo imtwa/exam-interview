@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, Length, Matches } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Length, Matches, IsEnum } from 'class-validator';
+import { UserRole } from '../../../../prisma/generated';
 
 export class RegisterDto {
     @IsNotEmpty({ message: '用户名不能为空' })
@@ -22,4 +23,8 @@ export class RegisterDto {
     @IsString({ message: '验证码必须是字符串' })
     @Length(4, 6, { message: '验证码长度必须在4-6个字符之间' })
     code: string;
+
+    @IsNotEmpty({ message: '用户角色不能为空' })
+    @IsEnum(UserRole, { message: '用户角色只能是求职者或面试官' })
+    role: UserRole;
 }

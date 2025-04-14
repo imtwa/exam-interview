@@ -7,7 +7,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from '../../common/logger/logger.module';
-import { PrismaClient } from '../../../generated/prisma/client';
+import { PrismaClient } from '../../../prisma/generated/client';
 import { RedisModule } from '../redis/redis.module';
 import { EmailModule } from '../email/email.module';
 

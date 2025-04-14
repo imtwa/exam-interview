@@ -50,6 +50,39 @@
             </div>
           </el-form-item>
 
+          <!-- 用户角色 -->
+          <el-form-item label="您的身份" prop="role">
+            <div class="role-selection">
+              <div 
+                class="role-card" 
+                :class="{ active: registerForm.role === 'JOB_SEEKER' }"
+                @click="registerForm.role = 'JOB_SEEKER'"
+              >
+                <div class="role-icon">
+                  <el-icon><User /></el-icon>
+                </div>
+                <div class="role-info">
+                  <div class="role-title">求职者</div>
+                  <div class="role-desc">使用题库练习，提升求职能力，直通在线面试</div>
+                </div>
+              </div>
+              
+              <div 
+                class="role-card" 
+                :class="{ active: registerForm.role === 'INTERVIEWER' }"
+                @click="registerForm.role = 'INTERVIEWER'"
+              >
+                <div class="role-icon">
+                  <el-icon><Briefcase /></el-icon>
+                </div>
+                <div class="role-info">
+                  <div class="role-title">面试官</div>
+                  <div class="role-desc">创建题库试卷，管理招聘流程，筛选优秀人才</div>
+                </div>
+              </div>
+            </div>
+          </el-form-item>
+
           <!-- 同意条款 -->
           <el-form-item prop="agreement">
             <el-checkbox v-model="registerForm.agreement">
@@ -80,7 +113,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Message, Lock, Key } from '@element-plus/icons-vue'
+import { User, Message, Lock, Key, Briefcase } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { register, sendEmailCode } from '@/api/auth'
 
@@ -97,6 +130,7 @@ const registerForm = reactive({
   password: '',
   confirmPassword: '',
   code: '',
+  role: 'JOB_SEEKER', // 默认选择求职者
   agreement: false
 })
 
@@ -217,6 +251,9 @@ const registerRules = reactive({
     { required: true, message: '请输入验证码', trigger: 'blur' },
     { min: 4, max: 6, message: '验证码长度在4-6个字符之间', trigger: 'blur' }
   ],
+  role: [
+    { required: true, message: '请选择身份类型', trigger: 'change' }
+  ],
   agreement: [
     {
       type: 'boolean',
@@ -261,7 +298,8 @@ const handleRegister = () => {
           username: registerForm.username,
           email: registerForm.email,
           password: registerForm.password,
-          code: registerForm.code
+          code: registerForm.code,
+          role: registerForm.role
         }
 
         const result = await register(registerData)
@@ -492,5 +530,76 @@ onMounted(() => {
       text-decoration: underline;
     }
   }
+}
+
+.role-selection {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+  }
+}
+
+.role-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #a3d0ff;
+    background-color: #f6faff;
+  }
+  
+  &.active {
+    border-color: #0352c9;
+    background-color: #f0f7ff;
+    box-shadow: 0 2px 8px rgba(3, 82, 201, 0.1);
+  }
+}
+
+.role-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e0f0ff;
+  margin-right: 15px;
+  color: #0352c9;
+  font-size: 20px;
+  
+  .active & {
+    background-color: #0352c9;
+    color: white;
+  }
+}
+
+.role-info {
+  flex: 1;
+}
+
+.role-title {
+  font-weight: 500;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 5px;
+  
+  .active & {
+    color: #0352c9;
+  }
+}
+
+.role-desc {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
 }
 </style>

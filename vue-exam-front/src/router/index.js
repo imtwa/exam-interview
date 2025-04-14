@@ -18,6 +18,11 @@ const routes = [
         component: () => import('../views/QuestionBank/index.vue')
       },
       {
+        path: 'question-bank/upload',
+        name: 'UploadExam',
+        component: () => import('../views/QuestionBank/UploadExam.vue')
+      },
+      {
         path: 'recruitment',
         name: 'Recruitment',
         component: () => import('../views/Recruitment/index.vue')

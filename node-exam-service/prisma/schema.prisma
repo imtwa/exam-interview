@@ -20,6 +20,7 @@ model FrontUser {
   username  String    @unique
   password  String
   email     String    @unique
+  role      UserRole  @default(JOB_SEEKER) // 用户角色：求职者或面试官
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -110,7 +111,8 @@ model Question {
 model ExamPaper {
   id            Int       @id @default(autoincrement())
   name          String // 试卷名称
-  description   String?   @db.Text // 试卷描述
+  summary       String?   @db.VarChar(500) // 试卷简介，简短摘要
+  description   String?   @db.Text // 试卷详细描述
   categoryId    Int // 一级分类ID
   subCategoryId Int? // 二级分类ID
   userId        Int // 创建用户ID
@@ -162,6 +164,12 @@ model Favorite {
 
   @@id([userId, examPaperId])
   @@map("exam_front_favorite")
+}
+
+// 用户角色枚举
+enum UserRole {
+  JOB_SEEKER    @map("JOB_SEEKER") // 求职者
+  INTERVIEWER   @map("INTERVIEWER") // 面试官
 }
 
 // 文档状态枚举

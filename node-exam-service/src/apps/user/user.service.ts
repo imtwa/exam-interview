@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
-import { PrismaClient } from '../../../generated/prisma/client';
+import { PrismaClient } from '../../../prisma/generated/client';
 import { LoggerService } from '../../common/logger/logger.service';
 import * as bcrypt from 'bcryptjs';
 

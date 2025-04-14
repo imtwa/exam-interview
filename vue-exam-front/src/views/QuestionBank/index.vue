@@ -43,6 +43,10 @@
                 </el-button>
               </template>
             </el-input>
+            <el-button type="primary" class="upload-btn" @click="goToUpload">
+              <el-icon><upload-filled /></el-icon>
+              上传试卷
+            </el-button>
           </div>
         </div>
       </div>
@@ -80,7 +84,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import {Search} from '@element-plus/icons-vue'
+import { Search, UploadFilled } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 // 一级分类
 const primaryCategories = ref([
@@ -295,6 +302,11 @@ const startExam = id => {
   // 跳转到考试页面
 }
 
+// 跳转到上传试卷页面
+const goToUpload = () => {
+  router.push('/question-bank/upload')
+}
+
 onMounted(() => {
   fetchQuestionList()
 })
@@ -383,18 +395,26 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  background-color: #f9f9f9;
+  border-top: 1px solid #f0f0f0;
 
   .left {
     .search-tip {
       font-size: 14px;
       color: #666;
+      margin: 0;
     }
   }
 
   .right {
+    display: flex;
+    align-items: center;
+    
     .search-input {
-      width: 320px;
+      width: 300px;
+    }
+    
+    .upload-btn {
+      margin-left: 15px;
     }
   }
 }
