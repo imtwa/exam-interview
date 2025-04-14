@@ -6,8 +6,8 @@
         <div class="category-wrapper">
           <div class="primary-categories">
             <div
-              v-for="(category, index) in primaryCategories"
-              :key="index"
+              v-for="category in primaryCategories"
+              :key="category.id"
               :class="['category-item', { active: activePrimaryCategory === category.id }]"
               @click="handlePrimaryCategoryClick(category.id)"
             >
@@ -18,8 +18,8 @@
           <!-- 二级分类导航 -->
           <div class="secondary-categories">
             <div
-              v-for="(category, index) in secondaryCategories"
-              :key="index"
+              v-for="category in secondaryCategories"
+              :key="category.id"
               :class="['category-item', { active: activeSecondaryCategory === category.id }]"
               @click="handleSecondaryCategoryClick(category.id)"
             >
@@ -86,77 +86,46 @@
 import { ref, computed, onMounted } from 'vue'
 import { Search, UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { getCategoryList } from '@/api/category'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 
+// 分类数据
+const categoryData = ref([])
+const loading = ref(false)
+
 // 一级分类
-const primaryCategories = ref([
-  { id: 'all', name: '全部分类' },
-  { id: 'gaokao', name: '高考院校' },
-  { id: 'college', name: '大学课程' },
-  { id: 'it', name: 'IT认证' },
-  { id: 'language', name: '语言考试' },
-  { id: 'finance', name: '金融财会' },
-  { id: 'medicine', name: '医药卫生' },
-  { id: 'civil', name: '公务员' },
-  { id: 'foreign', name: '外语考试' }
-])
+const primaryCategories = computed(() => {
+  // 添加"全部分类"选项
+  return [{ id: 0, name: '全部分类' }].concat(categoryData.value)
+})
 
 // 二级分类（根据选中的一级分类动态变化）
 const secondaryCategories = computed(() => {
-  const categoriesMap = {
-    all: [
-      { id: 'all-sub', name: '全部' },
-      { id: 'hot', name: '热门课程' }
-    ],
-    gaokao: [
-      { id: 'all-gaokao', name: '全部' },
-      { id: 'math', name: '数学' },
-      { id: 'chinese', name: '语文' },
-      { id: 'english', name: '英语' },
-      { id: 'physics', name: '物理' },
-      { id: 'chemistry', name: '化学' },
-      { id: 'biology', name: '生物' },
-      { id: 'politics', name: '政治' }
-    ],
-    college: [
-      { id: 'all-college', name: '全部' },
-      { id: 'engineering', name: '工学类' },
-      { id: 'science', name: '理学类' },
-      { id: 'economics', name: '经济学类' },
-      { id: 'management', name: '管理学类' },
-      { id: 'arts', name: '文学类' },
-      { id: 'law', name: '法学类' }
-    ],
-    it: [
-      { id: 'all-it', name: '全部' },
-      { id: 'developer', name: '程序开发' },
-      { id: 'database', name: '数据库' },
-      { id: 'network', name: '网络技术' },
-      { id: 'security', name: '信息安全' }
-    ],
-    language: [
-      { id: 'all-language', name: '全部' },
-      { id: 'english', name: '英语考试' },
-      { id: 'japanese', name: '日语考试' },
-      { id: 'korean', name: '韩语考试' },
-      { id: 'french', name: '法语考试' }
-    ],
-    finance: [
-      { id: 'all-finance', name: '全部' },
-      { id: 'accounting', name: '会计' },
-      { id: 'audit', name: '审计' },
-      { id: 'tax', name: '税务' },
-      { id: 'finance', name: '金融' }
-    ]
+  // 如果选择了"全部分类"，则展示空的二级分类
+  if (activePrimaryCategory.value === 0) {
+    return [{ id: 0, name: '全部' }]
   }
-
-  return categoriesMap[activePrimaryCategory.value] || categoriesMap.all
+  
+  // 根据选中的一级分类获取对应的二级分类
+  const selectedCategory = categoryData.value.find(
+    category => category.id === activePrimaryCategory.value
+  )
+  
+  // 如果找到对应的一级分类，并且有二级分类
+  if (selectedCategory && selectedCategory.children && selectedCategory.children.length > 0) {
+    // 添加"全部"选项
+    return [{ id: 0, name: '全部' }].concat(selectedCategory.children)
+  }
+  
+  // 默认返回只有"全部"的数组
+  return [{ id: 0, name: '全部' }]
 })
 
 // 当前选中的分类
-const activePrimaryCategory = ref('all')
-const activeSecondaryCategory = ref('all-sub')
+const activePrimaryCategory = ref(0) // 默认选中"全部分类"
+const activeSecondaryCategory = ref(0) // 默认选中"全部"
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -172,7 +141,7 @@ const searchTip = computed(() => {
   return `${primary?.name || '全部分类'} > ${secondary?.name || '全部'}`
 })
 
-// 模拟题目数据
+// 模拟题目数据 - 实际应用中应通过API获取
 const questionList = ref([
   {
     id: 1,
@@ -236,11 +205,25 @@ const questionList = ref([
   }
 ])
 
+// 获取分类数据
+const fetchCategories = async () => {
+  loading.value = true
+  try {
+    const res = await getCategoryList()
+      categoryData.value = res || []
+  } catch (error) {
+    console.error('获取分类数据异常:', error)
+    ElMessage.error('网络异常，请稍后重试')
+  } finally {
+    loading.value = false
+  }
+}
+
 // 分类点击事件处理
 const handlePrimaryCategoryClick = categoryId => {
   activePrimaryCategory.value = categoryId
   // 重置二级分类选择
-  activeSecondaryCategory.value = secondaryCategories.value[0]?.id || 'all-sub'
+  activeSecondaryCategory.value = 0 // 默认选中"全部"
   // 重置分页
   currentPage.value = 1
   // 重新加载数据
@@ -255,59 +238,55 @@ const handleSecondaryCategoryClick = categoryId => {
   fetchQuestionList()
 }
 
-// 搜索处理
+// 搜索
 const handleSearch = () => {
-  // 搜索重置分页
   currentPage.value = 1
-  // 重新加载数据
   fetchQuestionList()
 }
 
-// 分页事件处理
-const handleSizeChange = size => {
-  pageSize.value = size
+// 分页变化
+const handleSizeChange = val => {
+  pageSize.value = val
   fetchQuestionList()
 }
 
-const handleCurrentChange = page => {
-  currentPage.value = page
+const handleCurrentChange = val => {
+  currentPage.value = val
   fetchQuestionList()
 }
 
-// 获取题目列表数据
+// 获取题目数据
 const fetchQuestionList = () => {
   // 这里应该调用API获取数据
-  console.log('获取题目列表', {
+  // 暂时使用模拟数据，实际应用中需替换为真实API
+  console.log('获取题库列表：', {
     primaryCategory: activePrimaryCategory.value,
     secondaryCategory: activeSecondaryCategory.value,
     keyword: searchKeyword.value,
     page: currentPage.value,
     pageSize: pageSize.value
   })
-
-  // 模拟异步请求
-  setTimeout(() => {
-    // 这里为了演示，我们不改变数据
-  }, 300)
 }
 
-// 详情页和考试按钮处理
+// 查看详情
 const viewDetail = id => {
-  console.log('查看详情', id)
-  // 跳转到详情页
+  router.push(`/exam/${id}`)
 }
 
+// 开始做题
 const startExam = id => {
-  console.log('开始做题', id)
-  // 跳转到考试页面
+  router.push(`/take-exam/${id}`)
 }
 
-// 跳转到上传试卷页面
+// 上传试卷
 const goToUpload = () => {
   router.push('/question-bank/upload')
 }
 
 onMounted(() => {
+  // 获取分类数据
+  fetchCategories()
+  // 初始加载数据
   fetchQuestionList()
 })
 </script>

@@ -7,7 +7,7 @@ import request from './request'
  */
 export function getQuestionList(params) {
   return request({
-    url: '/api/question-bank',
+    url: '/question/list',
     method: 'get',
     params
   })
@@ -20,7 +20,7 @@ export function getQuestionList(params) {
  */
 export function getQuestionDetail(id) {
   return request({
-    url: `/api/question-bank/${id}`,
+    url: `/question/detail/${id}`,
     method: 'get'
   })
 }
@@ -32,7 +32,7 @@ export function getQuestionDetail(id) {
  */
 export function uploadExamPaper(data) {
   return request({
-    url: '/api/question-bank/upload',
+    url: '/question/upload',
     method: 'post',
     data,
     headers: {
@@ -47,7 +47,7 @@ export function uploadExamPaper(data) {
  */
 export function getQuestionTemplate() {
   return request({
-    url: '/api/question-bank/template',
+    url: '/question/template',
     method: 'get',
     responseType: 'blob'
   })
@@ -59,20 +59,8 @@ export function getQuestionTemplate() {
  */
 export function getCategoryList() {
   return request({
-    url: '/api/category/list',
+    url: '/category/list',
     method: 'get'
-  })
-}
-
-/**
- * 获取试卷模板
- * @returns {Promise}
- */
-export function getExamTemplate() {
-  return request({
-    url: '/api/exam/template',
-    method: 'get',
-    responseType: 'blob'
   })
 }
 
@@ -83,7 +71,7 @@ export function getExamTemplate() {
  */
 export function getExamList(params) {
   return request({
-    url: '/api/exam/list',
+    url: '/exam/list',
     method: 'get',
     params
   })
@@ -96,7 +84,32 @@ export function getExamList(params) {
  */
 export function getExamDetail(id) {
   return request({
-    url: `/api/exam/${id}`,
+    url: `/exam/detail/${id}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 提交考试答案
+ * @param {Object} data 考试答案数据
+ * @returns {Promise}
+ */
+export function submitExamAnswer(data) {
+  return request({
+    url: '/exam/submit',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取考试结果
+ * @param {string} examId 考试ID
+ * @returns {Promise}
+ */
+export function getExamResult(examId) {
+  return request({
+    url: `/exam/result/${examId}`,
     method: 'get'
   })
 } 

@@ -175,19 +175,22 @@ const navItems = computed(() => {
     { index: '/', name: '首页' },
   ]
   
-  // 根据用户角色添加不同菜单
+  // 根据用户登录状态添加不同菜单
   if (isLoggedIn.value) {
+    // 所有用户都可以看到试卷列表和试卷管理
+    baseItems.push(
+      { index: '/exams', name: '试卷列表' },
+      { index: '/question-bank', name: '题库管理' }
+    )
+    
+    // 添加特定用户菜单
     if (isJobSeeker.value) {
-      // 求职者菜单
       baseItems.push(
-        { index: '/exams', name: '试卷列表' },
         { index: '/my-exams', name: '我的考试' }
       )
     } else if (isInterviewer.value) {
-      // 面试官菜单
       baseItems.push(
-        { index: '/question-bank', name: '题库管理' },
-        { index: '/exam-management', name: '试卷管理' }
+        { index: '/exam-management', name: '面试管理' }
       )
     }
   }

@@ -12,7 +12,7 @@
       <div class="upload-form-container">
         <div class="form-title">想要更优质的试卷？一键上传，快速创建试卷！</div>
         
-        <el-form :model="formData" :rules="formRules" ref="uploadFormRef" label-position="top" class="upload-form">
+        <el-form :model="formData" :rules="formRules" ref="formRef" label-position="top" class="upload-form">
           <!-- 数据集分类 -->
           <el-form-item label="试卷一级分类" prop="categoryId" required>
             <el-select v-model="formData.categoryId" placeholder="请选择试卷一级分类" @change="handleCategoryChange">
@@ -41,19 +41,19 @@
           <el-form-item label="试卷名称" prop="name" required>
             <el-input
               v-model="formData.name"
-              placeholder="请输入试卷名称，最大不超过20字符"
-              maxlength="20"
+              placeholder="请输入试卷名称，最大不超过50字符"
+              maxlength="50"
               show-word-limit
             />
           </el-form-item>
 
           <!-- 数据集简介 -->
-          <el-form-item label="试卷简介" prop="description">
+          <el-form-item label="试卷简介" prop="summary">
             <el-input
-              v-model="formData.description"
+              v-model="formData.summary"
               type="textarea"
-              placeholder="请输入试卷简介，最大不超过50字符"
-              maxlength="50"
+              placeholder="请输入试卷简介，最大不超过500字符"
+              maxlength="500"
               show-word-limit
               :rows="3"
             />
@@ -105,21 +105,22 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
-import { uploadExamPaper, getCategoryList } from '@/api/question'
+import { getCategoryList } from '@/api/category'
+import { uploadExam } from '@/api/exam'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
-
-// 表单引用
-const uploadFormRef = ref(null)
-
-// 上传状态
-const uploading = ref(false)
+const userStore = useUserStore()
+const formRef = ref(null)
+const fileRef = ref(null)
+const fileList = ref([])
 
 // 表单数据
 const formData = reactive({
   categoryId: '',
   subCategoryId: '',
   name: '',
+  summary: '',
   description: '',
   file: null,
   isPublic: true
@@ -132,10 +133,13 @@ const formRules = {
   ],
   name: [
     { required: true, message: '请输入试卷名称', trigger: 'blur' },
-    { max: 20, message: '长度不能超过20个字符', trigger: 'blur' }
+    { max: 50, message: '长度不能超过50个字符', trigger: 'blur' }
+  ],
+  summary: [
+    { max: 500, message: '长度不能超过500个字符', trigger: 'blur' }
   ],
   description: [
-    { max: 50, message: '长度不能超过50个字符', trigger: 'blur' }
+    { max: 2000, message: '长度不能超过2000个字符', trigger: 'blur' }
   ],
   file: [
     { required: true, message: '请上传Excel文件', trigger: 'change' }
@@ -146,6 +150,7 @@ const formRules = {
 const categories = ref([])
 // 加载状态
 const loading = ref(false)
+const uploading = ref(false)
 
 // 二级分类（根据选中的一级分类动态变化）
 const subCategories = computed(() => {
@@ -169,13 +174,32 @@ const fetchCategories = async () => {
   loading.value = true
   try {
     const res = await getCategoryList()
-    categories.value = res.data || []
+    categories.value = res || []
   } catch (error) {
     console.error('获取分类失败', error)
     ElMessage.error('获取分类失败，请刷新页面重试')
   } finally {
     loading.value = false
   }
+}
+
+// 下载模板
+const downloadTemplate = () => {
+  // 使用本地模板文件路径
+  const templatePath = '/template/exam-template.xlsx';
+  
+  // 创建下载链接
+  const link = document.createElement('a');
+  link.href = templatePath;
+  link.download = '试卷导入模板.xlsx';
+  
+  // 触发下载
+  document.body.appendChild(link);
+  link.click();
+  
+  // 清理DOM
+  document.body.removeChild(link);
+  ElMessage.success('模板下载成功');
 }
 
 // 文件上传相关
@@ -186,14 +210,18 @@ const handleFileChange = (file) => {
   
   // 检查文件大小
   const isLt10M = file.raw.size / 1024 / 1024 < 10
-
+  
   if (!isExcel) {
-    ElMessage.error('只能上传Excel文件!')
+    ElMessage.error('只能上传Excel文件')
+    fileList.value = []
+    formData.file = null
     return false
   }
   
   if (!isLt10M) {
-    ElMessage.error('文件大小不能超过10MB!')
+    ElMessage.error('文件大小不能超过10MB')
+    fileList.value = []
+    formData.file = null
     return false
   }
   
@@ -201,64 +229,90 @@ const handleFileChange = (file) => {
   return true
 }
 
+// 移除文件
 const handleFileRemove = () => {
   formData.file = null
-}
-
-// 下载模板
-const downloadTemplate = async () => {
-  try {
-    // 直接使用本地文件路径
-    const templatePath = '/template/exam-template.xlsx';
-    
-    // 创建链接直接下载本地文件
-    const link = document.createElement('a');
-    link.href = templatePath;
-    link.download = '试题导入模板.xlsx';
-    
-    // 触发点击事件下载文件
-    document.body.appendChild(link);
-    link.click();
-    
-    // 清理
-    document.body.removeChild(link);
-    ElMessage.success('模板下载成功');
-  } catch (error) {
-    console.error('模板下载失败', error);
-    ElMessage.error('模板下载失败，请重试');
-  }
+  fileList.value = []
 }
 
 // 提交表单
 const submitForm = async () => {
-  if (!uploadFormRef.value) return
+  if (!formRef.value) return
   
-  await uploadFormRef.value.validate(async (valid) => {
+  // 添加调试信息，检查登录状态
+  console.log('用户登录状态:', userStore.isLoggedIn)
+  console.log('用户令牌:', userStore.token)
+  
+  formRef.value.validate(async (valid) => {
     if (valid) {
+      if (!formData.file) {
+        ElMessage.warning('请上传Excel文件')
+        return
+      }
+      
+      // 检查用户是否登录
+      if (!userStore.isLoggedIn) {
+        ElMessage.warning('请先登录后再上传试卷')
+        router.push('/login')
+        return
+      }
+      
       uploading.value = true
       
       try {
         // 创建FormData对象
-        const formDataToSend = new FormData()
-        formDataToSend.append('file', formData.file)
-        formDataToSend.append('categoryId', formData.categoryId)
+        const data = new FormData()
+        data.append('file', formData.file)
+        data.append('name', formData.name)
+        data.append('categoryId', formData.categoryId)
+        
         if (formData.subCategoryId) {
-          formDataToSend.append('subCategoryId', formData.subCategoryId)
+          data.append('subCategoryId', formData.subCategoryId)
         }
-        formDataToSend.append('name', formData.name)
+        
+        if (formData.summary) {
+          data.append('summary', formData.summary)
+        }
+        
         if (formData.description) {
-          formDataToSend.append('description', formData.description)
+          data.append('description', formData.description)
         }
-        formDataToSend.append('isPublic', formData.isPublic)
         
-        // 调用API上传文件
-        const res = await uploadExamPaper(formDataToSend)
+        data.append('isPublic', formData.isPublic)
         
-        ElMessage.success('上传成功！')
-        router.push('/question-bank')
+        // 发送请求
+        const res = await uploadExam(data)
+        
+        ElMessage.success('试卷上传成功')
+        
+        // 确认是否查看详情
+        ElMessageBox.confirm(
+          '试卷上传成功，是否查看试卷详情？',
+          '上传成功',
+          {
+            confirmButtonText: '查看详情',
+            cancelButtonText: '继续上传',
+            type: 'success',
+          }
+        )
+          .then(() => {
+            // 跳转到试卷详情页
+            router.push(`/exam/${res.data.id}`)
+          })
+          .catch(() => {
+            // 重置表单，继续上传
+            resetForm()
+          })
       } catch (error) {
         console.error('上传失败', error)
-        ElMessage.error(error.message || '上传失败，请重试')
+        // 显示详细错误信息
+        if (error.response) {
+          console.log('错误状态:', error.response.status)
+          console.log('错误数据:', error.response.data)
+          ElMessage.error(`上传失败: ${error.response.data.message || '请求错误'}`)
+        } else {
+          ElMessage.error('试卷上传失败，请重试')
+        }
       } finally {
         uploading.value = false
       }
@@ -266,8 +320,17 @@ const submitForm = async () => {
   })
 }
 
+// 重置表单
+const resetForm = () => {
+  if (formRef.value) {
+    formRef.value.resetFields()
+    formData.file = null
+    fileList.value = []
+  }
+}
+
 onMounted(() => {
-  // 初始化获取分类列表
+  // 获取分类列表
   fetchCategories()
 })
 </script>
