@@ -1,9 +1,10 @@
-import { Global, Module, OnApplicationShutdown } from '@nestjs/common';
+import { Global, Module, OnApplicationShutdown, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from './redis.service';
 import { RedisController } from './redis.controller';
 import { createClient } from 'redis';
 import { ModuleRef } from '@nestjs/core';
+import { logger } from '../../common/logger/logger.config';
 
 @Global()
 @Module({
@@ -12,6 +13,8 @@ import { ModuleRef } from '@nestjs/core';
     provide: 'REDIS_CLIENT',
     inject: [ConfigService],
     async useFactory(configService: ConfigService) {
+      const nestLogger = new Logger('Redis');
+      
       const client = createClient({
           socket: {
               host: configService.get('REDIS_HOST') || '127.0.0.1',
@@ -19,10 +22,12 @@ import { ModuleRef } from '@nestjs/core';
               reconnectStrategy: (retries) => {
                   // 最大重试次数为10次，每次重试间隔为重试次数 * 1000ms
                   if (retries > 10) {
-                      console.error('[Redis] 重连失败次数过多，停止重连');
+                      nestLogger.error('重连失败次数过多，停止重连');
+                      logger.error('重连失败次数过多，停止重连', { context: 'Redis' });
                       return new Error('Redis重连失败次数过多');
                   }
-                  console.log(`[Redis] 尝试重连，第${retries}次`);
+                  nestLogger.log(`尝试重连，第${retries}次`);
+                  logger.info(`尝试重连，第${retries}次`, { context: 'Redis' });
                   return retries * 1000; // 重连间隔时间
               },
               connectTimeout: 10000, // 连接超时设置为10秒
@@ -33,30 +38,36 @@ import { ModuleRef } from '@nestjs/core';
 
       // 错误事件处理
       client.on('error', (err) => {
-          console.error('[Redis] 连接错误:', err);
+          nestLogger.error(`连接错误: ${err.message}`);
+          logger.error('连接错误', { context: 'Redis', error: err });
       });
 
       // 重连事件
       client.on('reconnecting', () => {
-          console.log('[Redis] 正在重连...');
+          nestLogger.log('正在重连...');
+          logger.info('正在重连...', { context: 'Redis' });
       });
 
       // 连接成功
       client.on('connect', () => {
-          console.log('[Redis] 连接成功');
+          nestLogger.log('连接成功');
+          logger.info('连接成功', { context: 'Redis' });
       });
 
       // 连接就绪
       client.on('ready', () => {
-          console.log('[Redis] 服务就绪');
+          nestLogger.log('服务就绪');
+          logger.info('服务就绪', { context: 'Redis' });
       });
 
       try {
           await client.connect();
-          console.log('[Redis] 初始化连接成功');
+          nestLogger.log('初始化连接成功');
+          logger.info('初始化连接成功', { context: 'Redis' });
           return client;
       } catch (error) {
-          console.error('[Redis] 初始化连接失败:', error);
+          nestLogger.error(`初始化连接失败: ${error.message}`);
+          logger.error('初始化连接失败', { context: 'Redis', error });
           throw error;
       }
     }
@@ -64,6 +75,8 @@ import { ModuleRef } from '@nestjs/core';
   exports: [RedisService]
 })
 export class RedisModule implements OnApplicationShutdown {
+  private readonly logger = new Logger('Redis');
+  
   constructor(private moduleRef: ModuleRef) {}
 
   async onApplicationShutdown() {
@@ -71,7 +84,8 @@ export class RedisModule implements OnApplicationShutdown {
     const client = this.moduleRef.get('REDIS_CLIENT');
     if (client) {
       await client.quit();
-      console.log('[Redis] 连接已安全关闭');
+      this.logger.log('连接已安全关闭');
+      logger.info('连接已安全关闭', { context: 'Redis' });
     }
   }
 }
