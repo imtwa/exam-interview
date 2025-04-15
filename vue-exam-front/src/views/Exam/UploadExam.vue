@@ -48,9 +48,9 @@
           </el-form-item>
 
           <!-- 数据集简介 -->
-          <el-form-item label="试卷简介" prop="summary">
+          <el-form-item label="试卷简介" prop="description">
             <el-input
-              v-model="formData.summary"
+              v-model="formData.description"
               type="textarea"
               placeholder="请输入试卷简介，最大不超过500字符"
               maxlength="500"
@@ -76,6 +76,7 @@
               :on-change="handleFileChange"
               :on-remove="handleFileRemove"
               accept=".xlsx,.xls"
+              :disabled="uploading"
             >
               <el-icon class="el-icon--upload"><upload-filled /></el-icon>
               <div class="el-upload__text">
@@ -91,11 +92,28 @@
 
           <!-- 按钮区域 -->
           <div class="form-actions">
-            <el-button @click="goBack">取消</el-button>
-            <el-button type="primary" @click="submitForm" :loading="uploading">确认创建</el-button>
+            <el-button @click="goBack" :disabled="uploading" plain>取消</el-button>
+            <el-button 
+              @click="submitForm" 
+              :loading="uploading" 
+              :disabled="uploading"
+              type="primary"
+              style="background-color: #0352c9; border-color: #0352c9;"
+            >
+              {{ uploading ? '创建中...' : '确认创建' }}
+            </el-button>
           </div>
         </el-form>
       </div>
+    </div>
+    
+    <!-- 全屏加载指示器 -->
+    <div class="full-screen-loading" v-if="uploading">
+      <el-loading
+        :fullscreen="true"
+        text="正在上传试卷，请稍候..."
+        background="rgba(255, 255, 255, 0.8)"
+      ></el-loading>
     </div>
   </div>
 </template>
@@ -120,7 +138,6 @@ const formData = reactive({
   categoryId: '',
   subCategoryId: '',
   name: '',
-  summary: '',
   description: '',
   file: null,
   isPublic: true
@@ -135,11 +152,8 @@ const formRules = {
     { required: true, message: '请输入试卷名称', trigger: 'blur' },
     { max: 50, message: '长度不能超过50个字符', trigger: 'blur' }
   ],
-  summary: [
-    { max: 500, message: '长度不能超过500个字符', trigger: 'blur' }
-  ],
   description: [
-    { max: 2000, message: '长度不能超过2000个字符', trigger: 'blur' }
+    { max: 500, message: '长度不能超过500个字符', trigger: 'blur' }
   ],
   file: [
     { required: true, message: '请上传Excel文件', trigger: 'change' }
@@ -239,6 +253,12 @@ const handleFileRemove = () => {
 const submitForm = async () => {
   if (!formRef.value) return
   
+  // 如果正在上传中，阻止重复提交
+  if (uploading.value) {
+    ElMessage.warning('正在上传中，请勿重复提交')
+    return
+  }
+  
   // 添加调试信息，检查登录状态
   console.log('用户登录状态:', userStore.isLoggedIn)
   console.log('用户令牌:', userStore.token)
@@ -270,10 +290,6 @@ const submitForm = async () => {
           data.append('subCategoryId', formData.subCategoryId)
         }
         
-        if (formData.summary) {
-          data.append('summary', formData.summary)
-        }
-        
         if (formData.description) {
           data.append('description', formData.description)
         }
@@ -284,6 +300,7 @@ const submitForm = async () => {
         const res = await uploadExam(data)
         
         ElMessage.success('试卷上传成功')
+        console.log('上传成功返回的数据:', res)
         
         // 确认是否查看详情
         ElMessageBox.confirm(
@@ -297,7 +314,15 @@ const submitForm = async () => {
         )
           .then(() => {
             // 跳转到试卷详情页
-            router.push(`/exam/${res.data.id}`)
+            // API可能直接返回数据，也可能包裹在data属性中
+            const examId = res.id || (res.data && res.data.id)
+            if (examId) {
+              console.log('跳转到试卷ID:', examId)
+              router.push(`/exam/${examId}`)
+            } else {
+              ElMessage.warning('无法获取试卷ID，无法跳转到详情页')
+              console.error('未找到试卷ID:', res)
+            }
           })
           .catch(() => {
             // 重置表单，继续上传
@@ -341,6 +366,7 @@ onMounted(() => {
   min-height: calc(100vh - 72px);
   background-color: #f5f9ff;
   padding: 20px;
+  position: relative;
 }
 
 .upload-exam-container {
@@ -417,9 +443,63 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 30px;
+  gap: 15px;
   
   .el-button {
     min-width: 100px;
+    border-radius: 4px;
+    font-weight: 500;
+    
+    &:disabled {
+      cursor: not-allowed;
+    }
+    
+    &:hover {
+      opacity: 0.9;
+    }
   }
+}
+
+// 自定义Element Plus组件样式
+:deep(.el-button--primary) {
+  background-color: #0352c9;
+  border-color: #0352c9;
+  
+  &:hover, &:focus {
+    background-color: #0461e3;
+    border-color: #0461e3;
+  }
+  
+  &:active {
+    background-color: #0247b2;
+    border-color: #0247b2;
+  }
+  
+  &.is-disabled, &.is-disabled:hover {
+    background-color: #a0cfff;
+    border-color: #a0cfff;
+  }
+}
+
+// 上传禁用状态样式
+:deep(.is-disabled) {
+  cursor: not-allowed !important;
+  
+  .el-upload-dragger {
+    background-color: #f5f7fa !important;
+    border-color: #e4e7ed !important;
+  }
+}
+
+.full-screen-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style> 

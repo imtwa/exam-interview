@@ -15,12 +15,27 @@ const routes = [
       {
         path: 'question-bank',
         name: 'QuestionBank',
-        component: () => import('../views/QuestionBank/index.vue')
+        component: () => import('../views/Exam/index.vue')
       },
       {
         path: 'question-bank/upload',
         name: 'UploadExam',
-        component: () => import('../views/QuestionBank/UploadExam.vue')
+        component: () => import('../views/Exam/UploadExam.vue')
+      },
+      {
+        path: 'exam/:id',
+        name: 'ExamDetail',
+        component: () => import('../views/Exam/ExamDetail.vue')
+      },
+      {
+        path: 'take-exam/:id',
+        name: 'TakeExam',
+        component: () => import('../views/Exam/TakeExam.vue')
+      },
+      {
+        path: 'practice-exam/:id',
+        name: 'PracticeExam',
+        component: () => import('../views/Exam/PracticeExam.vue')
       },
       {
         path: 'recruitment',

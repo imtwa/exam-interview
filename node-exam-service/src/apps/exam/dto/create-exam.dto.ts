@@ -10,10 +10,6 @@ export class CreateExamDto {
   @IsOptional()
   @IsString({ message: '试卷简介必须是字符串' })
   @MaxLength(500, { message: '试卷简介不能超过500个字符' })
-  summary?: string;
-
-  @IsOptional()
-  @IsString({ message: '试卷详细描述必须是字符串' })
   description?: string;
 
   @IsNotEmpty({ message: '分类ID不能为空' })

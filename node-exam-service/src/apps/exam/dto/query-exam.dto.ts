@@ -11,25 +11,41 @@ export class QueryExamDto {
   @IsOptional()
   @IsInt({ message: '页码必须是整数' })
   @Min(1, { message: '页码必须大于0' })
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }) => {
+    if (value === undefined) return 1;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? 1 : parsed;
+  })
   page?: number = 1;
 
   @IsOptional()
   @IsInt({ message: '每页数量必须是整数' })
   @Min(1, { message: '每页数量必须大于0' })
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }) => {
+    if (value === undefined) return 10;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? 10 : parsed;
+  })
   pageSize?: number = 10;
 
   @IsOptional()
   @IsInt({ message: '分类ID必须是整数' })
   @Min(1, { message: '分类ID必须大于0' })
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => {
+    if (value === undefined || value === '') return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  })
   categoryId?: number;
 
   @IsOptional()
   @IsInt({ message: '二级分类ID必须是整数' })
   @Min(1, { message: '二级分类ID必须大于0' })
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => {
+    if (value === undefined || value === '') return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  })
   subCategoryId?: number;
 
   @IsOptional()

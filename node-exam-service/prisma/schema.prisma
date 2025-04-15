@@ -14,167 +14,146 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 用户表
+/// 用户表：存储系统用户信息，包括求职者和面试官
 model FrontUser {
-  id        Int       @id @default(autoincrement())
-  username  String    @unique
-  password  String
-  email     String    @unique
-  role      UserRole  @default(JOB_SEEKER) // 用户角色：求职者或面试官
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id        Int       @id @default(autoincrement()) /// 用户ID，自增主键
+  username  String    @unique /// 用户名，唯一标识
+  password  String /// 用户密码，存储加密后的密码
+  email     String    @unique /// 邮箱地址，用于邮件验证和通知，唯一标识
+  role      UserRole  @default(JOB_SEEKER) /// 用户角色：求职者或面试官
+  createdAt DateTime  @default(now()) /// 创建时间，记录用户注册时间
+  updatedAt DateTime  @updatedAt /// 更新时间，记录用户信息最后修改时间
+  deletedAt DateTime? /// 删除时间，用于软删除，值为null表示未删除
 
   // 关联表
-  documents  Document[] // 用户上传的文档
-  examPapers ExamPaper[] // 用户创建的试卷
-  favorites  Favorite[] // 用户收藏
-  questions  Question[] // 用户创建的题目
+  examPapers ExamPaper[] /// 用户创建的试卷
+  favorites  Favorite[] /// 用户收藏的试卷
+  questions  Question[] /// 用户创建的题目
 
   @@map("exam_front_user")
 }
 
-// 一级分类表
+/// 一级分类表：管理试卷和题目的顶级分类，如"计算机"、"大学考试"等
 model Category {
-  id          Int       @id @default(autoincrement())
-  name        String // 分类名称
-  description String?   @db.Text // 分类描述
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id          Int       @id @default(autoincrement()) /// 分类ID，自增主键
+  name        String /// 分类名称，如"计算机"、"大学考试"
+  description String?   @db.Text /// 分类描述，详细说明分类内容和用途
+  createdAt   DateTime  @default(now()) /// 创建时间
+  updatedAt   DateTime  @updatedAt /// 更新时间，记录分类信息最后修改时间
+  deletedAt   DateTime? /// 删除时间，用于软删除
 
   // 关联表
-  subCategories SubCategory[] // 二级分类
-  examPapers    ExamPaper[] // 所属试卷
+  subCategories SubCategory[] /// 二级分类，一对多关系
+  examPapers    ExamPaper[] /// 所属试卷，一对多关系
 
   @@map("exam_front_category")
 }
 
-// 二级分类表
+/// 二级分类表：一级分类下的子分类，如"计算机"下的"前端"、"Java"等
 model SubCategory {
-  id          Int       @id @default(autoincrement())
-  name        String // 二级分类名称
-  description String?   @db.Text // 二级分类描述
-  categoryId  Int // 所属一级分类ID
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id          Int       @id @default(autoincrement()) /// 二级分类ID，自增主键
+  name        String /// 二级分类名称，如"前端"、"Java"
+  description String?   @db.Text /// 二级分类描述
+  categoryId  Int /// 所属一级分类ID，外键关联到Category表
+  createdAt   DateTime  @default(now()) /// 创建时间
+  updatedAt   DateTime  @updatedAt /// 更新时间
+  deletedAt   DateTime? /// 删除时间，用于软删除
 
   // 关联表
-  category   Category    @relation(fields: [categoryId], references: [id])
-  examPapers ExamPaper[] // 所属试卷
+  category   Category    @relation(fields: [categoryId], references: [id]) /// 所属一级分类，多对一关系
+  examPapers ExamPaper[] /// 关联的试卷，一对多关系
 
   @@map("exam_front_subcategory")
 }
 
-// 文档表 - 用户上传的原始文档
-model Document {
-  id        Int            @id @default(autoincrement())
-  userId    Int // 用户ID
-  filePath  String // 文件路径
-  status    DocumentStatus @default(PENDING) // 文件状态
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  deletedAt DateTime?
-
-  // 关联表
-  user      FrontUser      @relation(fields: [userId], references: [id])
-  questions Question[] // 从文档中提取的题目
-
-  @@map("exam_front_document")
-}
-
-// 题目表
+/// 题目表：存储所有考试题目
 model Question {
-  id          Int       @id @default(autoincrement())
-  qtype       Int // 题目类型
-  question    String    @db.Text // 题目内容
-  options     String?   @db.Text // 选项，根据类型不同存储不同格式
-  answer      String    @db.Text // 答案，根据类型不同存储不同格式
-  ai_analysis String    @db.Text // AI解析
-  difficulty  Int? // 难度等级
-  userId      Int? // 创建用户ID
-  documentId  Int? // 所属文档ID
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id          Int       @id @default(autoincrement()) /// 题目ID，自增主键
+  qtype       Int /// 题目类型：1=单选题，2=多选题，3=判断题，4=填空题
+  question    String    @db.Text /// 题目内容，题干文本
+  options     String?   @db.Text /// 选项，JSON格式存储，根据题型不同有不同结构
+  answer      String    @db.Text /// 答案，不同题型有不同格式
+  ai_analysis String    @db.Text /// AI解析，题目的解释和分析
+  difficulty  Int? /// 难度等级：1=简单，2=中等，3=困难
+  userId      Int? /// 创建用户ID，可为null表示系统导入
+  createdAt   DateTime  @default(now()) /// 创建时间
+  updatedAt   DateTime  @updatedAt /// 更新时间
+  deletedAt   DateTime? /// 删除时间，用于软删除
 
   // 关联表
-  user          FrontUser?     @relation(fields: [userId], references: [id])
-  document      Document?      @relation(fields: [documentId], references: [id])
-  examQuestions ExamQuestion[] // 题目与试卷的关联
+  user          FrontUser?     @relation(fields: [userId], references: [id]) /// 创建用户，多对一关系
+  examQuestions ExamQuestion[] /// 题目与试卷的关联，一对多关系
 
   @@map("exam_front_question")
 }
 
-// 试卷表
+/// 试卷表：存储考试试卷信息
 model ExamPaper {
-  id            Int       @id @default(autoincrement())
-  name          String // 试卷名称
-  summary       String?   @db.VarChar(500) // 试卷简介，简短摘要
-  description   String?   @db.Text // 试卷详细描述
-  categoryId    Int // 一级分类ID
-  subCategoryId Int? // 二级分类ID
-  userId        Int // 创建用户ID
-  isPublic      Boolean   @default(true) // 是否公开
-  favoriteCount Int       @default(0) // 收藏数
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id            Int       @id @default(autoincrement()) /// 试卷ID，自增主键
+  name          String /// 试卷名称
+  description       String?   @db.VarChar(500) /// 试卷简介，简短摘要，限制500字符
+  categoryId    Int /// 一级分类ID，关联到Category表
+  subCategoryId Int? /// 二级分类ID，可为空，关联到SubCategory表
+  userId        Int /// 创建用户ID，关联到FrontUser表
+  isPublic      Boolean   @default(true) /// 是否公开：true=公开，false=私有
+  favoriteCount Int       @default(0) /// 收藏数，记录被收藏的次数
+  createdAt     DateTime  @default(now()) /// 创建时间
+  updatedAt     DateTime  @updatedAt /// 更新时间
+  deletedAt     DateTime? /// 删除时间，用于软删除
 
   // 关联表
-  category      Category       @relation(fields: [categoryId], references: [id])
-  subCategory   SubCategory?   @relation(fields: [subCategoryId], references: [id])
-  user          FrontUser      @relation(fields: [userId], references: [id])
-  examQuestions ExamQuestion[] // 试卷包含的题目
-  favorites     Favorite[] // 收藏记录
+  category      Category       @relation(fields: [categoryId], references: [id]) /// 所属一级分类，多对一关系
+  subCategory   SubCategory?   @relation(fields: [subCategoryId], references: [id]) /// 所属二级分类，多对一关系
+  user          FrontUser      @relation(fields: [userId], references: [id]) /// 创建用户，多对一关系
+  examQuestions ExamQuestion[] /// 试卷包含的题目，一对多关系
+  favorites     Favorite[] /// 收藏记录，一对多关系
 
   @@map("exam_front_exampaper")
 }
 
-// 试卷题目关联表
+/// 试卷题目关联表：维护试卷和题目之间的多对多关系
 model ExamQuestion {
-  examId     Int // 试卷ID
-  questionId Int // 题目ID
-  order      Int // 题目在试卷中的顺序
-  score      Float // 题目的分值
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
+  examId     Int /// 试卷ID，联合主键的一部分
+  questionId Int /// 题目ID，联合主键的一部分
+  order      Int /// 题目在试卷中的顺序，决定题目显示顺序
+  score      Float /// 题目的分值，决定该题在试卷中的分数权重
+  createdAt  DateTime  @default(now()) /// 创建时间
+  updatedAt  DateTime  @updatedAt /// 更新时间
+  deletedAt  DateTime? /// 删除时间，用于软删除
 
   // 关联表
-  examPaper ExamPaper @relation(fields: [examId], references: [id])
-  question  Question  @relation(fields: [questionId], references: [id])
+  examPaper ExamPaper @relation(fields: [examId], references: [id]) /// 关联的试卷，多对一关系
+  question  Question  @relation(fields: [questionId], references: [id]) /// 关联的题目，多对一关系
 
-  @@id([examId, questionId])
+  @@id([examId, questionId]) /// 联合主键，试卷ID和题目ID的组合
   @@map("exam_front_examquestion")
 }
 
-// 用户收藏表
+/// 用户收藏表：记录用户收藏的试卷
 model Favorite {
-  userId      Int // 用户ID
-  examPaperId Int // 试卷ID
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  userId      Int /// 用户ID，联合主键的一部分
+  examPaperId Int /// 试卷ID，联合主键的一部分
+  createdAt   DateTime  @default(now()) /// 创建时间，记录收藏的时间
+  updatedAt   DateTime  @updatedAt /// 更新时间
+  deletedAt   DateTime? /// 删除时间，用于软删除
 
   // 关联表
-  user      FrontUser  @relation(fields: [userId], references: [id])
-  examPaper ExamPaper @relation(fields: [examPaperId], references: [id])
+  user      FrontUser  @relation(fields: [userId], references: [id]) /// 收藏的用户，多对一关系
+  examPaper ExamPaper @relation(fields: [examPaperId], references: [id]) /// 被收藏的试卷，多对一关系
 
-  @@id([userId, examPaperId])
+  @@id([userId, examPaperId]) /// 联合主键，用户ID和试卷ID的组合
   @@map("exam_front_favorite")
 }
 
-// 用户角色枚举
+/// 用户角色枚举：定义系统中的用户角色类型
 enum UserRole {
-  JOB_SEEKER    @map("JOB_SEEKER") // 求职者
-  INTERVIEWER   @map("INTERVIEWER") // 面试官
+  JOB_SEEKER    @map("JOB_SEEKER") /// 求职者
+  INTERVIEWER   @map("INTERVIEWER") /// 面试官
 }
 
-// 文档状态枚举
+/// 文档状态枚举：定义文档处理的不同状态
 enum DocumentStatus {
-  PENDING @map("pending") // 待处理
-  PARSED  @map("parsed") // 已解析
-  ERROR   @map("error") // 解析错误
+  PENDING @map("pending") /// 待处理：文档已上传但尚未处理
+  PARSED  @map("parsed") /// 已解析：文档已成功解析为题目
+  ERROR   @map("error") /// 解析错误：文档解析过程中出现错误
 }

@@ -1,36 +1,36 @@
 import request from './request'
 
 /**
- * 获取试题列表
- * @param {Object} params 查询参数
+ * Get list of questions
+ * @param {Object} params Query parameters
  * @returns {Promise}
  */
 export function getQuestionList(params) {
   return request({
-    url: '/question/list',
+    url: '/question',
     method: 'get',
     params
   })
 }
 
 /**
- * 获取试题详情
- * @param {string} id 试题ID
+ * Get question details
+ * @param {string} id Question ID
  * @returns {Promise}
  */
 export function getQuestionDetail(id) {
   return request({
-    url: `/question/detail/${id}`,
+    url: `/question/${id}`,
     method: 'get'
   })
 }
 
 /**
- * 上传试卷Excel文件
- * @param {FormData} data 包含文件和试卷信息的FormData对象
+ * Upload question Excel file
+ * @param {FormData} data FormData object containing file and question information
  * @returns {Promise}
  */
-export function uploadExamPaper(data) {
+export function uploadQuestionFile(data) {
   return request({
     url: '/question/upload',
     method: 'post',
@@ -42,7 +42,7 @@ export function uploadExamPaper(data) {
 }
 
 /**
- * 获取试题库模板
+ * Get question template
  * @returns {Promise}
  */
 export function getQuestionTemplate() {
@@ -54,44 +54,72 @@ export function getQuestionTemplate() {
 }
 
 /**
- * 获取分类列表
+ * Create new question
+ * @param {Object} data Question data
  * @returns {Promise}
  */
-export function getCategoryList() {
+export function createQuestion(data) {
   return request({
-    url: '/category/list',
-    method: 'get'
+    url: '/question',
+    method: 'post',
+    data
   })
 }
 
 /**
- * 获取试卷列表
- * @param {Object} params 查询参数
+ * Update question
+ * @param {string} id Question ID
+ * @param {Object} data Question data
+ * @returns {Promise}
+ */
+export function updateQuestion(id, data) {
+  return request({
+    url: `/question/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+/**
+ * Delete question
+ * @param {string} id Question ID
+ * @returns {Promise}
+ */
+export function deleteQuestion(id) {
+  return request({
+    url: `/question/${id}`,
+    method: 'delete'
+  })
+}
+
+/**
+ * Get exam list
+ * @param {Object} params Query parameters
  * @returns {Promise}
  */
 export function getExamList(params) {
   return request({
-    url: '/exam/list',
+    url: '/exam',
     method: 'get',
     params
   })
 }
 
 /**
- * 获取试卷详情
- * @param {string} id 试卷ID
+ * Get exam details
+ * @param {string} id Exam ID
  * @returns {Promise}
  */
 export function getExamDetail(id) {
   return request({
-    url: `/exam/detail/${id}`,
+    url: `/exam/${id}`,
     method: 'get'
   })
 }
 
 /**
- * 提交考试答案
- * @param {Object} data 考试答案数据
+ * Submit exam answers
+ * @param {Object} data Exam answer data
  * @returns {Promise}
  */
 export function submitExamAnswer(data) {
@@ -103,8 +131,8 @@ export function submitExamAnswer(data) {
 }
 
 /**
- * 获取考试结果
- * @param {string} examId 考试ID
+ * Get exam results
+ * @param {string} examId Exam ID
  * @returns {Promise}
  */
 export function getExamResult(examId) {

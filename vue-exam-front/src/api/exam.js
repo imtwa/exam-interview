@@ -39,4 +39,29 @@ export function uploadExam(data) {
       'Content-Type': 'multipart/form-data'
     }
   })
+}
+
+/**
+ * 提交试卷答案
+ * @param {Object} data 答案数据
+ * @returns {Promise}
+ */
+export function submitExamAnswer(data) {
+  return request({
+    url: '/exam/submit',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取考试结果
+ * @param {string} examId 试卷ID
+ * @returns {Promise}
+ */
+export function getExamResult(examId) {
+  return request({
+    url: `/exam/result/${examId}`,
+    method: 'get'
+  })
 } 
