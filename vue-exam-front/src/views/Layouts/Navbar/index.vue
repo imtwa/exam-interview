@@ -70,6 +70,7 @@
                   <el-dropdown-menu>
                     <el-dropdown-item @click="router.push('/profile')">个人中心</el-dropdown-item>
                     <el-dropdown-item @click="router.push('/my-exams')">我的考试</el-dropdown-item>
+                    <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
                     <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>

@@ -22,19 +22,27 @@
             <h1 class="exam-title">{{ examData.name }}</h1>
             <div class="exam-meta">
               <span class="meta-item">
-                <el-icon><Document /></el-icon>
+                <el-icon>
+                  <Document />
+                </el-icon>
                 {{ examData.questionsCount || examData.examQuestions?.length || 0 }} 题
               </span>
               <span class="meta-item">
-                <el-icon><Star /></el-icon>
+                <el-icon>
+                  <Star />
+                </el-icon>
                 {{ examData.favoriteCount || 0 }} 收藏
               </span>
               <span class="meta-item">
-                <el-icon><User /></el-icon>
+                <el-icon>
+                  <User />
+                </el-icon>
                 创建者: {{ examData.userName || examData.user?.username || '未知' }}
               </span>
               <span class="meta-item">
-                <el-icon><Calendar /></el-icon>
+                <el-icon>
+                  <Calendar />
+                </el-icon>
                 创建时间: {{ formatDate(examData.createdAt) }}
               </span>
             </div>
@@ -47,12 +55,14 @@
             </div>
           </div>
           <div class="exam-actions">
-            <el-button type="primary" size="large" @click="startExam">
-              <el-icon><VideoPlay /></el-icon>
-              开始考试
-            </el-button>
-            <el-button type="default" size="large" @click="collectExam" :disabled="isCollecting">
-              <el-icon><Star /></el-icon>
+            <el-button type="primary" size="large" @click="startExam" class="action-button">
+              <el-icon>
+                <VideoPlay />
+              </el-icon>开始考试</el-button>
+            <el-button type="default" size="large" @click="collectExam" :disabled="isCollecting" class="action-button">
+              <el-icon>
+                <Star />
+              </el-icon>
               {{ isCollected ? '已收藏' : '收藏试卷' }}
             </el-button>
           </div>
@@ -84,23 +94,28 @@
               </div>
             </div>
           </div> -->
-          
+
           <div class="feature-section">
             <h2 class="section-header">专项练习</h2>
             <div class="feature-cards practice-cards">
               <div class="feature-card practice-card" @click="startSequentialPractice">
                 <div class="card-icon sequence-icon">
-                  <el-icon><List /></el-icon>
+                  <el-icon>
+                    <List />
+                  </el-icon>
                 </div>
                 <div class="card-content">
                   <div class="card-title">顺序练习</div>
-                  <div class="card-count">{{ examData.questionsCount || examData.examQuestions?.length || 0 }} / {{ examData.questionsCount || examData.examQuestions?.length || 0 }}</div>
+                  <div class="card-count">{{ examData.questionsCount || examData.examQuestions?.length || 0 }} / {{
+                    examData.questionsCount || examData.examQuestions?.length || 0 }}</div>
                 </div>
               </div>
-              
+
               <div class="feature-card practice-card" @click="startRandomPractice">
                 <div class="card-icon random-icon">
-                  <el-icon><Refresh /></el-icon>
+                  <el-icon>
+                    <Refresh />
+                  </el-icon>
                 </div>
                 <div class="card-content">
                   <div class="card-title">随机练习</div>
@@ -108,11 +123,13 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="feature-cards practice-cards" style="margin-top: 16px;">
               <div class="feature-card practice-card" @click="startSimulationExam">
                 <div class="card-icon simulation-icon">
-                  <el-icon><DocumentCopy /></el-icon>
+                  <el-icon>
+                    <DocumentCopy />
+                  </el-icon>
                 </div>
                 <div class="card-content">
                   <div class="card-title">模拟考试</div>
@@ -122,7 +139,9 @@
 
               <div class="feature-card practice-card" @click="startTypeBasedPractice">
                 <div class="card-icon type-icon">
-                  <el-icon><List /></el-icon>
+                  <el-icon>
+                    <List />
+                  </el-icon>
                 </div>
                 <div class="card-content">
                   <div class="card-title">题型练习</div>
@@ -131,7 +150,7 @@
               </div>
             </div>
           </div>
-          
+
         </div>
 
         <!-- 试题列表 -->
@@ -154,7 +173,8 @@
             <el-empty description="暂无题目" />
           </div>
           <div v-else class="question-list">
-            <div v-for="(question, index) in paginatedQuestions" :key="question.questionId || question.id" class="question-item">
+            <div v-for="(question, index) in paginatedQuestions" :key="question.questionId || question.id"
+              class="question-item" @click="goToQuestionPractice(question, index)">
               <div class="question-title">
                 <span class="question-index">{{ (currentPage - 1) * pageSize + index + 1 }}</span>
                 <span class="question-type-tag">
@@ -164,18 +184,12 @@
               </div>
             </div>
           </div>
-          
+
           <!-- 分页 -->
           <div class="pagination-wrapper" v-if="filteredQuestions.length > 0">
-            <el-pagination
-              v-model:current-page="currentPage"
-              v-model:page-size="pageSize"
-              :page-sizes="[10, 20, 30, 50]"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="filteredQuestions.length"
-              @size-change="handleSizeChange"
-              @current-change="handleCurrentChange"
-            />
+            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 30, 50]" layout="total, sizes, prev, pager, next, jumper"
+              :total="filteredQuestions.length" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
           </div>
         </div>
       </template>
@@ -186,11 +200,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getExamDetail } from '@/api/exam'
+import { getExamDetail, toggleFavorite, checkFavorite } from '@/api/exam'
 import { ElMessage } from 'element-plus'
-import { 
-  Document, Star, User, Calendar, VideoPlay, 
-  CloseBold, List, Refresh, DocumentCopy 
+import {
+  Document, Star, User, Calendar, VideoPlay,
+  CloseBold, List, Refresh, DocumentCopy
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -218,7 +232,8 @@ const fetchExamDetail = async () => {
   try {
     const data = await getExamDetail(examId.value)
     examData.value = data
-    // console.log('试卷详情:', data)
+    // 检查当前用户是否已收藏该试卷
+    checkIsCollected()
   } catch (error) {
     console.error('获取试卷详情失败:', error)
     ElMessage.error('获取试卷详情失败，请稍后再试')
@@ -227,20 +242,36 @@ const fetchExamDetail = async () => {
   }
 }
 
+// 检查当前用户是否已收藏该试卷
+const checkIsCollected = async () => {
+  try {
+    const res = await checkFavorite(examId.value)
+    isCollected.value = res.isFavorite || false
+  } catch (error) {
+    console.error('检查收藏状态失败:', error)
+    isCollected.value = false
+  }
+}
+
 // 开始考试
 const startExam = () => {
-  router.push(`/take-exam/${examId.value}`)
+  router.push(`/practice-exam/${examId.value}??mode=simulation`)
 }
 
 // 收藏试卷
 const collectExam = async () => {
   if (isCollecting.value) return
-  
+
   isCollecting.value = true
   try {
-    // 这里应调用收藏API，暂时模拟
-    await new Promise(resolve => setTimeout(resolve, 500))
-    isCollected.value = !isCollected.value
+    const res = await toggleFavorite(examId.value)
+    isCollected.value = res.isFavorite
+    
+    // 更新试卷的收藏数量
+    if (examData.value) {
+      examData.value.favoriteCount = res.favoriteCount || examData.value.favoriteCount
+    }
+    
     ElMessage.success(isCollected.value ? '收藏成功' : '已取消收藏')
   } catch (error) {
     console.error('收藏操作失败:', error)
@@ -264,15 +295,15 @@ const startSequentialPractice = () => {
 }
 
 const startRandomPractice = () => {
-  router.push(`/take-exam/${examId.value}?mode=random`)
+  router.push(`/practice-exam/${examId.value}?mode=random`)
 }
 
 const startSimulationExam = () => {
-  router.push(`/take-exam/${examId.value}?mode=simulation`)
+  router.push(`/practice-exam/${examId.value}?mode=simulation`)
 }
 
 const startTypeBasedPractice = () => {
-  router.push(`/take-exam/${examId.value}?mode=typebased`)
+  router.push(`/practice-exam/${examId.value}?mode=typebased`)
 }
 
 // 根据题型筛选题目
@@ -304,17 +335,17 @@ const handleCurrentChange = (newPage) => {
 // 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  
+
   try {
     const date = new Date(dateString)
-    
+
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     const hours = String(date.getHours()).padStart(2, '0')
     const minutes = String(date.getMinutes()).padStart(2, '0')
     const seconds = String(date.getSeconds()).padStart(2, '0')
-    
+
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
   } catch (error) {
     console.error('日期格式化错误:', error)
@@ -342,6 +373,30 @@ const parseOptions = (optionsStr) => {
     console.error('解析选项失败:', error)
     return []
   }
+}
+
+// 跳转到练习的指定题目
+const goToQuestionPractice = (question, index) => {
+  // 计算题目在原始数组中的位置
+  const questionIndex = findQuestionIndex(question);
+  
+  // 跳转到顺序练习页面，并传递要打开的题目索引
+  router.push(`/practice-exam/${examId.value}?mode=sequential&questionIndex=${questionIndex}`);
+}
+
+// 找到题目在原始数组中的索引
+const findQuestionIndex = (targetQuestion) => {
+  const allQuestions = examData.value.examQuestions || [];
+  
+  // 尝试通过questionId或id查找
+  const questionId = targetQuestion.questionId || targetQuestion.id;
+  const index = allQuestions.findIndex(q => 
+    (q.questionId && q.questionId === questionId) || 
+    (q.id && q.id === questionId)
+  );
+  
+  // 如果找到了，返回索引，否则返回0（第一题）
+  return index >= 0 ? index : 0;
 }
 
 onMounted(() => {
@@ -382,10 +437,10 @@ onMounted(() => {
   margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
-  
+
   .exam-info {
     flex: 1;
-    
+
     .exam-title {
       font-size: 24px;
       font-weight: 600;
@@ -393,46 +448,52 @@ onMounted(() => {
       margin: 0 0 16px 0;
       line-height: 1.3;
     }
-    
+
     .exam-meta {
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
       margin-bottom: 16px;
-      
+
       .meta-item {
         display: flex;
         align-items: center;
         gap: 6px;
         color: #666;
         font-size: 14px;
-        
+
         .el-icon {
           color: #0352c9;
         }
       }
     }
-    
+
     .exam-tags {
       margin-bottom: 16px;
-      
+
       .el-tag {
         margin-right: 8px;
       }
     }
-    
+
     .exam-description {
       color: #666;
       font-size: 14px;
       line-height: 1.6;
     }
   }
-  
+
   .exam-actions {
     display: flex;
-    flex-direction: column;
+    // flex-direction: column;
     gap: 12px;
     justify-content: center;
+
+    .action-button {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
   }
 }
 
@@ -442,15 +503,15 @@ onMounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   padding: 24px;
   margin-bottom: 20px;
-  
+
   .feature-section {
     margin-bottom: 24px;
-    
+
     &:not(:last-child) {
       border-bottom: 1px solid #f0f0f0;
       padding-bottom: 16px;
     }
-    
+
     .section-header {
       font-size: 18px;
       font-weight: 600;
@@ -458,11 +519,11 @@ onMounted(() => {
       margin: 0 0 16px 0;
     }
   }
-  
+
   .feature-cards {
     display: flex;
     gap: 16px;
-    
+
     .feature-card {
       flex: 1;
       padding: 16px;
@@ -473,12 +534,12 @@ onMounted(() => {
       display: flex;
       align-items: center;
       border: 1px solid #f0f0f0;
-      
+
       &:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         transform: translateY(-2px);
       }
-      
+
       .card-icon {
         width: 40px;
         height: 40px;
@@ -487,57 +548,57 @@ onMounted(() => {
         align-items: center;
         border-radius: 50%;
         margin-right: 12px;
-        
+
         .el-icon {
           font-size: 20px;
         }
-        
+
         &.wrong-icon {
           background-color: #ffeded;
           color: #ff4d4f;
         }
-        
+
         &.favorite-icon {
           background-color: #fff7e6;
           color: #ffa940;
         }
-        
+
         &.note-icon {
           background-color: #e6fffb;
           color: #13c2c2;
         }
-        
+
         &.sequence-icon {
           background-color: #fff7e6;
           color: #fa8c16;
         }
-        
+
         &.random-icon {
           background-color: #f0f5ff;
           color: #2f54eb;
         }
-        
+
         &.simulation-icon {
           background-color: #f6ffed;
           color: #52c41a;
         }
-        
+
         &.type-icon {
           background-color: #f0f5ff;
           color: #2f54eb;
         }
       }
-      
+
       .card-content {
         flex: 1;
-        
+
         .card-title {
           font-size: 15px;
           font-weight: 500;
           color: #333;
           margin-bottom: 4px;
         }
-        
+
         .card-count {
           font-size: 13px;
           color: #666;
@@ -545,7 +606,7 @@ onMounted(() => {
       }
     }
   }
-  
+
   .question-type-card {
     width: 100%;
     background-color: #f0f5ff;
@@ -558,7 +619,7 @@ onMounted(() => {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   padding: 24px;
-  
+
   .section-header {
     display: flex;
     justify-content: space-between;
@@ -566,7 +627,7 @@ onMounted(() => {
     margin-bottom: 24px;
     padding-bottom: 16px;
     border-bottom: 1px solid #eee;
-    
+
     .section-title {
       font-size: 18px;
       font-weight: 600;
@@ -574,7 +635,7 @@ onMounted(() => {
       margin: 0;
     }
   }
-  
+
   .question-list {
     .question-item {
       padding: 16px;
@@ -582,10 +643,12 @@ onMounted(() => {
       border-radius: 4px;
       margin-bottom: 16px;
       transition: all 0.3s;
+      cursor: pointer;
       
       &:hover {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        border-color: #d6e4ff;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        border-color: #409EFF;
+        transform: translateY(-2px);
       }
       
       .question-title {
@@ -623,6 +686,20 @@ onMounted(() => {
           line-height: 1.5;
         }
       }
+      
+      &::after {
+        content: "点击练习";
+        position: absolute;
+        right: 16px;
+        color: #409EFF;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      
+      &:hover::after {
+        opacity: 1;
+      }
     }
   }
 }
@@ -636,4 +713,4 @@ onMounted(() => {
   margin-top: 20px;
   text-align: right;
 }
-</style> 
+</style>

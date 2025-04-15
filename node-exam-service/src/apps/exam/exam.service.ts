@@ -745,4 +745,275 @@ export class ExamService {
       throw new Error(`处理上传文件失败: ${error.message}`);
     }
   }
+
+  /**
+   * 检查试卷是否被用户收藏
+   * @param examId 试卷ID
+   * @param userId 用户ID
+   * @returns 是否已收藏
+   */
+  async checkFavorite(examId: number, userId: number): Promise<boolean> {
+    this.logger.log(`检查用户 ${userId} 是否收藏了试卷 ${examId}`);
+    
+    try {
+      // 查询收藏记录
+      const favorite = await this.prisma.favorite.findUnique({
+        where: {
+          userId_examPaperId: {
+            userId,
+            examPaperId: examId,
+          },
+          deletedAt: null,
+        },
+      });
+      
+      this.logger.log(`收藏记录查询结果: ${favorite ? '已收藏' : '未收藏'}`);
+      return !!favorite;
+    } catch (error) {
+      this.logger.error(`检查收藏状态失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 添加或取消收藏
+   * @param examId 试卷ID
+   * @param userId 用户ID
+   * @returns 收藏操作结果
+   */
+  async toggleFavorite(examId: number, userId: number): Promise<{ isFavorite: boolean; favoriteCount: number }> {
+    this.logger.log(`切换试卷 ${examId} 的收藏状态，用户 ${userId}`);
+    
+    try {
+      // 首先检查试卷是否存在
+      const exam = await this.prisma.examPaper.findUnique({
+        where: {
+          id: examId,
+          deletedAt: null,
+        },
+      });
+      
+      if (!exam) {
+        this.logger.error(`试卷不存在: ${examId}`);
+        throw new NotFoundException(`试卷不存在: ${examId}`);
+      }
+      
+      // 检查当前收藏状态
+      const favorite = await this.prisma.favorite.findUnique({
+        where: {
+          userId_examPaperId: {
+            userId,
+            examPaperId: examId,
+          },
+        },
+      });
+      
+      let newFavorite;
+      
+      if (favorite) {
+        // 如果已经收藏，则取消收藏（软删除）
+        if (favorite.deletedAt) {
+          // 如果已经被软删除，则恢复
+          newFavorite = await this.prisma.favorite.update({
+            where: {
+              userId_examPaperId: {
+                userId,
+                examPaperId: examId,
+              },
+            },
+            data: {
+              deletedAt: null,
+              updatedAt: new Date(),
+            },
+          });
+          
+          // 增加收藏计数
+          await this.prisma.examPaper.update({
+            where: { id: examId },
+            data: {
+              favoriteCount: {
+                increment: 1,
+              },
+            },
+          });
+          
+          this.logger.log(`恢复收藏: 用户=${userId}, 试卷=${examId}`);
+        } else {
+          // 标记为已删除
+          newFavorite = await this.prisma.favorite.update({
+            where: {
+              userId_examPaperId: {
+                userId,
+                examPaperId: examId,
+              },
+            },
+            data: {
+              deletedAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
+          
+          // 减少收藏计数
+          await this.prisma.examPaper.update({
+            where: { id: examId },
+            data: {
+              favoriteCount: {
+                decrement: 1,
+              },
+            },
+          });
+          
+          this.logger.log(`取消收藏: 用户=${userId}, 试卷=${examId}`);
+        }
+      } else {
+        // 如果没有收藏记录，则创建新的收藏
+        newFavorite = await this.prisma.favorite.create({
+          data: {
+            userId,
+            examPaperId: examId,
+          },
+        });
+        
+        // 增加收藏计数
+        await this.prisma.examPaper.update({
+          where: { id: examId },
+          data: {
+            favoriteCount: {
+              increment: 1,
+            },
+          },
+        });
+        
+        this.logger.log(`新增收藏: 用户=${userId}, 试卷=${examId}`);
+      }
+      
+      // 获取更新后的收藏数量
+      const updatedExam = await this.prisma.examPaper.findUnique({
+        where: { id: examId },
+        select: { favoriteCount: true },
+      });
+      
+      return {
+        isFavorite: !newFavorite.deletedAt,
+        favoriteCount: updatedExam.favoriteCount,
+      };
+    } catch (error) {
+      this.logger.error(`切换收藏状态失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取用户收藏的试卷列表
+   * @param userId 用户ID
+   * @param queryExamDto 查询参数
+   * @returns 试卷列表和总数
+   */
+  async getUserFavorites(userId: number, queryExamDto: QueryExamDto) {
+    this.logger.log(`获取用户 ${userId} 的收藏列表, 参数: ${JSON.stringify(queryExamDto)}`);
+    
+    try {
+      const {
+        page = 1,
+        pageSize = 10,
+        categoryId,
+        subCategoryId,
+        keyword,
+        sortField = ExamSortField.CREATED_AT,
+        sortOrder = 'desc',
+      } = queryExamDto;
+
+      const skip = (page - 1) * pageSize;
+
+      // 构建查询条件
+      const where: any = {
+        deletedAt: null,
+        userId,
+        examPaper: {
+          deletedAt: null,
+        },
+      };
+
+      if (categoryId) {
+        where.examPaper.categoryId = parseInt(categoryId.toString(), 10);
+        this.logger.log(`按一级分类ID过滤: ${where.examPaper.categoryId}`);
+      }
+
+      if (subCategoryId) {
+        where.examPaper.subCategoryId = parseInt(subCategoryId.toString(), 10);
+        this.logger.log(`按二级分类ID过滤: ${where.examPaper.subCategoryId}`);
+      }
+
+      if (keyword) {
+        where.examPaper.OR = [
+          { name: { contains: keyword } },
+          { description: { contains: keyword } },
+        ];
+        this.logger.log(`按关键词过滤: ${keyword}`);
+      }
+
+      this.logger.log(`执行收藏查询, 查询条件: ${JSON.stringify(where)}`);
+
+      // 获取收藏数量
+      const total = await this.prisma.favorite.count({ where });
+
+      // 获取收藏列表
+      const favorites = await this.prisma.favorite.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: {
+          [sortField === 'favoriteCount' ? 'examPaper.favoriteCount' : sortField]: sortOrder,
+        },
+        include: {
+          examPaper: {
+            include: {
+              category: true,
+              subCategory: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  role: true,
+                },
+              },
+              examQuestions: {
+                where: {
+                  deletedAt: null,
+                },
+                include: {
+                  question: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // 处理返回数据，格式化为试卷列表
+      const exams = favorites.map(favorite => {
+        const exam = favorite.examPaper;
+        const questionsCount = exam.examQuestions.length;
+        const { examQuestions, ...examData } = exam;
+        
+        return {
+          ...examData,
+          questionsCount,
+          favoriteCreatedAt: favorite.createdAt,
+        };
+      });
+
+      this.logger.log(`查询结果: 共 ${exams.length} 条记录, 总数 ${total}`);
+
+      return {
+        items: exams,
+        total,
+        page,
+        pageSize,
+      };
+    } catch (error) {
+      this.logger.error(`获取用户收藏列表失败: ${error.message}`);
+      throw error;
+    }
+  }
 }

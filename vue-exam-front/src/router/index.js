@@ -28,11 +28,6 @@ const routes = [
         component: () => import('../views/Exam/ExamDetail.vue')
       },
       {
-        path: 'take-exam/:id',
-        name: 'TakeExam',
-        component: () => import('../views/Exam/TakeExam.vue')
-      },
-      {
         path: 'practice-exam/:id',
         name: 'PracticeExam',
         component: () => import('../views/Exam/PracticeExam.vue')
@@ -61,6 +56,11 @@ const routes = [
         path: 'forgot-password',
         name: 'ForgotPassword',
         component: () => import('../views/Auth/ForgotPassword.vue')
+      },
+      {
+        path: 'favorites',
+        name: 'Favorites',
+        component: () => import('../views/User/Favorites.vue')
       }
       // {
       //     path: 'profile',

@@ -340,7 +340,7 @@ const viewDetail = id => {
 
 // 开始做题
 const startExam = id => {
-  router.push(`/take-exam/${id}`)
+  router.push(`/practice-exam/${id}`)
 }
 
 // 上传试卷

@@ -89,4 +89,59 @@ export class ExamController {
       throw error;
     }
   }
+
+  // 收藏相关接口
+  @UseGuards(JwtAuthGuard)
+  @Get('exam/favorite/:id')
+  async checkFavorite(
+    @Param('id', ParseIntPipe) examId: number,
+    @Req() req,
+  ) {
+    const userId = req.user.userId;
+    this.logger.log(`检查试卷 ${examId} 是否被用户 ${userId} 收藏`);
+    
+    const isFavorite = await this.examService.checkFavorite(examId, userId);
+    
+    return {
+      code: 200,
+      message: '检查收藏状态成功',
+      data: { isFavorite },
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('exam/favorite/:id')
+  async toggleFavorite(
+    @Param('id', ParseIntPipe) examId: number,
+    @Req() req,
+  ) {
+    const userId = req.user.userId;
+    this.logger.log(`切换试卷 ${examId} 的收藏状态，用户 ${userId}`);
+    
+    const result = await this.examService.toggleFavorite(examId, userId);
+    
+    return {
+      code: 200,
+      message: result.isFavorite ? '收藏成功' : '取消收藏成功',
+      data: result,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('exam/favorites')
+  async getUserFavorites(
+    @Req() req,
+    @Query() queryExamDto: QueryExamDto,
+  ) {
+    const userId = req.user.userId;
+    this.logger.log(`获取用户 ${userId} 的收藏列表`);
+    
+    const result = await this.examService.getUserFavorites(userId, queryExamDto);
+    
+    return {
+      code: 200,
+      message: '获取收藏列表成功',
+      data: result,
+    };
+  }
 } 

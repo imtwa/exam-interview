@@ -64,4 +64,41 @@ export function getExamResult(examId) {
     url: `/exam/result/${examId}`,
     method: 'get'
   })
+}
+
+/**
+ * 添加或取消收藏试卷
+ * @param {number} examId 试卷ID
+ * @returns {Promise}
+ */
+export function toggleFavorite(examId) {
+  return request({
+    url: `/exam/favorite/${examId}`,
+    method: 'post'
+  })
+}
+
+/**
+ * 检查试卷是否已收藏
+ * @param {number} examId 试卷ID
+ * @returns {Promise}
+ */
+export function checkFavorite(examId) {
+  return request({
+    url: `/exam/favorite/${examId}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 获取用户收藏的试卷列表
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getFavorites(params) {
+  return request({
+    url: '/exam/favorites',
+    method: 'get',
+    params
+  })
 } 
