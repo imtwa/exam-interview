@@ -11,11 +11,21 @@
 
       <div class="upload-form-container">
         <div class="form-title">想要更优质的试卷？一键上传，快速创建试卷！</div>
-        
-        <el-form :model="formData" :rules="formRules" ref="formRef" label-position="top" class="upload-form">
+
+        <el-form
+          :model="formData"
+          :rules="formRules"
+          ref="formRef"
+          label-position="top"
+          class="upload-form"
+        >
           <!-- 数据集分类 -->
           <el-form-item label="试卷一级分类" prop="categoryId" required>
-            <el-select v-model="formData.categoryId" placeholder="请选择试卷一级分类" @change="handleCategoryChange">
+            <el-select
+              v-model="formData.categoryId"
+              placeholder="请选择试卷一级分类"
+              @change="handleCategoryChange"
+            >
               <el-option
                 v-for="item in categories"
                 :key="item.id"
@@ -27,7 +37,11 @@
 
           <!-- 二级分类 -->
           <el-form-item label="试卷二级分类" prop="subCategoryId">
-            <el-select v-model="formData.subCategoryId" placeholder="请选择试卷二级分类" :disabled="!formData.categoryId">
+            <el-select
+              v-model="formData.subCategoryId"
+              placeholder="请选择试卷二级分类"
+              :disabled="!formData.categoryId"
+            >
               <el-option
                 v-for="item in subCategories"
                 :key="item.id"
@@ -62,11 +76,12 @@
           <!-- 上传数据 -->
           <el-form-item label="上传数据" prop="file" required>
             <div class="upload-info">
-              <p>试卷量级不限、格式需标准化，同时要考虑有效数据。
+              <p>
+                试卷量级不限、格式需标准化，同时要考虑有效数据。
                 <el-link type="primary" @click="downloadTemplate">下载示例文件</el-link>
               </p>
             </div>
-            
+
             <el-upload
               class="upload-area"
               drag
@@ -79,13 +94,9 @@
               :disabled="uploading"
             >
               <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-              <div class="el-upload__text">
-                点击上传，或拖放文件到此处
-              </div>
+              <div class="el-upload__text">点击上传，或拖放文件到此处</div>
               <template #tip>
-                <div class="el-upload__tip">
-                  仅支持 .xlsx, .xls 格式的Excel文件，大小不超过10MB
-                </div>
+                <div class="el-upload__tip">仅支持 .xlsx, .xls 格式的Excel文件，大小不超过10MB</div>
               </template>
             </el-upload>
           </el-form-item>
@@ -93,12 +104,12 @@
           <!-- 按钮区域 -->
           <div class="form-actions">
             <el-button @click="goBack" :disabled="uploading" plain>取消</el-button>
-            <el-button 
-              @click="submitForm" 
-              :loading="uploading" 
+            <el-button
+              @click="submitForm"
+              :loading="uploading"
               :disabled="uploading"
               type="primary"
-              style="background-color: #0352c9; border-color: #0352c9;"
+              style="background-color: #0352c9; border-color: #0352c9"
             >
               {{ uploading ? '创建中...' : '确认创建' }}
             </el-button>
@@ -106,7 +117,7 @@
         </el-form>
       </div>
     </div>
-    
+
     <!-- 全屏加载指示器 -->
     <div class="full-screen-loading" v-if="uploading">
       <el-loading
@@ -145,19 +156,13 @@ const formData = reactive({
 
 // 表单验证规则
 const formRules = {
-  categoryId: [
-    { required: true, message: '请选择试卷分类', trigger: 'change' }
-  ],
+  categoryId: [{ required: true, message: '请选择试卷分类', trigger: 'change' }],
   name: [
     { required: true, message: '请输入试卷名称', trigger: 'blur' },
     { max: 50, message: '长度不能超过50个字符', trigger: 'blur' }
   ],
-  description: [
-    { max: 500, message: '长度不能超过500个字符', trigger: 'blur' }
-  ],
-  file: [
-    { required: true, message: '请上传Excel文件', trigger: 'change' }
-  ]
+  description: [{ max: 500, message: '长度不能超过500个字符', trigger: 'blur' }],
+  file: [{ required: true, message: '请上传Excel文件', trigger: 'change' }]
 }
 
 // 分类数据
@@ -178,7 +183,7 @@ const goBack = () => {
 }
 
 // 处理一级分类变化
-const handleCategoryChange = (val) => {
+const handleCategoryChange = val => {
   // 重置二级分类
   formData.subCategoryId = ''
 }
@@ -200,45 +205,46 @@ const fetchCategories = async () => {
 // 下载模板
 const downloadTemplate = () => {
   // 使用本地模板文件路径
-  const templatePath = '/template/exam-template.xlsx';
-  
+  const templatePath = '/template/exam-template.xlsx'
+
   // 创建下载链接
-  const link = document.createElement('a');
-  link.href = templatePath;
-  link.download = '试卷导入模板.xlsx';
-  
+  const link = document.createElement('a')
+  link.href = templatePath
+  link.download = '试卷导入模板.xlsx'
+
   // 触发下载
-  document.body.appendChild(link);
-  link.click();
-  
+  document.body.appendChild(link)
+  link.click()
+
   // 清理DOM
-  document.body.removeChild(link);
-  ElMessage.success('模板下载成功');
+  document.body.removeChild(link)
+  ElMessage.success('模板下载成功')
 }
 
 // 文件上传相关
-const handleFileChange = (file) => {
+const handleFileChange = file => {
   // 检查文件类型
-  const isExcel = file.raw.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-                  file.raw.type === 'application/vnd.ms-excel'
-  
+  const isExcel =
+    file.raw.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    file.raw.type === 'application/vnd.ms-excel'
+
   // 检查文件大小
   const isLt10M = file.raw.size / 1024 / 1024 < 10
-  
+
   if (!isExcel) {
     ElMessage.error('只能上传Excel文件')
     fileList.value = []
     formData.file = null
     return false
   }
-  
+
   if (!isLt10M) {
     ElMessage.error('文件大小不能超过10MB')
     fileList.value = []
     formData.file = null
     return false
   }
-  
+
   formData.file = file.raw
   return true
 }
@@ -252,66 +258,62 @@ const handleFileRemove = () => {
 // 提交表单
 const submitForm = async () => {
   if (!formRef.value) return
-  
+
   // 如果正在上传中，阻止重复提交
   if (uploading.value) {
     ElMessage.warning('正在上传中，请勿重复提交')
     return
   }
-  
+
   // 添加调试信息，检查登录状态
   console.log('用户登录状态:', userStore.isLoggedIn)
   console.log('用户令牌:', userStore.token)
-  
-  formRef.value.validate(async (valid) => {
+
+  formRef.value.validate(async valid => {
     if (valid) {
       if (!formData.file) {
         ElMessage.warning('请上传Excel文件')
         return
       }
-      
+
       // 检查用户是否登录
       if (!userStore.isLoggedIn) {
         ElMessage.warning('请先登录后再上传试卷')
         router.push('/login')
         return
       }
-      
+
       uploading.value = true
-      
+
       try {
         // 创建FormData对象
         const data = new FormData()
         data.append('file', formData.file)
         data.append('name', formData.name)
         data.append('categoryId', formData.categoryId)
-        
+
         if (formData.subCategoryId) {
           data.append('subCategoryId', formData.subCategoryId)
         }
-        
+
         if (formData.description) {
           data.append('description', formData.description)
         }
-        
+
         data.append('isPublic', formData.isPublic)
-        
+
         // 发送请求
         const res = await uploadExam(data)
-        
+
         ElMessage.success('试卷上传成功')
         console.log('上传成功返回的数据:', res)
-        
+
         // 确认是否查看详情
-        ElMessageBox.confirm(
-          '试卷上传成功，是否查看试卷详情？',
-          '上传成功',
-          {
-            confirmButtonText: '查看详情',
-            cancelButtonText: '继续上传',
-            type: 'success',
-          }
-        )
+        ElMessageBox.confirm('试卷上传成功，是否查看试卷详情？', '上传成功', {
+          confirmButtonText: '查看详情',
+          cancelButtonText: '继续上传',
+          type: 'success'
+        })
           .then(() => {
             // 跳转到试卷详情页
             // API可能直接返回数据，也可能包裹在data属性中
@@ -376,7 +378,7 @@ onMounted(() => {
 
 .page-header {
   margin-bottom: 20px;
-  
+
   .header-content {
     font-size: 18px;
     font-weight: 500;
@@ -412,28 +414,28 @@ onMounted(() => {
 
 .upload-area {
   width: 100%;
-  
+
   .el-upload {
     width: 100%;
   }
-  
+
   .el-upload-dragger {
     width: 100%;
     height: 180px;
   }
-  
+
   .el-icon--upload {
     font-size: 48px;
     color: #0352c9;
     margin-bottom: 10px;
   }
-  
+
   .el-upload__text {
     font-size: 16px;
     color: #606266;
     margin-bottom: 10px;
   }
-  
+
   .el-upload__tip {
     line-height: 1.5;
   }
@@ -444,16 +446,16 @@ onMounted(() => {
   justify-content: flex-end;
   margin-top: 30px;
   gap: 15px;
-  
+
   .el-button {
     min-width: 100px;
     border-radius: 4px;
     font-weight: 500;
-    
+
     &:disabled {
       cursor: not-allowed;
     }
-    
+
     &:hover {
       opacity: 0.9;
     }
@@ -464,18 +466,20 @@ onMounted(() => {
 :deep(.el-button--primary) {
   background-color: #0352c9;
   border-color: #0352c9;
-  
-  &:hover, &:focus {
+
+  &:hover,
+  &:focus {
     background-color: #0461e3;
     border-color: #0461e3;
   }
-  
+
   &:active {
     background-color: #0247b2;
     border-color: #0247b2;
   }
-  
-  &.is-disabled, &.is-disabled:hover {
+
+  &.is-disabled,
+  &.is-disabled:hover {
     background-color: #a0cfff;
     border-color: #a0cfff;
   }
@@ -484,7 +488,7 @@ onMounted(() => {
 // 上传禁用状态样式
 :deep(.is-disabled) {
   cursor: not-allowed !important;
-  
+
   .el-upload-dragger {
     background-color: #f5f7fa !important;
     border-color: #e4e7ed !important;
@@ -502,4 +506,4 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
 }
-</style> 
+</style>

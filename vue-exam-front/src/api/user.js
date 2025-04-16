@@ -1,4 +1,4 @@
-import request from './request'
+import request from '@/utils/request'
 
 // 获取用户列表
 export function getUserList(params) {
@@ -32,4 +32,4 @@ export function deleteUser(id) {
     url: `/user/${id}`,
     method: 'delete'
   })
-} 
+}

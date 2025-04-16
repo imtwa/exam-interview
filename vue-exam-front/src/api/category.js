@@ -1,4 +1,4 @@
-import request from './request'
+import request from '@/utils/request'
 
 /**
  * 获取分类列表（包含二级分类）
@@ -33,4 +33,4 @@ export function getSubCategoryById(id) {
     url: `/category/sub/${id}`,
     method: 'get'
   })
-} 
+}

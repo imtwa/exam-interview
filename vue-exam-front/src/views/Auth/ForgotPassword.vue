@@ -52,17 +52,11 @@
       </div>
 
       <div v-else class="reset-success">
-        <el-result
-          icon="success"
-          title="密码重置成功"
-          sub-title="您的默认密码已重置为:"
-        >
+        <el-result icon="success" title="密码重置成功" sub-title="您的默认密码已重置为:">
           <template #extra>
             <div class="default-password">{{ defaultPassword }}</div>
             <p class="password-hint">请使用此密码登录并及时修改</p>
-            <el-button type="primary" @click="router.push('/login')">
-              返回登录
-            </el-button>
+            <el-button type="primary" @click="router.push('/login')"> 返回登录 </el-button>
           </template>
         </el-result>
       </div>
@@ -119,7 +113,7 @@ const sendCaptcha = async () => {
   try {
     await sendEmailCode(forgotForm.email)
     ElMessage.success('验证码已发送，请查收邮件')
-    
+
     // 开始倒计时
     captchaTimer.value = 60
     timerInterval.value = setInterval(() => {
@@ -138,23 +132,23 @@ const sendCaptcha = async () => {
 const handleForgotPassword = () => {
   if (!forgotFormRef.value) return
 
-  forgotFormRef.value.validate(async (valid) => {
+  forgotFormRef.value.validate(async valid => {
     if (valid) {
       isLoading.value = true
-      
+
       try {
         // 构造重置密码请求数据
         const resetData = {
           email: forgotForm.email,
           code: forgotForm.code
         }
-        
+
         const result = await resetPassword(resetData)
-        
+
         // 重置成功
         resetSuccess.value = true
         defaultPassword.value = result.password || '********'
-        
+
         ElMessage.success('密码重置成功')
       } catch (error) {
         console.error('重置密码失败:', error)
@@ -293,7 +287,7 @@ onMounted(() => {
 
 .reset-success {
   text-align: center;
-  
+
   .default-password {
     font-size: 18px;
     font-weight: bold;
@@ -305,7 +299,7 @@ onMounted(() => {
     letter-spacing: 1px;
     font-family: monospace;
   }
-  
+
   .password-hint {
     color: #666;
     margin-bottom: 20px;

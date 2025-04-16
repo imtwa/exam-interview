@@ -67,7 +67,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message, Lock, Key } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getCaptcha } from '@/api/auth'
+import { getCaptcha, login, checkProfileStatus } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -106,10 +106,21 @@ const loginRules = reactive({
 const refreshCaptcha = async () => {
   try {
     const res = await getCaptcha()
-    
+
     captchaId.value = res.id
-    // 直接使用返回的SVG字符串，使用data URL来显示
-    captchaImg.value = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(res.img)}`
+    // 安全处理SVG字符串，避免特殊字符导致错误
+    if (res.img) {
+      try {
+        captchaImg.value = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(res.img)))}`
+      } catch (e) {
+        console.error('验证码编码失败:', e)
+        // 降级方案，直接使用URI编码
+        captchaImg.value = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(res.img)}`
+      }
+    } else {
+      captchaImg.value = ''
+    }
+
     loginForm.captchaId = captchaId.value
   } catch (error) {
     console.error('获取验证码失败:', error)
@@ -121,10 +132,10 @@ const refreshCaptcha = async () => {
 const handleLogin = () => {
   if (!loginFormRef.value) return
 
-  loginFormRef.value.validate(async (valid) => {
+  loginFormRef.value.validate(async valid => {
     if (valid) {
       isLoading.value = true
-      
+
       try {
         // 直接使用登录表单数据，包含验证码信息
         const loginData = {
@@ -133,24 +144,43 @@ const handleLogin = () => {
           captchaId: loginForm.captchaId,
           captcha: loginForm.captcha
         }
-        
+
         // 使用Pinia store进行登录
         await userStore.userLogin(loginData)
-        
+
         // 登录成功处理
         ElMessage.success('登录成功')
-        
+
         // 如果勾选了记住我，可以存储登录状态
         if (loginForm.remember) {
           localStorage.setItem('rememberEmail', loginForm.email)
         } else {
           localStorage.removeItem('rememberEmail')
         }
-        
-        // 登录成功后跳转到首页
-        router.push('/')
+
+        // 检查用户个人信息完善状态
+        try {
+          const data = await checkProfileStatus()
+          const { profileCompleted } = data
+          // 如果未完善信息且有重定向路径，则跳转
+          if (!profileCompleted) {
+            ElMessage.info('请先完善您的个人资料')
+            if (userStore.isInterviewer) {
+              router.push('/hr/profile-setup')
+            } else if (userStore.isJobSeeker) {
+              router.push('job-seeker/profile-setup')
+            }
+          } else {
+            // 信息完善 跳转到首页
+            router.push('/')
+          }
+        } catch (error) {
+          // console.error('检查个人信息状态失败:', error)
+          // 检查失败，跳转到首页
+          router.push('/')
+        }
       } catch (error) {
-        console.error('登录失败:', error)
+        // console.error('登录失败:', error)
         // 登录失败时刷新验证码
         refreshCaptcha()
       } finally {

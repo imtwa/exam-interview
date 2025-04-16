@@ -5,6 +5,7 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
+import './router/permission' // 从router目录引入权限控制
 
 // 样式
 import 'element-plus/theme-chalk/dark/css-vars.css'
@@ -18,7 +19,7 @@ const app = createApp(App)
 // 使用 Pinia
 app.use(createPinia())
 app.use(ElementPlus, {
-  locale: zhCn, // 使用中文语言包
+  locale: zhCn // 使用中文语言包
 })
 app.use(router)
 

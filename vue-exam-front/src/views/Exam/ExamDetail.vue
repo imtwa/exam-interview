@@ -47,8 +47,12 @@
               </span>
             </div>
             <div class="exam-tags">
-              <el-tag type="primary" effect="plain" v-if="examData.category">{{ examData.category.name }}</el-tag>
-              <el-tag type="success" effect="plain" v-if="examData.subCategory">{{ examData.subCategory.name }}</el-tag>
+              <el-tag type="primary" effect="plain" v-if="examData.category">{{
+                examData.category.name
+              }}</el-tag>
+              <el-tag type="success" effect="plain" v-if="examData.subCategory">{{
+                examData.subCategory.name
+              }}</el-tag>
             </div>
             <div class="exam-description" v-if="examData.description">
               <p>{{ examData.description }}</p>
@@ -56,10 +60,15 @@
           </div>
           <div class="exam-actions">
             <el-button type="primary" size="large" @click="startExam" class="action-button">
-              <el-icon>
-                <VideoPlay />
-              </el-icon>开始考试</el-button>
-            <el-button type="default" size="large" @click="collectExam" :disabled="isCollecting" class="action-button">
+              <el-icon> <VideoPlay /> </el-icon>开始考试</el-button
+            >
+            <el-button
+              type="default"
+              size="large"
+              @click="collectExam"
+              :disabled="isCollecting"
+              class="action-button"
+            >
               <el-icon>
                 <Star />
               </el-icon>
@@ -106,8 +115,10 @@
                 </div>
                 <div class="card-content">
                   <div class="card-title">顺序练习</div>
-                  <div class="card-count">{{ examData.questionsCount || examData.examQuestions?.length || 0 }} / {{
-                    examData.questionsCount || examData.examQuestions?.length || 0 }}</div>
+                  <div class="card-count">
+                    {{ examData.questionsCount || examData.examQuestions?.length || 0 }} /
+                    {{ examData.questionsCount || examData.examQuestions?.length || 0 }}
+                  </div>
                 </div>
               </div>
 
@@ -124,7 +135,7 @@
               </div>
             </div>
 
-            <div class="feature-cards practice-cards" style="margin-top: 16px;">
+            <div class="feature-cards practice-cards" style="margin-top: 16px">
               <div class="feature-card practice-card" @click="startSimulationExam">
                 <div class="card-icon simulation-icon">
                   <el-icon>
@@ -150,7 +161,6 @@
               </div>
             </div>
           </div>
-
         </div>
 
         <!-- 试题列表 -->
@@ -173,23 +183,35 @@
             <el-empty description="暂无题目" />
           </div>
           <div v-else class="question-list">
-            <div v-for="(question, index) in paginatedQuestions" :key="question.questionId || question.id"
-              class="question-item" @click="goToQuestionPractice(question, index)">
+            <div
+              v-for="(question, index) in paginatedQuestions"
+              :key="question.questionId || question.id"
+              class="question-item"
+              @click="goToQuestionPractice(question, index)"
+            >
               <div class="question-title">
                 <span class="question-index">{{ (currentPage - 1) * pageSize + index + 1 }}</span>
                 <span class="question-type-tag">
                   {{ getQuestionTypeName(question.question?.qtype || question.qtype) }}
                 </span>
-                <span class="title-text">{{ question.question?.question || question.question }}</span>
+                <span class="title-text">{{
+                  question.question?.question || question.question
+                }}</span>
               </div>
             </div>
           </div>
 
           <!-- 分页 -->
           <div class="pagination-wrapper" v-if="filteredQuestions.length > 0">
-            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
-              :page-sizes="[10, 20, 30, 50]" layout="total, sizes, prev, pager, next, jumper"
-              :total="filteredQuestions.length" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 30, 50]"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="filteredQuestions.length"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+            />
           </div>
         </div>
       </template>
@@ -203,8 +225,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { getExamDetail, toggleFavorite, checkFavorite } from '@/api/exam'
 import { ElMessage } from 'element-plus'
 import {
-  Document, Star, User, Calendar, VideoPlay,
-  CloseBold, List, Refresh, DocumentCopy
+  Document,
+  Star,
+  User,
+  Calendar,
+  VideoPlay,
+  CloseBold,
+  List,
+  Refresh,
+  DocumentCopy
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -266,12 +295,12 @@ const collectExam = async () => {
   try {
     const res = await toggleFavorite(examId.value)
     isCollected.value = res.isFavorite
-    
+
     // 更新试卷的收藏数量
     if (examData.value) {
       examData.value.favoriteCount = res.favoriteCount || examData.value.favoriteCount
     }
-    
+
     ElMessage.success(isCollected.value ? '收藏成功' : '已取消收藏')
   } catch (error) {
     console.error('收藏操作失败:', error)
@@ -324,16 +353,16 @@ const paginatedQuestions = computed(() => {
   return filteredQuestions.value.slice(startIndex, startIndex + pageSize.value)
 })
 
-const handleSizeChange = (newSize) => {
+const handleSizeChange = newSize => {
   pageSize.value = newSize
 }
 
-const handleCurrentChange = (newPage) => {
+const handleCurrentChange = newPage => {
   currentPage.value = newPage
 }
 
 // 格式化日期
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return ''
 
   try {
@@ -354,7 +383,7 @@ const formatDate = (dateString) => {
 }
 
 // 获取题型名称
-const getQuestionTypeName = (type) => {
+const getQuestionTypeName = type => {
   const types = {
     1: '单选题',
     2: '多选题',
@@ -365,7 +394,7 @@ const getQuestionTypeName = (type) => {
 }
 
 // 解析选项
-const parseOptions = (optionsStr) => {
+const parseOptions = optionsStr => {
   if (!optionsStr) return []
   try {
     return JSON.parse(optionsStr)
@@ -378,25 +407,24 @@ const parseOptions = (optionsStr) => {
 // 跳转到练习的指定题目
 const goToQuestionPractice = (question, index) => {
   // 计算题目在原始数组中的位置
-  const questionIndex = findQuestionIndex(question);
-  
+  const questionIndex = findQuestionIndex(question)
+
   // 跳转到顺序练习页面，并传递要打开的题目索引
-  router.push(`/practice-exam/${examId.value}?mode=sequential&questionIndex=${questionIndex}`);
+  router.push(`/practice-exam/${examId.value}?mode=sequential&questionIndex=${questionIndex}`)
 }
 
 // 找到题目在原始数组中的索引
-const findQuestionIndex = (targetQuestion) => {
-  const allQuestions = examData.value.examQuestions || [];
-  
+const findQuestionIndex = targetQuestion => {
+  const allQuestions = examData.value.examQuestions || []
+
   // 尝试通过questionId或id查找
-  const questionId = targetQuestion.questionId || targetQuestion.id;
-  const index = allQuestions.findIndex(q => 
-    (q.questionId && q.questionId === questionId) || 
-    (q.id && q.id === questionId)
-  );
-  
+  const questionId = targetQuestion.questionId || targetQuestion.id
+  const index = allQuestions.findIndex(
+    q => (q.questionId && q.questionId === questionId) || (q.id && q.id === questionId)
+  )
+
   // 如果找到了，返回索引，否则返回0（第一题）
-  return index >= 0 ? index : 0;
+  return index >= 0 ? index : 0
 }
 
 onMounted(() => {
@@ -644,18 +672,18 @@ onMounted(() => {
       margin-bottom: 16px;
       transition: all 0.3s;
       cursor: pointer;
-      
+
       &:hover {
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-        border-color: #409EFF;
+        border-color: #409eff;
         transform: translateY(-2px);
       }
-      
+
       .question-title {
         display: flex;
         align-items: center;
         gap: 10px;
-        
+
         .question-index {
           display: flex;
           align-items: center;
@@ -669,7 +697,7 @@ onMounted(() => {
           font-size: 13px;
           font-weight: 600;
         }
-        
+
         .question-type-tag {
           background-color: #e6f1ff;
           color: #0352c9;
@@ -678,7 +706,7 @@ onMounted(() => {
           font-size: 12px;
           margin-right: 6px;
         }
-        
+
         .title-text {
           flex: 1;
           font-size: 14px;
@@ -686,17 +714,17 @@ onMounted(() => {
           line-height: 1.5;
         }
       }
-      
+
       &::after {
-        content: "点击练习";
+        content: '点击练习';
         position: absolute;
         right: 16px;
-        color: #409EFF;
+        color: #409eff;
         font-size: 12px;
         opacity: 0;
         transition: opacity 0.3s;
       }
-      
+
       &:hover::after {
         opacity: 1;
       }

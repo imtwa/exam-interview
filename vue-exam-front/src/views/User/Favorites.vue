@@ -5,6 +5,7 @@
       <div class="breadcrumb-container">
         <el-breadcrumb separator="/">
           <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: '/profile' }">个人中心</el-breadcrumb-item>
           <el-breadcrumb-item>我的收藏</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
@@ -19,13 +20,28 @@
       <div class="filter-container">
         <el-form :inline="true" class="filter-form">
           <el-form-item label="分类">
-            <el-select v-model="queryParams.categoryId" placeholder="选择分类" clearable @change="handleCategoryChange">
-              <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
+            <el-select
+              v-model="queryParams.categoryId"
+              placeholder="选择分类"
+              clearable
+              @change="handleCategoryChange"
+            >
+              <el-option
+                v-for="item in categories"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="子分类" v-if="subCategories.length > 0">
             <el-select v-model="queryParams.subCategoryId" placeholder="选择子分类" clearable>
-              <el-option v-for="item in subCategories" :key="item.id" :label="item.name" :value="item.id" />
+              <el-option
+                v-for="item in subCategories"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="关键词">
@@ -47,7 +63,12 @@
           <el-radio-button label="name">名称</el-radio-button>
         </el-radio-group>
 
-        <el-radio-group v-model="queryParams.sortOrder" size="small" @change="fetchFavorites" class="sort-order">
+        <el-radio-group
+          v-model="queryParams.sortOrder"
+          size="small"
+          @change="fetchFavorites"
+          class="sort-order"
+        >
           <el-radio-button label="desc">降序</el-radio-button>
           <el-radio-button label="asc">升序</el-radio-button>
         </el-radio-group>
@@ -64,7 +85,12 @@
           <el-empty description="暂无收藏内容" />
         </div>
         <div v-else>
-          <div class="exam-card" v-for="exam in favorites" :key="exam.id" @click="goToExam(exam.id)">
+          <div
+            class="exam-card"
+            v-for="exam in favorites"
+            :key="exam.id"
+            @click="goToExam(exam.id)"
+          >
             <div class="exam-info">
               <h2 class="exam-title">{{ exam.name }}</h2>
               <div class="exam-meta">
@@ -82,16 +108,32 @@
                 </span>
               </div>
               <div class="exam-tags">
-                <el-tag type="primary" effect="plain" v-if="exam.category">{{ exam.category.name }}</el-tag>
-                <el-tag type="success" effect="plain" v-if="exam.subCategory">{{ exam.subCategory.name }}</el-tag>
+                <el-tag type="primary" effect="plain" v-if="exam.category">{{
+                  exam.category.name
+                }}</el-tag>
+                <el-tag type="success" effect="plain" v-if="exam.subCategory">{{
+                  exam.subCategory.name
+                }}</el-tag>
               </div>
               <div class="exam-description" v-if="exam.description">
                 <p>{{ exam.description }}</p>
               </div>
             </div>
             <div class="exam-actions">
-              <el-button type="primary" size="small" @click.stop="goToExam(exam.id)" class="exam-action-btn">查看详情</el-button>
-              <el-button type="danger" size="small" @click.stop="cancelFavorite(exam.id)" class="exam-action-btn">取消收藏</el-button>
+              <el-button
+                type="primary"
+                size="small"
+                @click.stop="goToExam(exam.id)"
+                class="exam-action-btn"
+                >查看详情</el-button
+              >
+              <el-button
+                type="danger"
+                size="small"
+                @click.stop="cancelFavorite(exam.id)"
+                class="exam-action-btn"
+                >取消收藏</el-button
+              >
             </div>
           </div>
         </div>
@@ -136,7 +178,7 @@ const queryParams = reactive({
   subCategoryId: '',
   keyword: '',
   sortField: 'createdAt',
-  sortOrder: 'desc',
+  sortOrder: 'desc'
 })
 
 // 数据状态
@@ -164,7 +206,7 @@ const fetchCategories = async () => {
   try {
     const response = await getCategoryList()
     categories.value = response || []
-    
+
     // 处理子分类数据
     allSubCategories.value = {}
     categories.value.forEach(category => {
@@ -172,7 +214,7 @@ const fetchCategories = async () => {
         allSubCategories.value[category.id] = category.children
       }
     })
-    
+
     // 如果有选中的分类，更新子分类列表
     if (queryParams.categoryId) {
       handleCategoryChange(queryParams.categoryId)
@@ -183,27 +225,30 @@ const fetchCategories = async () => {
 }
 
 // 处理分类变更，更新子分类选项
-const handleCategoryChange = (categoryId) => {
+const handleCategoryChange = categoryId => {
   if (!categoryId) {
     subCategories.value = []
     queryParams.subCategoryId = ''
     return
   }
-  
+
   subCategories.value = allSubCategories.value[categoryId] || []
   // 如果当前选中的子分类不在新分类的子分类中，清空选择
-  if (queryParams.subCategoryId && !subCategories.value.find(s => s.id === queryParams.subCategoryId)) {
+  if (
+    queryParams.subCategoryId &&
+    !subCategories.value.find(s => s.id === queryParams.subCategoryId)
+  ) {
     queryParams.subCategoryId = ''
   }
 }
 
 // 分页相关方法
-const handleSizeChange = (newSize) => {
+const handleSizeChange = newSize => {
   queryParams.pageSize = newSize
   fetchFavorites()
 }
 
-const handleCurrentChange = (newPage) => {
+const handleCurrentChange = newPage => {
   queryParams.page = newPage
   fetchFavorites()
 }
@@ -218,19 +263,19 @@ const resetFilters = () => {
 }
 
 // 跳转至试卷详情
-const goToExam = (examId) => {
+const goToExam = examId => {
   router.push(`/exam/${examId}`)
 }
 
 // 取消收藏
-const cancelFavorite = async (examId) => {
+const cancelFavorite = async examId => {
   try {
     await ElMessageBox.confirm('确定要取消收藏这份试卷吗？', '取消收藏', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning',
+      type: 'warning'
     })
-    
+
     const result = await toggleFavorite(examId)
     if (!result.isFavorite) {
       ElMessage.success('已取消收藏')
@@ -246,7 +291,7 @@ const cancelFavorite = async (examId) => {
 }
 
 // 格式化日期
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return ''
 
   try {
@@ -314,6 +359,25 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  :deep(.el-form-item) {
+    margin-right: 0;
+    margin-bottom: 0;
+  }
+
+  :deep(.el-select) {
+    width: 220px;
+  }
+
+  :deep(.el-input) {
+    width: 220px;
+  }
+}
+
 .sort-container {
   display: flex;
   align-items: center;
@@ -346,7 +410,7 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     transition: all 0.3s;
-    
+
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -361,7 +425,7 @@ onMounted(() => {
         color: #333;
         margin: 0 0 12px 0;
         cursor: pointer;
-        
+
         &:hover {
           color: #0352c9;
         }
@@ -398,7 +462,7 @@ onMounted(() => {
         color: #666;
         font-size: 14px;
         line-height: 1.6;
-        
+
         p {
           margin: 0;
           display: -webkit-box;
@@ -436,4 +500,4 @@ onMounted(() => {
   margin-top: 20px;
   text-align: right;
 }
-</style> 
+</style>

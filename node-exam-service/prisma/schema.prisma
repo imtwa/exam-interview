@@ -29,6 +29,10 @@ model FrontUser {
   examPapers ExamPaper[] /// 用户创建的试卷
   favorites  Favorite[] /// 用户收藏的试卷
   questions  Question[] /// 用户创建的题目
+  
+  // 招聘系统关联
+  jobSeeker   JobSeeker?
+  interviewer Interviewer?
 
   @@map("exam_front_user")
 }
@@ -46,7 +50,7 @@ model Category {
   subCategories SubCategory[] /// 二级分类，一对多关系
   examPapers    ExamPaper[] /// 所属试卷，一对多关系
 
-  @@map("exam_front_category")
+  @@map("exam_category")
 }
 
 /// 二级分类表：一级分类下的子分类，如"计算机"下的"前端"、"Java"等
@@ -63,7 +67,7 @@ model SubCategory {
   category   Category    @relation(fields: [categoryId], references: [id]) /// 所属一级分类，多对一关系
   examPapers ExamPaper[] /// 关联的试卷，一对多关系
 
-  @@map("exam_front_subcategory")
+  @@map("exam_subcategory")
 }
 
 /// 题目表：存储所有考试题目
@@ -84,7 +88,7 @@ model Question {
   user          FrontUser?     @relation(fields: [userId], references: [id]) /// 创建用户，多对一关系
   examQuestions ExamQuestion[] /// 题目与试卷的关联，一对多关系
 
-  @@map("exam_front_question")
+  @@map("exam_question")
 }
 
 /// 试卷表：存储考试试卷信息
@@ -108,7 +112,7 @@ model ExamPaper {
   examQuestions ExamQuestion[] /// 试卷包含的题目，一对多关系
   favorites     Favorite[] /// 收藏记录，一对多关系
 
-  @@map("exam_front_exampaper")
+  @@map("exam_exampaper")
 }
 
 /// 试卷题目关联表：维护试卷和题目之间的多对多关系
@@ -126,7 +130,7 @@ model ExamQuestion {
   question  Question  @relation(fields: [questionId], references: [id]) /// 关联的题目，多对一关系
 
   @@id([examId, questionId]) /// 联合主键，试卷ID和题目ID的组合
-  @@map("exam_front_examquestion")
+  @@map("exam_examquestion")
 }
 
 /// 用户收藏表：记录用户收藏的试卷
@@ -142,13 +146,234 @@ model Favorite {
   examPaper ExamPaper @relation(fields: [examPaperId], references: [id]) /// 被收藏的试卷，多对一关系
 
   @@id([userId, examPaperId]) /// 联合主键，用户ID和试卷ID的组合
-  @@map("exam_front_favorite")
+  @@map("exam_favorite")
 }
+
+// ==================== 招聘系统表结构 ====================
+
+/// 求职者表：存储求职者详细信息
+model JobSeeker {
+  id                Int              @id @default(autoincrement()) /// 求职者ID，自增主键
+  userId            Int              @unique /// 关联的用户ID，唯一标识
+  user              FrontUser        @relation(fields: [userId], references: [id]) /// 关联的用户，一对一关系
+  email             String           @unique /// 邮箱地址，唯一标识
+  name              String /// 姓名
+  telephone         String? /// 电话号码
+  address           String? /// 地址
+  birthday          DateTime? /// 出生日期
+  gender            Gender? /// 性别：男/女/其他
+  currentSalary     Float? /// 当前薪资
+  expectedSalary    Float? /// 期望薪资
+  expectedPosition  String? /// 期望职位
+  expectedWorkCity  String? /// 期望工作城市
+  workExperience    WorkExperience[] /// 工作经历，一对多关系
+  education         Education[] /// 教育经历，一对多关系
+  applications      JobApplication[] /// 职位申请记录，一对多关系
+  createdAt         DateTime         @default(now()) /// 创建时间
+  updatedAt         DateTime         @updatedAt /// 更新时间
+  deletedAt         DateTime? /// 删除时间，用于软删除
+
+  @@map("exam_recruitment_job_seekers")
+}
+
+/// 工作经验表：记录求职者的工作经历
+model WorkExperience {
+  id          Int       @id @default(autoincrement()) /// 工作经验ID，自增主键
+  jobSeekerId Int /// 关联的求职者ID
+  jobSeeker   JobSeeker @relation(fields: [jobSeekerId], references: [id]) /// 关联的求职者，多对一关系
+  company     String /// 公司名称
+  position    String /// 职位名称
+  startDate   DateTime /// 开始日期
+  endDate     DateTime? /// 结束日期，为空表示至今
+  description String?    @db.Text /// 工作描述
+  createdAt   DateTime   @default(now()) /// 创建时间
+  updatedAt   DateTime   @updatedAt /// 更新时间
+
+  @@map("exam_recruitment_work_experience")
+}
+
+/// 教育经历表：记录求职者的教育背景
+model Education {
+  id          Int       @id @default(autoincrement()) /// 教育经历ID，自增主键
+  jobSeekerId Int /// 关联的求职者ID
+  jobSeeker   JobSeeker @relation(fields: [jobSeekerId], references: [id]) /// 关联的求职者，多对一关系
+  school      String /// 学校名称
+  degree      Degree /// 学历：高中/大专/本科/硕士/博士/其他
+  major       String /// 专业
+  startDate   DateTime /// 开始日期
+  endDate     DateTime? /// 结束日期，为空表示在读
+  createdAt   DateTime  @default(now()) /// 创建时间
+  updatedAt   DateTime  @updatedAt /// 更新时间
+
+  @@map("exam_recruitment_education")
+}
+
+
+/// 公司表：存储招聘公司信息
+model Company {
+  id              Int       @id @default(autoincrement()) /// 公司ID，自增主键
+  name            String /// 公司名称
+  description     String? @db.Text /// 公司简介
+  address         String? /// 公司地址
+  fundingStage    FundingStage? /// 融资阶段：未融资/天使轮/A轮/B轮/C轮/D轮及以上/已上市/不需要融资
+  size            CompanySize? /// 公司规模：0-20人/20-99人/100-499人/500-999人/1000-9999人/10000+人
+  industry        String? /// 所属行业
+  foundedYear     Int? /// 成立年份
+  verificationStatus VerificationStatus @default(PENDING) /// 验证状态：待验证/已验证/已拒绝
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+  deletedAt       DateTime? /// 删除时间，用于软删除
+  
+  // 关联表
+  interviewers    Interviewer[] /// 公司的HR/面试官，一对多关系
+  jobPostings     JobPosting[] /// 公司发布的职位，一对多关系
+
+  @@map("exam_recruitment_companies")
+}
+
+/// 面试官表：存储面试官详细信息
+model Interviewer {
+  id              Int       @id @default(autoincrement()) /// 面试官ID，自增主键
+  userId          Int       @unique /// 关联的用户ID，唯一标识
+  gender          Gender? /// 性别：男/女/其他
+  position        String /// 职位
+  companyId       Int /// 所属公司ID
+  verificationStatus VerificationStatus @default(PENDING) /// 验证状态：待验证/已验证/已拒绝
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+  deletedAt       DateTime? /// 删除时间，用于软删除
+  
+  // 关联表
+  user            FrontUser @relation(fields: [userId], references: [id]) /// 关联的用户，一对一关系
+  company         Company   @relation(fields: [companyId], references: [id]) /// 所属公司，多对一关系
+  jobPostings     JobPosting[] /// 该HR发布的招聘信息，一对多关系
+
+  @@map("exam_recruitment_interviewers")
+}
+
+/// 行业一级分类表：管理行业顶级分类
+model IndustryCategory {
+  id              Int       @id @default(autoincrement()) /// 分类ID，自增主键
+  name            String /// 分类名称
+  description     String? /// 分类描述
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+  deletedAt       DateTime? /// 删除时间，用于软删除
+  
+  // 关联表
+  subCategories   IndustrySubCategory[] /// 二级分类，一对多关系
+
+  @@map("exam_recruitment_industry_categories")
+}
+
+/// 行业二级分类表：一级分类下的子分类
+model IndustrySubCategory {
+  id              Int       @id @default(autoincrement()) /// 二级分类ID，自增主键
+  categoryId      Int /// 所属一级分类ID
+  name            String /// 二级分类名称
+  description     String? /// 分类描述
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+  deletedAt       DateTime? /// 删除时间，用于软删除
+  
+  // 关联表
+  category        IndustryCategory @relation(fields: [categoryId], references: [id]) /// 所属一级分类，多对一关系
+  jobPostings     JobPosting[] /// 该分类下的职位，一对多关系
+
+  @@map("exam_recruitment_industry_subcategories")
+}
+
+/// 招聘信息表：存储职位招聘信息
+model JobPosting {
+  id              Int       @id @default(autoincrement()) /// 职位ID，自增主键
+  title           String /// 职位标题
+  companyId       Int /// 所属公司ID
+  interviewerId   Int /// 发布的HR ID
+  subCategoryId   Int /// 所属行业二级分类ID
+  description     String    @db.Text /// 职位描述
+  requirements    String    @db.Text /// 职位要求
+  city            String /// 工作城市
+  address         String? /// 详细地址
+  salaryMin       Int /// 薪资下限
+  salaryMax       Int /// 薪资上限
+  experienceReq   Int? /// 经验要求(年)
+  educationReq    Degree? /// 学历要求：高中/大专/本科/硕士/博士/其他
+  isRemote        Boolean   @default(false) /// 是否支持远程
+  status          JobStatus @default(ACTIVE) /// 职位状态：招聘中/已招满/已过期/草稿
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+  deletedAt       DateTime? /// 删除时间，用于软删除
+  
+  // 关联表
+  company         Company   @relation(fields: [companyId], references: [id]) /// 所属公司，多对一关系
+  interviewer     Interviewer @relation(fields: [interviewerId], references: [id]) /// 发布的HR，多对一关系
+  subCategory     IndustrySubCategory @relation(fields: [subCategoryId], references: [id]) /// 所属行业分类，多对一关系
+  applications    JobApplication[] /// 该职位收到的申请，一对多关系
+
+  @@map("exam_recruitment_job_postings")
+}
+
+/// 面试安排表：记录面试时间和状态
+model Interview {
+  id              Int       @id @default(autoincrement()) /// 面试ID，自增主键
+  applicationId   Int /// 关联的职位申请ID
+  scheduleTime    DateTime /// 面试时间
+  duration        Int /// 面试时长(分钟)
+  meetingLink     String? /// 线上面试链接
+  status          InterviewStatus @default(SCHEDULED) /// 面试状态：已安排/已完成/已取消
+  feedback        String?   @db.Text /// 面试反馈
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+  deletedAt       DateTime? /// 删除时间，用于软删除
+  
+  // 关联表
+  application     JobApplication @relation(fields: [applicationId], references: [id]) /// 关联的职位申请，多对一关系
+
+  @@map("exam_recruitment_interviews")
+}
+
+/// 职位申请表：求职者申请职位的记录
+model JobApplication {
+  id             Int             @id @default(autoincrement()) /// 申请ID，自增主键
+  jobSeekerId    Int /// 申请的求职者ID
+  jobSeeker      JobSeeker       @relation(fields: [jobSeekerId], references: [id]) /// 申请的求职者，多对一关系
+  jobId          Int /// 申请的职位ID
+  job            JobPosting      @relation(fields: [jobId], references: [id]) /// 申请的职位，多对一关系
+  status         InterviewStatus @default(RESUME_SCREENING) /// 申请状态：简历筛选/笔试/一面/二面/HR面试/已安排/Offer/拒绝
+  appliedAt      DateTime        @default(now()) /// 申请时间
+  updatedAt      DateTime        @updatedAt /// 更新时间
+  resumeUrl      String? /// 简历文件URL
+  coverLetterUrl String? /// 求职信URL
+  notes          String? /// 申请备注
+  
+  // 关联表
+  interviews     Interview[]     /// 该申请的面试安排，一对多关系
+  
+  @@map("exam_recruitment_job_applications")
+}
+
+/// 消息通知表：系统内各类通知
+model Notification {
+  id              Int       @id @default(autoincrement()) /// 通知ID，自增主键
+  userId          Int /// 接收通知的用户ID
+  title           String /// 通知标题
+  content         String    @db.Text /// 通知内容
+  isRead          Boolean   @default(false) /// 是否已读
+  type            NotificationType /// 通知类型：申请状态更新/面试安排/职位邀请/系统消息
+  targetId        Int? /// 相关联对象ID
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+  deletedAt       DateTime? /// 删除时间，用于软删除
+
+  @@map("exam_recruitment_notifications")
+}
+
+// ==================== 枚举类型 ====================
 
 /// 用户角色枚举：定义系统中的用户角色类型
 enum UserRole {
-  JOB_SEEKER    @map("JOB_SEEKER") /// 求职者
-  INTERVIEWER   @map("INTERVIEWER") /// 面试官
+  JOB_SEEKER    @map("JOB_SEEKER") /// 求职者：普通用户，可以浏览和申请职位
+  INTERVIEWER   @map("INTERVIEWER") /// 面试官：公司HR或技术面试官，可以发布和管理招聘信息
 }
 
 /// 文档状态枚举：定义文档处理的不同状态
@@ -156,4 +381,90 @@ enum DocumentStatus {
   PENDING @map("pending") /// 待处理：文档已上传但尚未处理
   PARSED  @map("parsed") /// 已解析：文档已成功解析为题目
   ERROR   @map("error") /// 解析错误：文档解析过程中出现错误
+}
+
+// 招聘系统使用的枚举
+
+/// 性别枚举：定义用户性别选项
+enum Gender {
+  MALE    /// 男性
+  FEMALE  /// 女性
+  OTHER   /// 其他性别或不愿透露
+}
+
+/// 学历枚举：定义教育程度级别
+enum Degree {
+  HIGH_SCHOOL  /// 高中学历
+  ASSOCIATE    /// 大专学历
+  BACHELOR     /// 本科学历
+  MASTER       /// 硕士学历
+  DOCTORATE    /// 博士学历
+  OTHER        /// 其他学历类型
+}
+
+/// 验证状态枚举：定义账户或信息的验证状态
+enum VerificationStatus {
+  PENDING    /// 待验证：信息已提交但尚未验证
+  VERIFIED   /// 已验证：信息已经过验证，确认有效
+  REJECTED   /// 已拒绝：信息验证失败或被拒绝
+}
+
+/// 融资阶段枚举：定义公司的融资状态
+enum FundingStage {
+  UNFUNDED     /// 未融资：尚未获得外部投资
+  ANGEL        /// 天使轮：获得天使投资人的早期投资
+  SERIES_A     /// A轮：获得A轮融资
+  SERIES_B     /// B轮：获得B轮融资
+  SERIES_C     /// C轮：获得C轮融资
+  SERIES_D     /// D轮及以上：获得D轮或更高轮次融资
+  IPO          /// 已上市：公司已在证券交易所公开上市
+  SELF_FUNDED  /// 不需要融资：公司自给自足，不需要外部融资
+}
+
+/// 公司规模枚举：定义公司的员工人数范围
+enum CompanySize {
+  TINY      /// 0-20人：微型企业或创业团队
+  SMALL     /// 20-99人：小型企业
+  MEDIUM    /// 100-499人：中型企业
+  LARGE     /// 500-999人：大型企业
+  XLARGE    /// 1000-9999人：特大型企业
+  XXLARGE   /// 10000+人：超大型企业或跨国公司
+}
+
+/// 职位状态枚举：定义招聘职位的当前状态
+enum JobStatus {
+  ACTIVE   /// 招聘中：职位正在招聘，接受申请
+  FILLED   /// 停止招聘：职位已招聘到合适人选
+  EXPIRED  /// 已过期
+}
+
+/// 面试状态枚举：定义求职过程中的各个阶段
+enum InterviewStatus {
+  RESUME_SCREENING  /// 简历筛选：HR正在审核简历
+  WRITTEN_TEST      /// 笔试：进入笔试阶段
+  FIRST_INTERVIEW   /// 一面(线上)：第一轮面试，技术面试
+  SECOND_INTERVIEW  /// 二面(线上)：第二轮面试，高级技术面试
+  HR_INTERVIEW      /// HR面试(线上)：人力资源部门面试
+  SCHEDULED         /// 已安排面试：面试已安排，等待进行
+  OFFER             /// Offer：已通过所有面试，收到录用通知
+  REJECTED          /// 拒绝：求职申请被拒绝
+}
+
+/// 通知类型枚举：定义系统通知的不同类型
+enum NotificationType {
+  APPLICATION_STATUS  /// 申请状态更新：求职申请状态变更通知
+  INTERVIEW_SCHEDULED /// 面试安排：面试时间和地点安排通知
+  JOB_INVITATION      /// 职位邀请：招聘方主动邀请求职者应聘的通知
+  SYSTEM_MESSAGE      /// 系统消息：平台公告或其他系统通知
+}
+
+/// 工作经验枚举：定义工作经验年限范围
+enum ExperienceLevel {
+  STUDENT       /// 在校生：尚未毕业的学生
+  FRESH_GRADUATE /// 应届生：刚毕业，无工作经验
+  LESS_THAN_ONE /// 一年以内：工作经验不满一年
+  ONE_TO_THREE  /// 一到三年：具有1-3年工作经验
+  THREE_TO_FIVE /// 三到五年：具有3-5年工作经验
+  FIVE_TO_TEN   /// 五到十年：具有5-10年工作经验
+  MORE_THAN_TEN /// 十年以上：具有10年以上工作经验
 }

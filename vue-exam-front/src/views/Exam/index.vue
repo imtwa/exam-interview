@@ -1,19 +1,29 @@
 <template>
   <div class="question-bank-page">
     <div class="question-bank-container">
-
       <!-- 一级分类导航 -->
       <div class="category-nav">
         <div class="category-wrapper">
           <div class="primary-categories">
-            <div class="category-item" :class="{ 'active': activePrimaryCategory === 0 }"
-              @click="handlePrimaryCategoryClick(0)">
+            <div
+              class="category-item"
+              :class="{ active: activePrimaryCategory === 0 }"
+              @click="handlePrimaryCategoryClick(0)"
+            >
               全部
             </div>
-            <el-tooltip v-for="category in primaryCategories" :key="category.id"
-              :content="category.description || '暂无描述'" placement="top" :effect="'light'">
-              <div class="category-item" :class="{ 'active': activePrimaryCategory === category.id }"
-                @click="handlePrimaryCategoryClick(category.id)">
+            <el-tooltip
+              v-for="category in primaryCategories"
+              :key="category.id"
+              :content="category.description || '暂无描述'"
+              placement="top"
+              :effect="'light'"
+            >
+              <div
+                class="category-item"
+                :class="{ active: activePrimaryCategory === category.id }"
+                @click="handlePrimaryCategoryClick(category.id)"
+              >
                 {{ category.name }}
               </div>
             </el-tooltip>
@@ -21,14 +31,25 @@
 
           <!-- 二级分类导航 -->
           <div class="secondary-categories">
-            <div class="category-item" :class="{ 'active': activeSecondaryCategory === 0 }"
-              @click="handleSecondaryCategoryClick(0)">
+            <div
+              class="category-item"
+              :class="{ active: activeSecondaryCategory === 0 }"
+              @click="handleSecondaryCategoryClick(0)"
+            >
               全部
             </div>
-            <el-tooltip v-for="subCategory in secondaryCategories.filter(item => item.id !== 0)" :key="subCategory.id"
-              :content="subCategory.description || '暂无描述'" placement="top" :effect="'light'">
-              <div class="category-item" :class="{ 'active': activeSecondaryCategory === subCategory.id }"
-                @click="handleSecondaryCategoryClick(subCategory.id)">
+            <el-tooltip
+              v-for="subCategory in secondaryCategories.filter(item => item.id !== 0)"
+              :key="subCategory.id"
+              :content="subCategory.description || '暂无描述'"
+              placement="top"
+              :effect="'light'"
+            >
+              <div
+                class="category-item"
+                :class="{ active: activeSecondaryCategory === subCategory.id }"
+                @click="handleSecondaryCategoryClick(subCategory.id)"
+              >
                 {{ subCategory.name }}
               </div>
             </el-tooltip>
@@ -41,7 +62,12 @@
             <p class="search-tip">{{ searchTip }}</p>
           </div>
           <div class="right">
-            <el-input v-model="searchKeyword" placeholder="输入关键词搜索" class="search-input" @keyup.enter="handleSearch">
+            <el-input
+              v-model="searchKeyword"
+              placeholder="输入关键词搜索"
+              class="search-input"
+              @keyup.enter="handleSearch"
+            >
               <template #append>
                 <el-button @click="handleSearch" :loading="loading">
                   <el-icon>
@@ -74,17 +100,22 @@
             </el-empty>
           </div>
           <div v-else v-for="(item, index) in questionList" :key="index" class="question-item">
-
             <div class="item-header">
               <h3 class="item-title" @click="viewDetail(item.id)">{{ item.name }}</h3>
               <div class="item-stats">
-                <el-tag size="small" effect="plain" type="info">{{ item.questionsCount || 0 }} 题</el-tag>
-                <el-tag size="small" effect="plain" type="info">{{ item.favoriteCount || 0 }} 收藏</el-tag>
+                <el-tag size="small" effect="plain" type="info"
+                  >{{ item.questionsCount || 0 }} 题</el-tag
+                >
+                <el-tag size="small" effect="plain" type="info"
+                  >{{ item.favoriteCount || 0 }} 收藏</el-tag
+                >
               </div>
             </div>
             <div class="item-details">
               <el-tag size="small" type="primary">{{ item.category?.name }}</el-tag>
-              <el-tag size="small" type="success" v-if="item.subCategory">{{ item.subCategory.name }}</el-tag>
+              <el-tag size="small" type="success" v-if="item.subCategory">{{
+                item.subCategory.name
+              }}</el-tag>
               <div class="author">
                 <el-icon>
                   <User />
@@ -99,16 +130,25 @@
 
             <div class="item-footer">
               <el-button type="primary" size="small" @click="viewDetail(item.id)">查看</el-button>
-              <el-button type="success" size="small" @click="startExam(item.id)">开始做题</el-button>
+              <el-button type="success" size="small" @click="startExam(item.id)"
+                >开始做题</el-button
+              >
             </div>
           </div>
 
           <!-- 分页 -->
           <div class="pagination-wrapper" v-if="questionList.length > 0">
-            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
-              :page-sizes="[10, 20, 30, 50]" layout="total, sizes, prev, pager, next, jumper" prev-text="上一页"
-              next-text="下一页" :total="totalItems" @size-change="handleSizeChange"
-              @current-change="handleCurrentChange" />
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 30, 50]"
+              layout="total, sizes, prev, pager, next, jumper"
+              prev-text="上一页"
+              next-text="下一页"
+              :total="totalItems"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+            />
           </div>
         </template>
       </div>
@@ -144,11 +184,13 @@ const searchKeyword = ref('')
 // 一级分类
 const primaryCategories = computed(() => {
   // 返回原始分类数据，不添加"全部分类"选项
-  return categoryData.value.map(category => ({
-    id: category.id,
-    name: category.name,
-    description: category.description || ''
-  })) || []
+  return (
+    categoryData.value.map(category => ({
+      id: category.id,
+      name: category.name,
+      description: category.description || ''
+    })) || []
+  )
 })
 
 // 二级分类（根据选中的一级分类动态变化）
@@ -164,7 +206,12 @@ const secondaryCategories = computed(() => {
   )
 
   // 如果找到对应的一级分类，并且有children属性
-  if (selectedCategory && selectedCategory.children && Array.isArray(selectedCategory.children) && selectedCategory.children.length > 0) {
+  if (
+    selectedCategory &&
+    selectedCategory.children &&
+    Array.isArray(selectedCategory.children) &&
+    selectedCategory.children.length > 0
+  ) {
     // 添加"全部"选项
     return [{ id: 0, name: '全部', description: '所有子分类' }].concat(
       selectedCategory.children.map(child => ({
@@ -277,7 +324,7 @@ const fetchQuestionList = async () => {
 }
 
 // 日期格式化函数
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return ''
 
   try {

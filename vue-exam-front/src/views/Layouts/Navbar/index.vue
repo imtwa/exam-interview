@@ -25,20 +25,49 @@
             >
               题库
             </router-link>
-            <router-link
-              to="/recruitment"
-              class="navbar__link"
-              :class="{ 'navbar__link--active': route.path === '/recruitment' }"
-            >
-              招聘
-            </router-link>
-            <router-link
-              to="/online-exam"
-              class="navbar__link"
-              :class="{ 'navbar__link--active': route.path === '/online-exam' }"
-            >
-              在线考试
-            </router-link>
+
+            <!-- 求职者导航链接 -->
+            <template v-if="isJobSeeker">
+              <router-link
+                to="/recruitment"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path === '/recruitment' }"
+              >
+                招聘
+              </router-link>
+              <router-link
+                to="/online-exam"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path === '/online-exam' }"
+              >
+                在线考试
+              </router-link>
+            </template>
+
+            <!-- 面试官导航链接 -->
+            <template v-else-if="isInterviewer">
+              <router-link
+                to="/job-management"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path.includes('/job-management') }"
+              >
+                岗位管理
+              </router-link>
+              <router-link
+                to="/candidate-management"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path.includes('/candidate') }"
+              >
+                候选人
+              </router-link>
+              <router-link
+                to="/exam-management"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path.includes('/exam-management') }"
+              >
+                考试管理
+              </router-link>
+            </template>
           </div>
         </div>
 
@@ -69,8 +98,37 @@
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="router.push('/profile')">个人中心</el-dropdown-item>
-                    <el-dropdown-item @click="router.push('/my-exams')">我的考试</el-dropdown-item>
-                    <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
+
+                    <!-- 求职者菜单项 -->
+                    <template v-if="isJobSeeker">
+                      <el-dropdown-item @click="router.push('/my-exams')"
+                        >我的考试</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/favorites')"
+                        >我的收藏</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/resume')">我的简历</el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/applications')"
+                        >应聘进度</el-dropdown-item
+                      >
+                    </template>
+
+                    <!-- 面试官菜单项 -->
+                    <template v-else>
+                      <el-dropdown-item @click="router.push('/job-management')"
+                        >岗位管理</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/candidate-management')"
+                        >候选人管理</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/exam-management')"
+                        >考试管理</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/interview-schedule')"
+                        >面试安排</el-dropdown-item
+                      >
+                    </template>
+
                     <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -110,20 +168,49 @@
         >
           题库
         </router-link>
-        <router-link
-          to="/recruitment"
-          class="navbar__mobile-link"
-          :class="{ 'navbar__mobile-link--active': route.path === '/recruitment' }"
-        >
-          招聘
-        </router-link>
-        <router-link
-          to="/online-exam"
-          class="navbar__mobile-link"
-          :class="{ 'navbar__mobile-link--active': route.path === '/online-exam' }"
-        >
-          在线考试
-        </router-link>
+
+        <!-- 求职者导航链接 -->
+        <template v-if="isJobSeeker">
+          <router-link
+            to="/recruitment"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path === '/recruitment' }"
+          >
+            招聘
+          </router-link>
+          <router-link
+            to="/online-exam"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path === '/online-exam' }"
+          >
+            在线考试
+          </router-link>
+        </template>
+
+        <!-- 面试官导航链接 -->
+        <template v-else-if="isInterviewer">
+          <router-link
+            to="/job-management"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/job-management') }"
+          >
+            岗位管理
+          </router-link>
+          <router-link
+            to="/candidate-management"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/candidate') }"
+          >
+            候选人
+          </router-link>
+          <router-link
+            to="/exam-management"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/exam-management') }"
+          >
+            考试管理
+          </router-link>
+        </template>
 
         <!-- Mobile search -->
         <div class="navbar__mobile-search">
@@ -149,7 +236,6 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Search, Menu } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 
@@ -172,26 +258,24 @@ const navActiveIndex = ref('/')
 // 导航菜单项
 const navItems = computed(() => {
   // 基本菜单项
-  const baseItems = [
-    { index: '/', name: '首页' },
-  ]
-  
+  const baseItems = [{ index: '/', name: '首页' }]
+
   // 根据用户登录状态添加不同菜单
   if (isLoggedIn.value) {
-    // 所有用户都可以看到试卷列表和试卷管理
-    baseItems.push(
-      { index: '/exams', name: '试卷列表' },
-      { index: '/question-bank', name: '题库管理' }
-    )
-    
+    // 所有用户都可以看到题库
+    baseItems.push({ index: '/question-bank', name: '题库' })
+
     // 添加特定用户菜单
     if (isJobSeeker.value) {
       baseItems.push(
-        { index: '/my-exams', name: '我的考试' }
+        { index: '/my-exams', name: '我的考试' },
+        { index: '/recruitment', name: '招聘岗位' }
       )
     } else if (isInterviewer.value) {
       baseItems.push(
-        { index: '/exam-management', name: '面试管理' }
+        { index: '/job-management', name: '岗位管理' },
+        { index: '/candidate-management', name: '候选人管理' },
+        { index: '/exam-management', name: '考试管理' }
       )
     }
   }
@@ -200,7 +284,7 @@ const navItems = computed(() => {
 })
 
 // 处理菜单点击
-const handleSelect = (key) => {
+const handleSelect = key => {
   navActiveIndex.value = key
   router.push(key)
 }
@@ -212,6 +296,9 @@ const checkLoginStatus = async () => {
       await userStore.getInfo()
     } catch (error) {
       console.error('获取用户信息失败:', error)
+      // 如果获取用户信息失败，清除token避免反复请求
+      userStore.clearToken()
+      userStore.clearUserInfo()
     }
   }
 }
@@ -547,14 +634,14 @@ onUnmounted(() => {
   font-size: 12px;
   padding: 2px 6px;
   border-radius: 4px;
-  margin-left: 8px;
-  
+  margin-left: 6px;
+
   &.seeker {
     background-color: #e6f7ff;
     color: #1890ff;
     border: 1px solid #91d5ff;
   }
-  
+
   &.interviewer {
     background-color: #f6ffed;
     color: #52c41a;

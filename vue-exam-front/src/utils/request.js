@@ -17,7 +17,7 @@ request.interceptors.request.use(
     // 从 Pinia store 获取 token
     const userStore = useUserStore()
     const { token } = storeToRefs(userStore)
-    
+
     if (token.value) {
       config.headers['Authorization'] = `Bearer ${token.value}` // 添加JWT令牌
     }
@@ -35,11 +35,11 @@ request.interceptors.response.use(
   response => {
     // 如果响应是下载文件类型，直接返回
     if (response.config.responseType === 'blob') {
-      return response;
+      return response
     }
-    
+
     const res = response.data
-    
+
     // 检查是否是双层嵌套的响应格式
     if (res.code === 200 && res.data && typeof res.data === 'object' && 'code' in res.data) {
       // 双层嵌套的格式，直接提取内层data
@@ -51,7 +51,7 @@ request.interceptors.response.use(
         return Promise.reject(new Error(res.data.message || '请求失败'))
       }
     }
-    
+
     // 单层格式
     if (res.code === 0 || res.code === 200) {
       return res.data
@@ -63,14 +63,14 @@ request.interceptors.response.use(
       const userStore = useUserStore()
       userStore.clearToken()
       userStore.clearUserInfo()
-      
+
       ElMessage.error('登录已过期，请重新登录')
       setTimeout(() => {
         window.location.href = '/login'
       }, 1500)
       return Promise.reject(new Error(res.message || '未授权'))
     }
-    
+
     // 其他错误显示错误消息
     // ElMessage.error(res.message || '请求失败')
     return Promise.reject(new Error(res.message || '请求失败'))
@@ -79,7 +79,7 @@ request.interceptors.response.use(
     // 处理HTTP错误
     // console.error('Response error:', error)
     const { response } = error
-    
+
     if (response) {
       // 根据HTTP状态码处理错误
       switch (response.status) {
@@ -109,9 +109,9 @@ request.interceptors.response.use(
       // 网络错误或请求被取消
       ElMessage.error('网络异常，请检查您的网络连接')
     }
-    
+
     return Promise.reject(error)
   }
 )
 
-export default request 
+export default request

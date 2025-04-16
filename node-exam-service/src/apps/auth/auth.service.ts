@@ -261,17 +261,64 @@ export class AuthService {
 
   // 根据用户ID获取用户信息
   async getUserById(userId: number) {
-    this.logger.log(`获取用户信息: ID ${userId}`);
-    
     const user = await this.prisma.frontUser.findUnique({
       where: { id: userId },
     });
     
     if (!user) {
-      this.logger.warn(`获取用户信息失败，用户不存在: ID ${userId}`);
+      this.logger.warn(`获取用户信息失败，用户不存在: ${userId}`);
       throw new BadRequestException('用户不存在');
     }
     
+    this.logger.log(`获取用户信息: ${userId}, 角色: ${user.role}`);
     return user;
+  }
+
+  /**
+   * 检查用户个人信息完善状态
+   */
+  async checkProfileStatus(userId: number) {
+    // 获取用户基本信息
+    const user = await this.prisma.frontUser.findUnique({
+      where: { id: userId },
+      include: {
+        interviewer: true,
+        jobSeeker: true
+      }
+    });
+    
+    if (!user) {
+      this.logger.warn(`检查个人信息状态失败，用户不存在: ${userId}`);
+      throw new BadRequestException('用户不存在');
+    }
+    
+    // 根据用户角色检查不同的个人信息完善状态
+    let profileStatus = {
+      role: user.role,
+      profileCompleted: false,
+      profileData: null,
+      redirectPath: ''
+    };
+    
+    // 检查HR角色
+    if (user.role === 'INTERVIEWER') {
+      const isComplete = !!user.interviewer;
+      profileStatus.profileCompleted = isComplete;
+      profileStatus.profileData = user.interviewer;
+    } 
+    // 检查求职者角色
+    else if (user.role === 'JOB_SEEKER') {
+      const isComplete = !!user.jobSeeker;
+      profileStatus.profileCompleted = isComplete;
+      profileStatus.profileData = user.jobSeeker;
+    }
+    
+    this.logger.log(`检查用户个人信息完善状态: ${userId}, 角色: ${user.role}, 是否完善: ${profileStatus.profileCompleted}`);
+    
+    return {
+      code: 200,
+      message: '获取个人信息状态成功',
+      data: profileStatus
+    };
   }
 } 

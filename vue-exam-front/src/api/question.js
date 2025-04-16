@@ -1,4 +1,4 @@
-import request from './request'
+import request from '@/utils/request'
 
 /**
  * Get list of questions
@@ -140,4 +140,4 @@ export function getExamResult(examId) {
     url: `/exam/result/${examId}`,
     method: 'get'
   })
-} 
+}

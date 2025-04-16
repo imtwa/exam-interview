@@ -1,8 +1,8 @@
-import request from './request'
+import request from '@/utils/request'
 
 /**
  * 获取试卷列表
- * @param {Object} params 查询参数 
+ * @param {Object} params 查询参数
  * @returns {Promise}
  */
 export function getExamList(params) {
@@ -101,4 +101,4 @@ export function getFavorites(params) {
     method: 'get',
     params
   })
-} 
+}

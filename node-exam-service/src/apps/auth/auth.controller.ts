@@ -50,4 +50,11 @@ export class AuthController {
       password: undefined // 不返回密码
     };
   }
+  
+  @UseGuards(JwtAuthGuard)
+  @Get('check-profile-status')
+  async checkProfileStatus(@Request() req) {
+    const userId = req.user.userId;
+    return this.authService.checkProfileStatus(userId);
+  }
 } 

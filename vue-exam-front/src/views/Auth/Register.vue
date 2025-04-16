@@ -7,27 +7,49 @@
       </div>
 
       <div class="auth-form">
-        <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" label-position="top">
+        <el-form
+          ref="registerFormRef"
+          :model="registerForm"
+          :rules="registerRules"
+          label-position="top"
+        >
           <!-- 用户名 -->
           <el-form-item label="用户名" prop="username">
-            <el-input v-model="registerForm.username" placeholder="请输入用户名" :prefix-icon="User" />
+            <el-input
+              v-model="registerForm.username"
+              placeholder="请输入用户名"
+              :prefix-icon="User"
+            />
           </el-form-item>
 
           <!-- 邮箱 -->
           <el-form-item label="邮箱" prop="email">
-            <el-input v-model="registerForm.email" placeholder="请输入邮箱" :prefix-icon="Message" />
+            <el-input
+              v-model="registerForm.email"
+              placeholder="请输入邮箱"
+              :prefix-icon="Message"
+            />
           </el-form-item>
 
           <!-- 密码 -->
           <el-form-item label="密码" prop="password">
-            <el-input v-model="registerForm.password" type="password" placeholder="请输入密码" :prefix-icon="Lock"
-              show-password @input="checkPasswordStrength" />
+            <el-input
+              v-model="registerForm.password"
+              type="password"
+              placeholder="请输入密码"
+              :prefix-icon="Lock"
+              show-password
+              @input="checkPasswordStrength"
+            />
             <!-- 密码强度指示器 -->
             <div class="password-strength" v-if="registerForm.password">
               <div class="strength-label">密码强度：{{ passwordStrengthText }}</div>
               <div class="strength-meter">
-                <div class="strength-indicator" :style="{ width: `${passwordStrength * 25}%` }" :class="strengthClass">
-                </div>
+                <div
+                  class="strength-indicator"
+                  :style="{ width: `${passwordStrength * 25}%` }"
+                  :class="strengthClass"
+                ></div>
               </div>
               <div class="strength-tips">密码必须包含字母、数字，长度至少8位</div>
             </div>
@@ -35,16 +57,29 @@
 
           <!-- 确认密码 -->
           <el-form-item label="确认密码" prop="confirmPassword">
-            <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" :prefix-icon="Lock"
-              show-password />
+            <el-input
+              v-model="registerForm.confirmPassword"
+              type="password"
+              placeholder="请再次输入密码"
+              :prefix-icon="Lock"
+              show-password
+            />
           </el-form-item>
 
           <!-- 验证码 -->
           <el-form-item label="邮箱验证码" prop="code">
             <div class="captcha-container">
-              <el-input v-model="registerForm.code" placeholder="请输入邮箱验证码" :prefix-icon="Key" />
-              <el-button type="primary" class="captcha-btn" :disabled="captchaTimer > 0 || !isEmailValid"
-                @click="sendCaptcha">
+              <el-input
+                v-model="registerForm.code"
+                placeholder="请输入邮箱验证码"
+                :prefix-icon="Key"
+              />
+              <el-button
+                type="primary"
+                class="captcha-btn"
+                :disabled="captchaTimer > 0 || !isEmailValid"
+                @click="sendCaptcha"
+              >
                 {{ captchaTimer > 0 ? `${captchaTimer}秒后重试` : '获取验证码' }}
               </el-button>
             </div>
@@ -53,8 +88,8 @@
           <!-- 用户角色 -->
           <el-form-item label="您的身份" prop="role">
             <div class="role-selection">
-              <div 
-                class="role-card" 
+              <div
+                class="role-card"
                 :class="{ active: registerForm.role === 'JOB_SEEKER' }"
                 @click="registerForm.role = 'JOB_SEEKER'"
               >
@@ -66,9 +101,9 @@
                   <div class="role-desc">使用题库练习，提升求职能力，直通在线面试</div>
                 </div>
               </div>
-              
-              <div 
-                class="role-card" 
+
+              <div
+                class="role-card"
                 :class="{ active: registerForm.role === 'INTERVIEWER' }"
                 @click="registerForm.role = 'INTERVIEWER'"
               >
@@ -95,7 +130,12 @@
 
           <!-- 注册按钮 -->
           <el-form-item>
-            <el-button type="primary" class="submit-btn" :loading="isLoading" @click="handleRegister">
+            <el-button
+              type="primary"
+              class="submit-btn"
+              :loading="isLoading"
+              @click="handleRegister"
+            >
               注册
             </el-button>
           </el-form-item>
@@ -251,9 +291,7 @@ const registerRules = reactive({
     { required: true, message: '请输入验证码', trigger: 'blur' },
     { min: 4, max: 6, message: '验证码长度在4-6个字符之间', trigger: 'blur' }
   ],
-  role: [
-    { required: true, message: '请选择身份类型', trigger: 'change' }
-  ],
+  role: [{ required: true, message: '请选择身份类型', trigger: 'change' }],
   agreement: [
     {
       type: 'boolean',
@@ -288,7 +326,7 @@ const sendCaptcha = async () => {
 const handleRegister = () => {
   if (!registerFormRef.value) return
 
-  registerFormRef.value.validate(async (valid) => {
+  registerFormRef.value.validate(async valid => {
     if (valid) {
       isLoading.value = true
 
@@ -536,7 +574,7 @@ onMounted(() => {
   display: flex;
   gap: 15px;
   width: 100%;
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
   }
@@ -551,12 +589,12 @@ onMounted(() => {
   border: 1px solid #e0e0e0;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     border-color: #a3d0ff;
     background-color: #f6faff;
   }
-  
+
   &.active {
     border-color: #0352c9;
     background-color: #f0f7ff;
@@ -575,7 +613,7 @@ onMounted(() => {
   margin-right: 15px;
   color: #0352c9;
   font-size: 20px;
-  
+
   .active & {
     background-color: #0352c9;
     color: white;
@@ -591,7 +629,7 @@ onMounted(() => {
   font-size: 16px;
   color: #333;
   margin-bottom: 5px;
-  
+
   .active & {
     color: #0352c9;
   }
