@@ -118,3 +118,16 @@ export function searchCompanies(params) {
     params
   })
 }
+
+/**
+ * 创建求职者详情资料
+ * @param {Object} data 求职者详情资料数据
+ * @returns {Promise} 返回创建结果
+ * */
+export function createJobseekerProfile(data) {
+  return request({
+    url: '/jobseeker/profile',
+    method: 'post',
+    data
+  })
+}

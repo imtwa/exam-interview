@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsString, IsOptional, IsEnum, IsInt, Min, Max } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { FundingStage } from '../../../common/enums/funding-stage.enum';
 import { CompanySize } from '../../../common/enums/company-size.enum';
 
@@ -32,4 +40,4 @@ export class CreateCompanyDto {
   @Min(1900, { message: '成立年份不能早于1900年' })
   @Max(new Date().getFullYear(), { message: '成立年份不能晚于当前年份' })
   foundedYear?: number;
-} 
+}

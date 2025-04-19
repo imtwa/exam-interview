@@ -23,4 +23,4 @@ export class LoggerModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes('*');
   }
-} 
+}

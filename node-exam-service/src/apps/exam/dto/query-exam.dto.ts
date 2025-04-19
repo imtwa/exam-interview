@@ -1,5 +1,6 @@
 import { IsOptional, IsInt, Min, IsString, IsEnum } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 export enum ExamSortField {
   CREATED_AT = 'createdAt',
@@ -8,6 +9,13 @@ export enum ExamSortField {
 }
 
 export class QueryExamDto {
+  @ApiProperty({
+    description: '页码',
+    example: 1,
+    required: false,
+    default: 1,
+    minimum: 1,
+  })
   @IsOptional()
   @IsInt({ message: '页码必须是整数' })
   @Min(1, { message: '页码必须大于0' })
@@ -18,6 +26,13 @@ export class QueryExamDto {
   })
   page?: number = 1;
 
+  @ApiProperty({
+    description: '每页数量',
+    example: 10,
+    required: false,
+    default: 10,
+    minimum: 1,
+  })
   @IsOptional()
   @IsInt({ message: '每页数量必须是整数' })
   @Min(1, { message: '每页数量必须大于0' })
@@ -28,6 +43,12 @@ export class QueryExamDto {
   })
   pageSize?: number = 10;
 
+  @ApiProperty({
+    description: '分类ID',
+    example: 1,
+    required: false,
+    minimum: 1,
+  })
   @IsOptional()
   @IsInt({ message: '分类ID必须是整数' })
   @Min(1, { message: '分类ID必须大于0' })
@@ -38,6 +59,12 @@ export class QueryExamDto {
   })
   categoryId?: number;
 
+  @ApiProperty({
+    description: '二级分类ID',
+    example: 5,
+    required: false,
+    minimum: 1,
+  })
   @IsOptional()
   @IsInt({ message: '二级分类ID必须是整数' })
   @Min(1, { message: '二级分类ID必须大于0' })
@@ -48,15 +75,34 @@ export class QueryExamDto {
   })
   subCategoryId?: number;
 
+  @ApiProperty({
+    description: '搜索关键词',
+    example: 'Java',
+    required: false,
+  })
   @IsOptional()
   @IsString({ message: '关键词必须是字符串' })
   keyword?: string;
 
+  @ApiProperty({
+    description: '排序字段',
+    example: ExamSortField.CREATED_AT,
+    required: false,
+    default: ExamSortField.CREATED_AT,
+    enum: ExamSortField,
+  })
   @IsOptional()
   @IsEnum(ExamSortField, { message: '排序字段无效' })
   sortField?: ExamSortField = ExamSortField.CREATED_AT;
 
+  @ApiProperty({
+    description: '排序方式',
+    example: 'desc',
+    required: false,
+    default: 'desc',
+    enum: ['asc', 'desc'],
+  })
   @IsOptional()
   @IsEnum(['asc', 'desc'], { message: '排序方式必须是asc或desc' })
   sortOrder?: 'asc' | 'desc' = 'desc';
-} 
+}

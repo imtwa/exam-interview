@@ -102,3 +102,29 @@ export function getFavorites(params) {
     params
   })
 }
+
+/**
+ * 创建HR专属试卷（从收藏试卷中抽题）
+ * @param {Object} data 专属试卷数据
+ * @returns {Promise}
+ */
+export function createPrivateExam(data) {
+  return request({
+    url: '/exam/private',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取HR的专属试卷列表
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getPrivateExams(params) {
+  return request({
+    url: '/exam/private',
+    method: 'get',
+    params
+  })
+}

@@ -21,10 +21,11 @@ import * as path from 'path';
           cb(null, './uploads/exams');
         },
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = path.extname(file.originalname) || '.xlsx';
           cb(null, `temp-${uniqueSuffix}${ext}`);
-        }
+        },
       }),
       limits: {
         fileSize: 10 * 1024 * 1024,
@@ -33,28 +34,30 @@ import * as path from 'path';
         const acceptedTypes = [
           'application/vnd.ms-excel',
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'application/octet-stream'
+          'application/octet-stream',
         ];
-        
-        if (acceptedTypes.includes(file.mimetype) || 
-            file.originalname.endsWith('.xlsx') || 
-            file.originalname.endsWith('.xls')) {
+
+        if (
+          acceptedTypes.includes(file.mimetype) ||
+          file.originalname.endsWith('.xlsx') ||
+          file.originalname.endsWith('.xls')
+        ) {
           cb(null, true);
         } else {
           cb(new Error('只接受Excel文件(.xlsx, .xls)'), false);
         }
-      }
+      },
     }),
   ],
   controllers: [ExamController],
   providers: [
-    ExamService, 
+    ExamService,
     LoggerService,
     {
       provide: 'PRISMA_CLIENT',
       useValue: new PrismaClient(),
-    }
+    },
   ],
   exports: [ExamService],
 })
-export class ExamModule {} 
+export class ExamModule {}

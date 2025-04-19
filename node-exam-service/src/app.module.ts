@@ -14,8 +14,8 @@ import { JobModule } from './apps/job/job.module';
   imports: [
     UserModule,
     ConfigModule.forRoot({
-        isGlobal: true,
-        envFilePath: '.env'
+      isGlobal: true,
+      envFilePath: '.env',
     }),
     EmailModule,
     RedisModule,

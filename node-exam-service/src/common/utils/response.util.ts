@@ -20,7 +20,10 @@ export function success<T>(data: T, message = 'Success'): ResponseData<T> {
  * @param message 错误消息
  * @returns 格式化的错误响应
  */
-export function error(code = ResponseCode.INTERNAL_ERROR, message = 'Error'): ResponseData<null> {
+export function error(
+  code = ResponseCode.INTERNAL_ERROR,
+  message = 'Error',
+): ResponseData<null> {
   return {
     code,
     data: null,
@@ -55,4 +58,4 @@ export function pagination<T>(
     pageSize,
     totalPages: Math.ceil(total / pageSize),
   });
-} 
+}

@@ -22,7 +22,9 @@ import { EmailModule } from '../email/email.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET') || 'exam-interview-secure-jwt-secret-key',
+        secret:
+          configService.get('JWT_SECRET') ||
+          'exam-interview-secure-jwt-secret-key',
         signOptions: { expiresIn: '1d' },
       }),
     }),
@@ -38,4 +40,4 @@ import { EmailModule } from '../email/email.module';
   exports: [AuthService],
   controllers: [AuthController],
 })
-export class AuthModule {} 
+export class AuthModule {}

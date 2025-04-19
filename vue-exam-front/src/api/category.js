@@ -34,3 +34,14 @@ export function getSubCategoryById(id) {
     method: 'get'
   })
 }
+
+/**
+ * 获取所有分类（包含子分类）
+ * @returns {Promise}
+ */
+export function getAllCategories() {
+  return request({
+    url: '/category/list',
+    method: 'get'
+  })
+}

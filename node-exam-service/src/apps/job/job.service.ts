@@ -1,4 +1,10 @@
-import { Injectable, Inject, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaClient } from '../../../prisma/generated/client';
 import { LoggerService } from '../../common/logger/logger.service';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -9,7 +15,13 @@ import { CreateInterviewerDto } from './dto/create-interviewer.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { ProfileSetupDto } from './dto/profile-setup.dto';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { QueryJobApplicationDto } from './dto/query-job-application.dto';
 
+/**
+ * 职位服务 - 处理职位管理相关的业务逻辑
+ *
+ * 使用Prisma进行数据库操作
+ */
 @Injectable()
 export class JobService {
   private readonly logger: LoggerService;
@@ -25,11 +37,33 @@ export class JobService {
 
   /**
    * 获取职位列表
+   *
+   * @param queryJobDto 查询参数
+   * 示例:
+   * {
+   *   "page": 1,
+   *   "pageSize": 10,
+   *   "keyword": "前端开发",
+   *   "city": "北京",
+   *   "companyId": 1,
+   *   "subCategoryId": 2
+   * }
+   *
+   * @returns 职位列表和分页信息
    */
   async getJobList(queryJobDto: QueryJobDto) {
-    const { page = 1, pageSize = 10, keyword, companyId, subCategoryId, city, salaryMin, salaryMax } = queryJobDto;
+    const {
+      page = 1,
+      pageSize = 10,
+      keyword,
+      companyId,
+      subCategoryId,
+      city,
+      salaryMin,
+      salaryMax,
+    } = queryJobDto;
     const skip = (page - 1) * pageSize;
-    
+
     // 构建查询条件
     const where = {
       deletedAt: null, // 只查询未删除的记录
@@ -50,7 +84,7 @@ export class JobService {
 
     // 查询总数
     const total = await this.prisma.jobPosting.count({ where });
-    
+
     // 查询数据
     const list = await this.prisma.jobPosting.findMany({
       where,
@@ -82,8 +116,10 @@ export class JobService {
       },
     });
 
-    this.logger.log(`获取职位列表：page=${page}, pageSize=${pageSize}, total=${total}`);
-    
+    this.logger.log(
+      `获取职位列表：page=${page}, pageSize=${pageSize}, total=${total}`,
+    );
+
     return {
       list,
       pagination: {
@@ -97,6 +133,11 @@ export class JobService {
 
   /**
    * 获取职位详情
+   *
+   * @param id 职位ID
+   * 示例: 1
+   *
+   * @returns 职位详情，包含公司和面试官信息
    */
   async getJobDetail(id: number) {
     const job = await this.prisma.jobPosting.findFirst({
@@ -148,6 +189,22 @@ export class JobService {
 
   /**
    * 创建职位
+   *
+   * @param createJobDto 创建职位参数
+   * 示例:
+   * {
+   *   "title": "前端开发工程师",
+   *   "description": "负责公司前端开发",
+   *   "requirements": "熟悉React、Vue等框架",
+   *   "city": "北京",
+   *   "salaryMin": 15000,
+   *   "salaryMax": 25000,
+   *   "companyId": 1,
+   *   "interviewerId": 1,
+   *   "subCategoryId": 2
+   * }
+   *
+   * @returns 创建的职位信息
    */
   async createJob(createJobDto: CreateJobDto) {
     // 检查面试官
@@ -156,7 +213,9 @@ export class JobService {
     });
 
     if (!interviewer) {
-      this.logger.warn(`创建职位失败: 面试官不存在 ${createJobDto.interviewerId}`);
+      this.logger.warn(
+        `创建职位失败: 面试官不存在 ${createJobDto.interviewerId}`,
+      );
       throw new BadRequestException('面试官不存在');
     }
 
@@ -172,7 +231,9 @@ export class JobService {
 
     // 检查面试官是否属于该公司
     if (interviewer.companyId !== createJobDto.companyId) {
-      this.logger.warn(`创建职位失败: 面试官不属于该公司 ${createJobDto.interviewerId}/${createJobDto.companyId}`);
+      this.logger.warn(
+        `创建职位失败: 面试官不属于该公司 ${createJobDto.interviewerId}/${createJobDto.companyId}`,
+      );
       throw new BadRequestException('面试官不属于该公司');
     }
 
@@ -182,7 +243,9 @@ export class JobService {
     });
 
     if (!subCategory) {
-      this.logger.warn(`创建职位失败: 行业分类不存在 ${createJobDto.subCategoryId}`);
+      this.logger.warn(
+        `创建职位失败: 行业分类不存在 ${createJobDto.subCategoryId}`,
+      );
       throw new BadRequestException('行业分类不存在');
     }
 
@@ -200,6 +263,17 @@ export class JobService {
 
   /**
    * 更新职位
+   *
+   * @param id 职位ID
+   * @param updateJobDto 更新职位参数
+   * 示例:
+   * {
+   *   "title": "资深前端开发工程师",
+   *   "salaryMin": 20000,
+   *   "salaryMax": 30000
+   * }
+   *
+   * @returns 更新后的职位信息
    */
   async updateJob(id: number, updateJobDto: UpdateJobDto) {
     // 检查职位是否存在
@@ -222,13 +296,17 @@ export class JobService {
       });
 
       if (!interviewer) {
-        this.logger.warn(`更新职位失败: 面试官不存在 ${updateJobDto.interviewerId}`);
+        this.logger.warn(
+          `更新职位失败: 面试官不存在 ${updateJobDto.interviewerId}`,
+        );
         throw new BadRequestException('面试官不存在');
       }
 
       const companyId = updateJobDto.companyId || job.companyId;
       if (interviewer.companyId !== companyId) {
-        this.logger.warn(`更新职位失败: 面试官不属于该公司 ${updateJobDto.interviewerId}/${companyId}`);
+        this.logger.warn(
+          `更新职位失败: 面试官不属于该公司 ${updateJobDto.interviewerId}/${companyId}`,
+        );
         throw new BadRequestException('面试官不属于该公司');
       }
     }
@@ -252,7 +330,9 @@ export class JobService {
       });
 
       if (!subCategory) {
-        this.logger.warn(`更新职位失败: 行业分类不存在 ${updateJobDto.subCategoryId}`);
+        this.logger.warn(
+          `更新职位失败: 行业分类不存在 ${updateJobDto.subCategoryId}`,
+        );
         throw new BadRequestException('行业分类不存在');
       }
     }
@@ -263,12 +343,15 @@ export class JobService {
       data: updateJobDto,
     });
 
-    this.logger.log(`更新职位成功: ${id}, 标题: ${updatedJob.title}`);
+    this.logger.log(`更新职位成功: ${id}`);
     return updatedJob;
   }
 
   /**
    * 删除职位（软删除）
+   *
+   * @param id 职位ID
+   * 示例: 1
    */
   async deleteJob(id: number) {
     // 检查职位是否存在
@@ -284,8 +367,8 @@ export class JobService {
       throw new NotFoundException('职位不存在');
     }
 
-    // 软删除
-    const deletedJob = await this.prisma.jobPosting.update({
+    // 软删除职位
+    await this.prisma.jobPosting.update({
       where: { id },
       data: {
         deletedAt: new Date(),
@@ -293,20 +376,23 @@ export class JobService {
       },
     });
 
-    this.logger.log(`删除职位成功: ${id}, 标题: ${deletedJob.title}`);
-    return { success: true, message: '职位已删除' };
+    this.logger.log(`删除职位成功: ${id}`);
   }
 
   /**
-   * 检查用户是否为HR且是否需要完善信息
+   * 检查用户是否已设置用户资料
+   *
+   * @param userId 用户ID
+   * 示例: 1
+   *
+   * @returns 用户资料信息，包括角色和面试官信息
    */
   async checkUserProfile(userId: number) {
-    // 获取用户信息
+    this.logger.log(`检查用户是否已设置用户资料: ${userId}`);
+
+    // 获取用户
     const user = await this.prisma.frontUser.findUnique({
       where: { id: userId },
-      include: {
-        interviewer: true,
-      },
     });
 
     if (!user) {
@@ -314,425 +400,30 @@ export class JobService {
       throw new NotFoundException('用户不存在');
     }
 
-    // 检查用户角色
-    if (user.role !== UserRole.INTERVIEWER) {
-      this.logger.warn(`用户不是HR: ${userId}, 角色: ${user.role}`);
-      throw new ForbiddenException('只有HR角色可以访问此功能');
-    }
-
-    // 检查是否需要完善信息
-    const needsProfileSetup = !user.interviewer;
-
-    // 返回结果，移除了公司列表
-    return {
-      needsProfileSetup,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-      interviewer: user.interviewer
+    const result = {
+      isProfileCompleted: false,
+      role: user.role,
+      isInterviewer: user.role === UserRole.INTERVIEWER,
+      interviewer: null,
+      company: null,
     };
-  }
 
-  /**
-   * 创建公司
-   */
-  async createCompany(createCompanyDto: CreateCompanyDto, userId: number) {
-    const { name } = createCompanyDto;
-
-    // 检查公司名称是否已存在
-    const existingCompany = await this.prisma.company.findFirst({
-      where: {
-        name,
-        deletedAt: null,
-      },
-    });
-
-    if (existingCompany) {
-      this.logger.warn(`公司名称已存在: ${name}`);
-      throw new BadRequestException('公司名称已存在');
-    }
-
-    // 检查用户是否存在
-    const user = await this.prisma.frontUser.findUnique({
-      where: { id: userId },
-      include: {
-        interviewer: true,
-      },
-    });
-
-    if (!user) {
-      this.logger.warn(`用户不存在: ${userId}`);
-      throw new NotFoundException('用户不存在');
-    }
-
-    if (user.role !== UserRole.INTERVIEWER) {
-      this.logger.warn(`用户不是HR: ${userId}, 角色: ${user.role}`);
-      throw new ForbiddenException('只有HR角色可以创建公司');
-    }
-
-    // 创建公司
-    const company = await this.prisma.company.create({
-      data: createCompanyDto,
-    });
-
-    // 如果用户已有面试官信息，则更新关联的公司ID
-    if (user.interviewer) {
-      await this.prisma.interviewer.update({
-        where: { id: user.interviewer.id },
-        data: {
-          companyId: company.id,
-        },
-      });
-      this.logger.log(`已将面试官(${user.interviewer.id})关联到新创建的公司(${company.id})`);
-    } else {
-      // 如果用户还没有面试官信息，则创建一个基本的面试官信息
-      await this.prisma.interviewer.create({
-        data: {
-          userId: user.id,
-          companyId: company.id,
-          position: 'HR', // 默认职位
-        },
-      });
-      this.logger.log(`为用户(${userId})创建了基本的面试官信息并关联到新公司(${company.id})`);
-    }
-
-    this.logger.log(`创建公司成功: ${company.id}, 名称: ${company.name}`);
-    return company;
-  }
-
-  /**
-   * 根据用户ID获取公司信息
-   */
-  async getCompanyByUserId(userId: number) {
-    // 检查用户是否存在
-    const user = await this.prisma.frontUser.findUnique({
-      where: { id: userId },
-      include: {
-        interviewer: true,
-      },
-    });
-
-    if (!user) {
-      this.logger.warn(`用户不存在: ${userId}`);
-      throw new NotFoundException('用户不存在');
-    }
-
-    if (user.role !== UserRole.INTERVIEWER) {
-      this.logger.warn(`用户不是HR: ${userId}, 角色: ${user.role}`);
-      throw new ForbiddenException('只有HR角色可以查看公司信息');
-    }
-
-    // 检查用户是否已有关联的面试官信息
-    if (!user.interviewer) {
-      this.logger.warn(`用户未设置面试官信息: ${userId}`);
-      throw new NotFoundException('您尚未完善个人信息');
-    }
-
-    // 获取公司信息
-    const company = await this.prisma.company.findUnique({
-      where: { id: user.interviewer.companyId },
-    });
-
-    if (!company) {
-      this.logger.warn(`公司不存在: ${user.interviewer.companyId}`);
-      throw new NotFoundException('公司不存在');
-    }
-
-    return company;
-  }
-
-  /**
-   * 更新公司信息
-   */
-  async updateCompany(userId: number, updateCompanyDto: CreateCompanyDto) {
-    // 获取用户的公司信息
-    const user = await this.prisma.frontUser.findUnique({
-      where: { id: userId },
-      include: {
-        interviewer: true,
-      },
-    });
-
-    if (!user) {
-      this.logger.warn(`用户不存在: ${userId}`);
-      throw new NotFoundException('用户不存在');
-    }
-
-    if (user.role !== UserRole.INTERVIEWER) {
-      this.logger.warn(`用户不是HR: ${userId}, 角色: ${user.role}`);
-      throw new ForbiddenException('只有HR角色可以更新公司信息');
-    }
-
-    if (!user.interviewer) {
-      this.logger.warn(`用户未设置面试官信息: ${userId}`);
-      throw new NotFoundException('您尚未完善个人信息');
-    }
-
-    const companyId = user.interviewer.companyId;
-
-    // 检查公司是否存在
-    const existingCompany = await this.prisma.company.findUnique({
-      where: { id: companyId },
-    });
-
-    if (!existingCompany) {
-      this.logger.warn(`公司不存在: ${companyId}`);
-      throw new NotFoundException('公司不存在');
-    }
-
-    // 如果修改了公司名称，检查新名称是否已存在
-    if (updateCompanyDto.name && updateCompanyDto.name !== existingCompany.name) {
-      const nameExists = await this.prisma.company.findFirst({
-        where: {
-          name: updateCompanyDto.name,
-          id: { not: companyId },
-          deletedAt: null,
-        },
-      });
-
-      if (nameExists) {
-        this.logger.warn(`公司名称已存在: ${updateCompanyDto.name}`);
-        throw new BadRequestException('公司名称已存在');
-      }
-    }
-
-    // 更新公司信息
-    const updatedCompany = await this.prisma.company.update({
-      where: { id: companyId },
-      data: updateCompanyDto,
-    });
-
-    this.logger.log(`更新公司信息成功: ${updatedCompany.id}, 名称: ${updatedCompany.name}`);
-    return updatedCompany;
-  }
-
-  /**
-   * 创建或更新面试官信息
-   */
-  async createOrUpdateInterviewer(userId: number, createInterviewerDto: CreateInterviewerDto, companyId: number) {
-    // 检查用户
-    const user = await this.prisma.frontUser.findUnique({
-      where: { id: userId },
-      include: {
-        interviewer: true,
-      },
-    });
-
-    if (!user) {
-      this.logger.warn(`用户不存在: ${userId}`);
-      throw new NotFoundException('用户不存在');
-    }
-
-    if (user.role !== UserRole.INTERVIEWER) {
-      this.logger.warn(`用户不是HR: ${userId}, 角色: ${user.role}`);
-      throw new ForbiddenException('只有HR角色可以完善面试官信息');
-    }
-
-    // 检查公司是否存在
-    const company = await this.prisma.company.findUnique({
-      where: { id: companyId },
-    });
-
-    if (!company) {
-      this.logger.warn(`公司不存在: ${companyId}`);
-      throw new NotFoundException('公司不存在');
-    }
-
-    let interviewer;
-    
-    if (user.interviewer) {
-      // 更新现有面试官信息
-      interviewer = await this.prisma.interviewer.update({
-        where: { id: user.interviewer.id },
-        data: {
-          ...createInterviewerDto,
-          companyId,
-        },
-      });
-      this.logger.log(`更新面试官信息成功: ${interviewer.id}, 姓名: ${interviewer.name}`);
-    } else {
-      // 创建新的面试官信息
-      interviewer = await this.prisma.interviewer.create({
-        data: {
-          ...createInterviewerDto,
-          userId,
-          companyId,
-        },
-      });
-      this.logger.log(`创建面试官信息成功: ${interviewer.id}, 姓名: ${interviewer.name}`);
-    }
-
-    return interviewer;
-  }
-
-  /**
-   * 设置HR个人资料和公司信息
-   */
-  async setupProfile(userId: number, profileSetupDto: ProfileSetupDto) {
-    const { interviewer: interviewerDto, company: companyDto, useExistingCompany, existingCompanyId } = profileSetupDto;
-    
-    // 开始事务
-    return this.prisma.$transaction(async (prisma) => {
-      let companyId: number;
-      
-      if (useExistingCompany && existingCompanyId) {
-        // 使用现有公司
-        const existingCompany = await prisma.company.findUnique({
-          where: { id: existingCompanyId },
-        });
-        
-        if (!existingCompany) {
-          throw new NotFoundException('选择的公司不存在');
-        }
-        
-        companyId = existingCompanyId;
-        this.logger.log(`使用现有公司: ${companyId}, 名称: ${existingCompany.name}`);
-      } else {
-        // 创建新公司
-        const newCompany = await prisma.company.create({
-          data: companyDto,
-        });
-        
-        companyId = newCompany.id;
-        this.logger.log(`创建新公司: ${companyId}, 名称: ${newCompany.name}`);
-      }
-      
-      // 创建或更新面试官信息
-      const user = await prisma.frontUser.findUnique({
-        where: { id: userId },
+    // 如果是面试官，检查是否已设置面试官信息和公司信息
+    if (user.role === UserRole.INTERVIEWER) {
+      const interviewer = await this.prisma.interviewer.findFirst({
+        where: { userId, deletedAt: null },
         include: {
-          interviewer: true,
+          company: true,
         },
       });
-      
-      if (!user) {
-        throw new NotFoundException('用户不存在');
-      }
-      
-      if (user.role !== UserRole.INTERVIEWER) {
-        throw new ForbiddenException('只有HR角色可以完善个人信息');
-      }
-      
-      let interviewer;
-      
-      if (user.interviewer) {
-        // 更新现有面试官信息
-        interviewer = await prisma.interviewer.update({
-          where: { id: user.interviewer.id },
-          data: {
-            ...interviewerDto,
-            companyId,
-          },
-        });
-      } else {
-        // 创建新的面试官信息
-        interviewer = await prisma.interviewer.create({
-          data: {
-            ...interviewerDto,
-            userId,
-            companyId,
-          },
-        });
-      }
-      
-      this.logger.log(`面试官设置完成: ${interviewer.id}, 姓名: ${interviewer.name}, 公司ID: ${companyId}`);
-      
-      return {
-        success: true,
-        interviewer,
-        company: await prisma.company.findUnique({
-          where: { id: companyId },
-        }),
-      };
-    });
-  }
-  
-  /**
-   * 获取行业分类数据（用于公司选择行业）
-   */
-  async getIndustryCategories() {
-    const categories = await this.prisma.industryCategory.findMany({
-      where: {
-        deletedAt: null,
-      },
-      include: {
-        subCategories: {
-          where: {
-            deletedAt: null,
-          },
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
-    
-    return categories;
-  }
 
-  /**
-   * 获取公司列表（支持搜索）
-   */
-  async getCompanies(params: { 
-    keyword?: string; 
-    page?: number; 
-    pageSize?: number;
-    industry?: string;
-  }) {
-    const { keyword, page = 1, pageSize = 10, industry } = params;
-    const skip = (page - 1) * pageSize;
-    
-    // 构建查询条件
-    const where = {
-      deletedAt: null, // 只查询未删除的记录
-      ...(keyword && {
-        OR: [
-          { name: { contains: keyword } },
-          { description: { contains: keyword } },
-          { address: { contains: keyword } },
-        ],
-      }),
-      ...(industry && { industry: { contains: industry } }),
-    };
+      if (interviewer) {
+        result.interviewer = interviewer;
+        result.company = interviewer.company;
+        result.isProfileCompleted = true;
+      }
+    }
 
-    // 查询总数
-    const total = await this.prisma.company.count({ where });
-    
-    // 查询数据
-    const list = await this.prisma.company.findMany({
-      where,
-      skip,
-      take: pageSize,
-      orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        industry: true,
-        size: true,
-        address: true,
-        description: true,
-        foundedYear: true,
-        fundingStage: true,
-      },
-    });
-
-    this.logger.log(`获取公司列表：page=${page}, pageSize=${pageSize}, total=${total}`);
-    
-    return {
-      list,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.ceil(total / pageSize),
-      },
-    };
+    return result;
   }
-} 
+}

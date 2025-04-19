@@ -1,4 +1,8 @@
-import { Injectable, Scope, LoggerService as NestLoggerService } from '@nestjs/common';
+import {
+  Injectable,
+  Scope,
+  LoggerService as NestLoggerService,
+} from '@nestjs/common';
 import { logger } from './logger.config';
 
 @Injectable({ scope: Scope.TRANSIENT })
@@ -15,38 +19,53 @@ export class LoggerService implements NestLoggerService {
 
   log(message: any, ...optionalParams: any[]) {
     const context = this.getContext(optionalParams);
-    logger.info(message, { context, ...this.parseOptionalParams(optionalParams) });
+    logger.info(message, {
+      context,
+      ...this.parseOptionalParams(optionalParams),
+    });
   }
 
   error(message: any, ...optionalParams: any[]) {
     const context = this.getContext(optionalParams);
     const stack = this.findStack(optionalParams);
-    
-    logger.error(message, { 
-      context, 
+
+    logger.error(message, {
+      context,
       stack,
-      ...this.parseOptionalParams(optionalParams)
+      ...this.parseOptionalParams(optionalParams),
     });
   }
 
   warn(message: any, ...optionalParams: any[]) {
     const context = this.getContext(optionalParams);
-    logger.warn(message, { context, ...this.parseOptionalParams(optionalParams) });
+    logger.warn(message, {
+      context,
+      ...this.parseOptionalParams(optionalParams),
+    });
   }
 
   debug(message: any, ...optionalParams: any[]) {
     const context = this.getContext(optionalParams);
-    logger.debug(message, { context, ...this.parseOptionalParams(optionalParams) });
+    logger.debug(message, {
+      context,
+      ...this.parseOptionalParams(optionalParams),
+    });
   }
 
   verbose(message: any, ...optionalParams: any[]) {
     const context = this.getContext(optionalParams);
-    logger.verbose(message, { context, ...this.parseOptionalParams(optionalParams) });
+    logger.verbose(message, {
+      context,
+      ...this.parseOptionalParams(optionalParams),
+    });
   }
 
   private getContext(optionalParams: any[]): string | undefined {
     // 提取上下文
-    if (optionalParams.length && typeof optionalParams[optionalParams.length - 1] === 'string') {
+    if (
+      optionalParams.length &&
+      typeof optionalParams[optionalParams.length - 1] === 'string'
+    ) {
       return optionalParams.pop();
     }
     return this.context;
@@ -59,7 +78,7 @@ export class LoggerService implements NestLoggerService {
         return param.stack;
       }
     }
-    
+
     // 通过构建新的 Error 获取当前调用栈
     const error = new Error();
     return error.stack;
@@ -67,7 +86,7 @@ export class LoggerService implements NestLoggerService {
 
   private parseOptionalParams(optionalParams: any[]): Record<string, any> {
     const params: Record<string, any> = {};
-    
+
     // 处理可选参数
     optionalParams.forEach((param, index) => {
       if (param !== null && typeof param === 'object') {
@@ -83,7 +102,7 @@ export class LoggerService implements NestLoggerService {
         params[`param${index}`] = param;
       }
     });
-    
+
     return params;
   }
-} 
+}

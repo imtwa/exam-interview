@@ -1,6 +1,7 @@
 import { createWebHashHistory, createRouter } from 'vue-router'
 import Navbar from '../views/Layouts/Navbar/index.vue'
 import Home from '../views/Home/index.vue'
+import PrivateExams from '@/views/Interviewer/PrivateExams.vue'
 
 const routes = [
   {
@@ -95,6 +96,16 @@ const routes = [
         path: 'interviewer/jobs',
         name: 'InterviewerJobs',
         component: () => import('../views/User/Jobs.vue')
+      },
+      {
+        path: '/private-exams',
+        component: PrivateExams,
+        name: 'PrivateExams',
+        meta: {
+          title: '专属试卷管理',
+          requireAuth: true,
+          roles: ['INTERVIEWER'] // 只允许面试官/HR访问
+        }
       }
     ]
   }

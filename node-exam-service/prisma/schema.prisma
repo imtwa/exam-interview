@@ -156,9 +156,6 @@ model JobSeeker {
   id                Int              @id @default(autoincrement()) /// 求职者ID，自增主键
   userId            Int              @unique /// 关联的用户ID，唯一标识
   user              FrontUser        @relation(fields: [userId], references: [id]) /// 关联的用户，一对一关系
-  email             String           @unique /// 邮箱地址，唯一标识
-  name              String /// 姓名
-  telephone         String? /// 电话号码
   address           String? /// 地址
   birthday          DateTime? /// 出生日期
   gender            Gender? /// 性别：男/女/其他

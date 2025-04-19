@@ -124,6 +124,9 @@
                       <el-dropdown-item @click="router.push('/exam-management')"
                         >考试管理</el-dropdown-item
                       >
+                      <el-dropdown-item @click="router.push('/private-exams')"
+                        >专属试卷管理</el-dropdown-item
+                      >
                       <el-dropdown-item @click="router.push('/interview-schedule')"
                         >面试安排</el-dropdown-item
                       >
@@ -210,6 +213,13 @@
           >
             考试管理
           </router-link>
+          <router-link
+            to="/private-exams"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/private-exams') }"
+          >
+            专属试卷
+          </router-link>
         </template>
 
         <!-- Mobile search -->
@@ -275,7 +285,8 @@ const navItems = computed(() => {
       baseItems.push(
         { index: '/job-management', name: '岗位管理' },
         { index: '/candidate-management', name: '候选人管理' },
-        { index: '/exam-management', name: '考试管理' }
+        { index: '/exam-management', name: '考试管理' },
+        { index: '/private-exams', name: '专属试卷管理' }
       )
     }
   }

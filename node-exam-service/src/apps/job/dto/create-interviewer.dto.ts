@@ -9,4 +9,4 @@ export class CreateInterviewerDto {
   @IsNotEmpty({ message: '职位不能为空' })
   @IsString({ message: '职位必须是字符串' })
   position: string;
-} 
+}
