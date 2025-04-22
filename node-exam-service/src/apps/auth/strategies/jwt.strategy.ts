@@ -39,6 +39,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // 返回用户对象（不包含密码）
     const { password, ...result } = user;
+    this.logger.log(`去除密码: ${JSON.stringify(password)}`);
+
     return {
       ...result,
       userId: payload.sub,

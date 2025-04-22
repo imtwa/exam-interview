@@ -8,7 +8,6 @@ import { RedisModule } from './apps/redis/redis.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { AuthModule } from './apps/auth/auth.module';
 import { ExamModule } from './apps/exam/exam.module';
-import { JobModule } from './apps/job/job.module';
 
 @Module({
   imports: [
@@ -22,7 +21,6 @@ import { JobModule } from './apps/job/job.module';
     LoggerModule,
     AuthModule,
     ExamModule,
-    JobModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -25,7 +25,7 @@ export class EmailService {
     });
 
     // 验证SMTP连接配置
-    this.transporter.verify((error, success) => {
+    this.transporter.verify((error) => {
       if (error) {
         this.logger.error(`SMTP连接验证失败: ${error.message}`);
         logger.error('SMTP连接验证失败', { context: 'EmailService', error });

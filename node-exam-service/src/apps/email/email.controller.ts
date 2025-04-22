@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Query } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { RedisService } from 'src/apps/redis/redis.service';
 import { EmailService } from './email.service';
 

@@ -3,25 +3,25 @@ import { LoggerModule } from '../../common/logger/logger.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaClient } from '../../../prisma/generated/client';
 import { LoggerService } from '../../common/logger/logger.service';
-import { InterviewerController } from './interviewer.controller';
-import { InterviewerService } from './interviewer.service';
+import { CompanyController } from './company.controller';
+import { CompanyService } from './company.service';
 
 /**
- * 面试官模块
+ * 公司模块
  *
- * 处理面试官相关的功能，包括面试官资料管理、职位管理等
+ * 处理公司相关的功能，包括公司信息管理、验证等
  */
 @Module({
   imports: [LoggerModule, ConfigModule],
-  controllers: [InterviewerController],
+  controllers: [CompanyController],
   providers: [
-    InterviewerService,
+    CompanyService,
     LoggerService,
     {
       provide: 'PRISMA_CLIENT',
       useValue: new PrismaClient(),
     },
   ],
-  exports: [InterviewerService],
+  exports: [CompanyService],
 })
-export class InterviewerModule {}
+export class CompanyModule {}

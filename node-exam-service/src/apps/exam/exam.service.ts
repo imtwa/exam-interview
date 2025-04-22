@@ -131,7 +131,7 @@ export class ExamService {
         const questionsCount = exam.examQuestions.length;
         // 从examQuestions中移除question详情以减小数据量
         const { examQuestions, ...examData } = exam;
-
+        this.logger.log(`移除question详情: ${examQuestions}`);
         return {
           ...examData,
           questionsCount, // 添加题目总数
@@ -1045,7 +1045,7 @@ export class ExamService {
         const exam = favorite.examPaper;
         const questionsCount = exam.examQuestions.length;
         const { examQuestions, ...examData } = exam;
-
+        this.logger.log(`移除examQuestions:${examQuestions}`);
         return {
           ...examData,
           questionsCount,
@@ -1301,7 +1301,7 @@ export class ExamService {
         const questionsCount = exam._count.examQuestions;
         // 从_count中移除examQuestions详情以减小数据量
         const { _count, ...examData } = exam;
-
+        this.logger.log(_count); // 打印每个exam的信息，用于调试和ap
         return {
           ...examData,
           questionsCount, // 添加题目总数

@@ -11,7 +11,7 @@ import {
   Interviewer,
 } from '../../../prisma/generated/client';
 import { CreateInterviewerDto } from './dto/create-interviewer.dto';
-import { LoggerService } from '../../../common/logger/logger.service';
+import { LoggerService } from '../../common/logger/logger.service';
 
 @Injectable()
 export class InterviewerService {
@@ -271,7 +271,6 @@ export class InterviewerService {
     applicationId: number,
     status: string,
     userId: number,
-    feedback?: string,
   ) {
     // 查找面试官ID以验证权限
     const interviewer = await this.getInterviewerByUserId(userId);
