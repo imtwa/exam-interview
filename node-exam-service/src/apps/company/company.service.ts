@@ -9,7 +9,7 @@ import {
   PrismaClient,
   VerificationStatus,
 } from '../../../prisma/generated/client';
-import { CreateCompanyDto } from '../job/dto/create-company.dto';
+import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { QueryCompanyDto } from './dto/query-company.dto';
 import { LoggerService } from '../../common/logger/logger.service';

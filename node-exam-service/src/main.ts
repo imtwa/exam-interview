@@ -39,7 +39,10 @@ async function bootstrap() {
     .addTag('auth', '认证相关')
     .addTag('user', '用户相关')
     .addTag('exam', '考试相关')
-    .addTag('job', '招聘相关')
+    .addTag('company', '公司相关')
+    .addTag('interview', '面试相关')
+    .addTag('Interviewer', '面试官相关')
+    .addTag('jobseeker', '求职者相关')
     .addBearerAuth(
       {
         type: 'http',

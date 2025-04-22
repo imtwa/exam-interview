@@ -9,9 +9,9 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { InterviewerService } from '../job/services/interviewer.service';
+import { InterviewerService } from './interviewer.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CreateInterviewerDto } from '../job/dto/create-interviewer.dto';
+import { CreateInterviewerDto } from './dto/create-interviewer.dto';
 import { success, pagination } from '../../common/utils/response.util';
 import { LoggerService } from '../../common/logger/logger.service';
 
@@ -159,7 +159,6 @@ export class InterviewerController {
         applicationId,
         status,
         userId,
-        feedback,
       );
       return success(application, '更新申请状态成功');
     } catch (error) {

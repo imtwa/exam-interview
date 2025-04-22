@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
 import { InterviewController } from './interview.controller';
 import { InterviewService } from './interview.service';
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PrismaClient } from '../../../prisma/generated/client';
 import { LoggerModule } from '../../common/logger/logger.module';
 
 @Module({
-  imports: [PrismaModule, LoggerModule],
+  imports: [LoggerModule],
   controllers: [InterviewController],
-  providers: [InterviewService],
+  providers: [
+    InterviewService,
+    {
+      provide: 'PRISMA_CLIENT',
+      useValue: new PrismaClient(),
+    },
+  ],
   exports: [InterviewService],
 })
 export class InterviewModule {}

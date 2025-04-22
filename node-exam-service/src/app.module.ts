@@ -8,6 +8,10 @@ import { RedisModule } from './apps/redis/redis.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { AuthModule } from './apps/auth/auth.module';
 import { ExamModule } from './apps/exam/exam.module';
+import { CompanyModule } from './apps/company/company.module';
+import { InterviewModule } from './apps/interview/interview.module';
+import { InterviewerModule } from './apps/interviewer/interviewer.module';
+import { JobSeekerModule } from './apps/jobseeker/jobseeker.module';
 
 @Module({
   imports: [
@@ -21,6 +25,10 @@ import { ExamModule } from './apps/exam/exam.module';
     LoggerModule,
     AuthModule,
     ExamModule,
+    CompanyModule,
+    InterviewModule,
+    InterviewerModule,
+    JobSeekerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

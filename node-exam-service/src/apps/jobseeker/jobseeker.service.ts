@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaClient, Degree, Gender } from '../../../prisma/generated/client';
-import { JobSeekerProfileDto } from '../job/dto/jobseeker-profile.dto';
+import { JobSeekerProfileDto } from './dto/jobseeker-profile.dto';
 import { CreateEducationDto } from './dto/create-education.dto';
 import { CreateWorkExperienceDto } from './dto/create-work-experience.dto';
 import { UpdateEducationDto } from './dto/update-education.dto';
