@@ -16,6 +16,10 @@
 - 题库分类管理（一级分类、二级分类）
 - 试卷管理（创建、更新、删除、查询）
 - 题目管理（创建、更新、删除、查询）
+- 面试管理（创建、更新、删除、查询）
+- 求职者管理（资料维护、教育经历、工作经验）
+- 公司管理（创建、更新、删除、验证）
+- 面试官管理（资料维护、职位管理、面试安排）
 - 用户收藏功能
 - 用户上传文档处理
 
@@ -48,9 +52,13 @@ node-exam-service/
 │   ├── apps/               # 业务模块
 │   │   ├── auth/           # 认证模块
 │   │   ├── category/       # 分类模块
+│   │   ├── company/        # 公司模块
 │   │   ├── document/       # 文档模块
 │   │   ├── email/          # 邮件模块
 │   │   ├── exam/           # 试卷模块
+│   │   ├── interview/      # 面试模块
+│   │   ├── interviewer/    # 面试官模块
+│   │   ├── jobseeker/      # 求职者模块
 │   │   ├── question/       # 题目模块
 │   │   ├── redis/          # Redis模块
 │   │   └── user/           # 用户模块
@@ -76,6 +84,12 @@ node-exam-service/
 - `exam_front_exampaper`: 试卷表
 - `exam_front_examquestion`: 试卷题目关联表
 - `exam_front_favorite`: 用户收藏表
+- `exam_front_interview`: 面试表
+- `exam_front_company`: 公司表
+- `exam_front_interviewer`: 面试官表
+- `exam_front_jobseeker`: 求职者表
+- `exam_front_education`: 教育经历表
+- `exam_front_work_experience`: 工作经验表
 
 详细的表结构定义可以在`prisma/schema.prisma`文件中查看。
 
@@ -173,6 +187,37 @@ http://localhost:3000/api/docs
 - `PATCH /user/:id` - 更新用户信息
 - `DELETE /user/:id` - 删除用户
 
+### 求职者接口
+
+- `GET /jobseeker/profile` - 获取当前用户的求职者资料
+- `PATCH /jobseeker/profile` - 更新求职者资料
+- `GET /jobseeker/page` - 分页获取求职者列表
+- `GET /jobseeker/:id` - 根据ID获取求职者信息
+- `POST /jobseeker/education` - 添加教育经历
+- `PATCH /jobseeker/education/:id` - 更新教育经历
+- `DELETE /jobseeker/education/:id` - 删除教育经历
+- `POST /jobseeker/work-experience` - 添加工作经验
+- `PATCH /jobseeker/work-experience/:id` - 更新工作经验
+- `DELETE /jobseeker/work-experience/:id` - 删除工作经验
+
+### 公司接口
+
+- `POST /company` - 创建公司
+- `GET /company/page` - 分页获取公司列表
+- `GET /company/:id` - 根据ID获取公司信息
+- `PATCH /company/:id` - 更新公司信息
+- `DELETE /company/:id` - 删除公司
+- `PATCH /company/:id/verify` - 验证公司信息
+
+### 面试官接口
+
+- `GET /interviewer/profile` - 获取当前用户的面试官信息
+- `POST /interviewer/profile` - 创建或更新面试官信息
+- `GET /interviewer/jobs` - 获取面试官创建的职位列表
+- `GET /interviewer/applications` - 获取面试官收到的职位申请列表
+- `PUT /interviewer/applications/:id/status` - 更新职位申请状态
+- `POST /interviewer/applications/:id/interview` - 安排面试
+
 ### 分类接口
 
 - `GET /category` - 获取一级分类列表
@@ -181,6 +226,15 @@ http://localhost:3000/api/docs
 - `PATCH /category/:id` - 更新一级分类
 - `DELETE /category/:id` - 删除一级分类
 - `GET /category/:id/subcategories` - 获取二级分类列表
+
+### 文档接口
+
+- `POST /document/upload` - 上传文档
+- `GET /document` - 获取文档列表
+- `GET /document/:id` - 获取文档详情
+- `DELETE /document/:id` - 删除文档
+- `GET /document/status/:id` - 获取文档处理状态
+- `GET /document/download/:id` - 下载文档
 
 ### 试卷接口
 
@@ -191,6 +245,16 @@ http://localhost:3000/api/docs
 - `DELETE /exam/:id` - 删除试卷
 - `POST /exam/:id/favorite` - 收藏试卷
 - `DELETE /exam/:id/favorite` - 取消收藏试卷
+- `POST /exam/upload` - 上传Excel试卷
+- `GET /exam/template` - 下载试卷导入模板
+
+### 面试接口
+
+- `POST /interview` - 创建面试
+- `GET /interview/page` - 分页获取面试列表
+- `GET /interview/:id` - 获取面试详情
+- `PATCH /interview/:id` - 更新面试信息
+- `DELETE /interview/:id` - 删除面试
 
 ### 题目接口
 

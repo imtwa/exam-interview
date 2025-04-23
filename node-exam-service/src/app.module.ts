@@ -12,7 +12,8 @@ import { CompanyModule } from './apps/company/company.module';
 import { InterviewModule } from './apps/interview/interview.module';
 import { InterviewerModule } from './apps/interviewer/interviewer.module';
 import { JobSeekerModule } from './apps/jobseeker/jobseeker.module';
-
+import { JobModule } from './apps/job/job.module';
+import { IndustryModule } from './apps/industry/industry.module';
 @Module({
   imports: [
     UserModule,
@@ -29,6 +30,8 @@ import { JobSeekerModule } from './apps/jobseeker/jobseeker.module';
     InterviewModule,
     InterviewerModule,
     JobSeekerModule,
+    JobModule,
+    IndustryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -14,7 +14,17 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateInterviewerDto } from './dto/create-interviewer.dto';
 import { success, pagination } from '../../common/utils/response.util';
 import { LoggerService } from '../../common/logger/logger.service';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
+  ApiBody,
+} from '@nestjs/swagger';
 
+@ApiTags('interviewer')
 @Controller('interviewer')
 export class InterviewerController {
   private readonly logger: LoggerService;
@@ -30,6 +40,11 @@ export class InterviewerController {
   /**
    * 获取当前用户的面试官信息
    */
+  @ApiOperation({ summary: '获取当前用户的面试官信息' })
+  @ApiResponse({ status: 200, description: '返回面试官资料' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '面试官资料不存在' })
+  @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req) {
@@ -49,6 +64,17 @@ export class InterviewerController {
   /**
    * 创建或更新面试官信息
    */
+  @ApiOperation({ summary: '创建或更新面试官信息' })
+  @ApiResponse({ status: 200, description: '创建/更新成功' })
+  @ApiResponse({ status: 400, description: '参数错误' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiQuery({
+    name: 'companyId',
+    description: '公司ID',
+    required: true,
+    type: Number,
+  })
+  @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   @Post('profile')
   async createOrUpdateProfile(
@@ -80,6 +106,22 @@ export class InterviewerController {
   /**
    * 获取面试官创建的职位列表
    */
+  @ApiOperation({ summary: '获取面试官创建的职位列表' })
+  @ApiQuery({
+    name: 'page',
+    description: '当前页码',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    required: false,
+    type: Number,
+  })
+  @ApiResponse({ status: 200, description: '返回职位列表及分页信息' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   @Get('jobs')
   async getInterviewerJobs(@Req() req, @Query() query) {
@@ -109,6 +151,28 @@ export class InterviewerController {
   /**
    * 获取面试官收到的职位申请列表
    */
+  @ApiOperation({ summary: '获取面试官收到的职位申请列表' })
+  @ApiQuery({
+    name: 'page',
+    description: '当前页码',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'status',
+    description: '申请状态',
+    required: false,
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: '返回申请列表及分页信息' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   @Get('applications')
   async getApplications(@Req() req, @Query() query) {
@@ -139,6 +203,30 @@ export class InterviewerController {
   /**
    * 更新职位申请状态 (进度推进、拒绝等)
    */
+  @ApiOperation({ summary: '更新职位申请状态' })
+  @ApiParam({ name: 'id', description: '申请ID', type: 'number' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          description: '申请新状态',
+          example: 'accepted',
+        },
+        feedback: {
+          type: 'string',
+          description: '反馈信息',
+          example: '您的简历非常符合我们的要求',
+        },
+      },
+      required: ['status'],
+    },
+  })
+  @ApiResponse({ status: 200, description: '更新成功' })
+  @ApiResponse({ status: 404, description: '申请不存在' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   @Put('applications/:id/status')
   async updateApplicationStatus(
@@ -170,6 +258,35 @@ export class InterviewerController {
   /**
    * 安排面试
    */
+  @ApiOperation({ summary: '安排面试' })
+  @ApiParam({ name: 'id', description: '申请ID', type: 'number' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        scheduleTime: {
+          type: 'string',
+          description: '面试时间',
+          example: '2023-05-20T14:00:00Z',
+        },
+        duration: {
+          type: 'number',
+          description: '面试时长（分钟）',
+          example: 60,
+        },
+        meetingLink: {
+          type: 'string',
+          description: '会议链接',
+          example: 'https://meeting.example.com/abc123',
+        },
+      },
+      required: ['scheduleTime', 'duration'],
+    },
+  })
+  @ApiResponse({ status: 200, description: '安排成功' })
+  @ApiResponse({ status: 404, description: '申请不存在' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   @Post('applications/:id/interview')
   async scheduleInterview(
