@@ -97,36 +97,4 @@ export class UserController {
     await this.userService.remove(+id);
     return success(null, '删除成功');
   }
-
-  @ApiOperation({ summary: '检查用户资料完善状态' })
-  @ApiResponse({
-    status: 200,
-    description: '返回用户资料信息',
-    schema: {
-      properties: {
-        code: { type: 'number', example: 200 },
-        message: { type: 'string', example: '获取用户资料成功' },
-        data: {
-          type: 'object',
-          properties: {
-            isProfileCompleted: { type: 'boolean', example: true },
-            role: { type: 'string', example: 'INTERVIEWER' },
-            isInterviewer: { type: 'boolean', example: true },
-            interviewer: { type: 'object' },
-            company: { type: 'object' },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: '未授权' })
-  @ApiResponse({ status: 404, description: '用户不存在' })
-  @ApiBearerAuth('JWT')
-  @UseGuards(JwtAuthGuard)
-  @Get('profile/check')
-  async checkUserProfile(@Request() req) {
-    const userId = req.user.userId;
-    const result = await this.userService.checkUserProfile(userId);
-    return success(result, '获取用户资料成功');
-  }
 }

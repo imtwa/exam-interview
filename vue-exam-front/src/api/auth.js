@@ -53,7 +53,7 @@ export function resetPassword(data) {
   })
 }
 
-// 获取当前用户信息
+// 获取当前用户详细信息
 export function getProfile() {
   return request({
     url: '/auth/profile',

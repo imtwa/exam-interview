@@ -67,26 +67,26 @@ export function getExamResult(examId) {
 }
 
 /**
- * 添加或取消收藏试卷
- * @param {number} examId 试卷ID
+ * 检查试卷是否已收藏
+ * @param {number} id 试卷ID
  * @returns {Promise}
  */
-export function toggleFavorite(examId) {
+export function checkFavorite(id) {
   return request({
-    url: `/exam/favorite/${examId}`,
-    method: 'post'
+    url: `/exam/favorite/${id}`,
+    method: 'get'
   })
 }
 
 /**
- * 检查试卷是否已收藏
- * @param {number} examId 试卷ID
+ * 切换试卷收藏状态
+ * @param {number} id 试卷ID
  * @returns {Promise}
  */
-export function checkFavorite(examId) {
+export function toggleFavorite(id) {
   return request({
-    url: `/exam/favorite/${examId}`,
-    method: 'get'
+    url: `/exam/favorite/${id}`,
+    method: 'post'
   })
 }
 

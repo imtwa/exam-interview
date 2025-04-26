@@ -372,6 +372,7 @@ onUnmounted(() => {
   z-index: 100;
   transition: all 0.3s ease;
   background-color: transparent;
+  min-width: 320px; /* 设置最小宽度，防止过度挤压 */
 
   &--with-bg {
     background-color: #fff;
@@ -386,9 +387,14 @@ onUnmounted(() => {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
+    box-sizing: border-box;
 
     @media (max-width: 1200px) {
-      padding: 0 2rem;
+      padding: 0 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      padding: 0 1rem;
     }
   }
 
@@ -397,11 +403,14 @@ onUnmounted(() => {
     justify-content: space-between;
     align-items: center;
     height: 72px;
+    flex-wrap: nowrap; /* 防止内容折行 */
   }
 
   &__left {
     display: flex;
     align-items: center;
+    flex-shrink: 0; /* 防止左侧内容被压缩 */
+    min-width: 120px; /* 设置最小宽度，保证logo显示完整 */
   }
 
   &__logo {
@@ -421,12 +430,18 @@ onUnmounted(() => {
       background: linear-gradient(120deg, #0047ff, #00b7ff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      white-space: nowrap; /* 防止文字换行 */
     }
   }
 
   &__links {
     display: flex;
-    margin-left: 48px;
+    margin-left: 40px;
+    overflow: hidden; /* 溢出隐藏 */
+
+    @media (max-width: 992px) {
+      margin-left: 20px;
+    }
 
     @media (max-width: 768px) {
       display: none;
@@ -435,12 +450,17 @@ onUnmounted(() => {
 
   &__link {
     position: relative;
-    padding: 0 20px;
+    padding: 0 16px; /* 减小内边距 */
     font-size: 16px;
     color: #333;
     line-height: 72px;
     text-decoration: none;
     transition: all 0.3s;
+    white-space: nowrap; /* 防止文字换行 */
+
+    @media (max-width: 992px) {
+      padding: 0 12px; /* 窄屏幕时减小内边距 */
+    }
 
     &:hover {
       color: #0060ff;
@@ -454,11 +474,16 @@ onUnmounted(() => {
         content: '';
         position: absolute;
         bottom: 0;
-        left: 20px;
-        right: 20px;
+        left: 16px;
+        right: 16px;
         height: 3px;
         background: #0060ff;
         border-radius: 3px 3px 0 0;
+
+        @media (max-width: 992px) {
+          left: 12px;
+          right: 12px;
+        }
       }
     }
   }
@@ -466,14 +491,22 @@ onUnmounted(() => {
   &__right {
     display: flex;
     align-items: center;
+    flex-shrink: 0; /* 防止右侧内容被压缩 */
+    margin-left: auto; /* 自动占用剩余空间 */
   }
 
   &__search {
-    margin-right: 20px;
-    width: 240px;
+    margin-right: 16px;
+    width: 200px;
+    flex-shrink: 1; /* 允许搜索框压缩 */
+    transition: width 0.3s;
 
     @media (max-width: 1024px) {
-      width: 200px;
+      width: 180px;
+    }
+
+    @media (max-width: 900px) {
+      width: 150px;
     }
 
     @media (max-width: 768px) {
@@ -484,6 +517,10 @@ onUnmounted(() => {
       width: 100%;
 
       .search-input {
+        :deep(.el-input__inner) {
+          transition: all 0.3s;
+        }
+        
         :deep(.el-input__suffix) {
           right: 5px;
 
@@ -502,22 +539,36 @@ onUnmounted(() => {
   &__user {
     display: flex;
     align-items: center;
+    flex-shrink: 0; /* 防止用户区域被压缩 */
 
     &-info {
       display: flex;
       align-items: center;
       cursor: pointer;
+      max-width: 200px; /* 限制最大宽度 */
+      
+      @media (max-width: 992px) {
+        max-width: 150px;
+      }
     }
 
     &name {
       margin-left: 8px;
       font-size: 14px;
       color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100px; /* 限制用户名最大宽度 */
+      
+      @media (max-width: 992px) {
+        max-width: 60px;
+      }
     }
   }
 
   .login-register-btn {
-    padding: 8px 20px;
+    padding: 6px 16px;
     border-radius: 20px;
     font-size: 14px;
     color: #333;
@@ -527,6 +578,11 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
+    white-space: nowrap;
+
+    @media (max-width: 992px) {
+      padding: 6px 12px;
+    }
 
     i {
       margin-right: 5px;
@@ -546,7 +602,8 @@ onUnmounted(() => {
 
   &__mobile-menu {
     display: none;
-    margin-left: 16px;
+    margin-left: 12px;
+    flex-shrink: 0;
 
     @media (max-width: 768px) {
       display: block;
@@ -556,6 +613,7 @@ onUnmounted(() => {
   &__hamburger {
     font-size: 24px;
     color: #333;
+    padding: 8px;
   }
 
   &__mobile-dropdown {
@@ -646,6 +704,11 @@ onUnmounted(() => {
   padding: 2px 6px;
   border-radius: 4px;
   margin-left: 6px;
+  white-space: nowrap;
+  
+  @media (max-width: 992px) {
+    display: none; /* 在窄屏幕上隐藏角色标签 */
+  }
 
   &.seeker {
     background-color: #e6f7ff;

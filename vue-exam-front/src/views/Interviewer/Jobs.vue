@@ -292,12 +292,12 @@ const resetFilters = () => {
 
 // 创建新职位
 const createJob = () => {
-  router.push('/hr/job/create')
+  router.push('/interviewer/job/create')
 }
 
 // 编辑职位
 const editJob = jobId => {
-  router.push(`/hr/job/edit/${jobId}`)
+  router.push(`/interviewer/job/edit/${jobId}`)
 }
 
 // 查看职位详情
@@ -389,12 +389,12 @@ const deleteJob = async jobId => {
 
 // 查看应聘者
 const viewApplications = jobId => {
-  router.push(`/hr/job/${jobId}/applications`)
+  router.push(`/interviewer/job/${jobId}/applications`)
 }
 
 // 查看面试
 const viewInterviews = jobId => {
-  router.push(`/hr/job/${jobId}/interviews`)
+  router.push(`/interviewer/job/${jobId}/interviews`)
 }
 
 // 获取状态标签

@@ -12,6 +12,7 @@ import {
 } from '../../../prisma/generated/client';
 import { CreateInterviewerDto } from './dto/create-interviewer.dto';
 import { LoggerService } from '../../common/logger/logger.service';
+import { UpdateInterviewerProfileDto } from './dto/update-interviewer-profile.dto';
 
 @Injectable()
 export class InterviewerService {
@@ -355,5 +356,154 @@ export class InterviewerService {
     });
 
     return interview;
+  }
+
+  /**
+   * 更新面试官资料，支持同时创建公司
+   */
+  async updateInterviewerProfile(
+    userId: number,
+    profileDto: UpdateInterviewerProfileDto,
+  ) {
+    this.logger.log(
+      `更新用户${userId}的面试官资料，使用已有公司: ${profileDto.useExistingCompany}`,
+    );
+
+    let companyId: number;
+
+    // 处理公司信息
+    if (profileDto.useExistingCompany) {
+      // 使用现有公司
+      if (!profileDto.existingCompanyId) {
+        throw new BadRequestException('使用现有公司时，必须提供公司ID');
+      }
+
+      // 验证公司是否存在
+      const company = await this.prisma.company.findFirst({
+        where: {
+          id: profileDto.existingCompanyId,
+          deletedAt: null,
+        },
+      });
+
+      if (!company) {
+        throw new NotFoundException(
+          `公司不存在 ID: ${profileDto.existingCompanyId}`,
+        );
+      }
+
+      companyId = profileDto.existingCompanyId;
+    } else {
+      // 创建新公司
+      if (!profileDto.company) {
+        throw new BadRequestException('创建新公司时，必须提供公司信息');
+      }
+
+      try {
+        // 创建新公司
+        const newCompany = await this.prisma.company.create({
+          data: {
+            ...profileDto.company,
+            verificationStatus: 'PENDING',
+          },
+        });
+
+        this.logger.log(`为用户${userId}创建新公司成功 ID: ${newCompany.id}`);
+        companyId = newCompany.id;
+      } catch (error) {
+        this.logger.error(`创建新公司失败: ${error.message}`, error);
+        throw new BadRequestException('创建公司失败: ' + error.message);
+      }
+    }
+
+    try {
+      // 检查面试官是否已存在
+      const existingInterviewer = await this.prisma.interviewer.findFirst({
+        where: {
+          userId,
+          deletedAt: null,
+        },
+      });
+
+      let interviewer;
+      if (existingInterviewer) {
+        // 更新现有面试官信息
+        interviewer = await this.prisma.interviewer.update({
+          where: {
+            id: existingInterviewer.id,
+          },
+          data: {
+            ...profileDto.interviewer,
+            companyId,
+          },
+          include: {
+            company: {
+              select: {
+                id: true,
+                name: true,
+                industry: true,
+                address: true,
+                size: true,
+                fundingStage: true,
+              },
+            },
+            user: {
+              select: {
+                username: true,
+                email: true,
+              },
+            },
+          },
+        });
+
+        this.logger.log(`更新面试官信息成功 ID: ${interviewer.id}`);
+      } else {
+        // 更新用户角色为面试官
+        await this.prisma.frontUser.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            role: 'INTERVIEWER',
+          },
+        });
+
+        // 创建面试官记录
+        interviewer = await this.prisma.interviewer.create({
+          data: {
+            ...profileDto.interviewer,
+            userId,
+            companyId,
+          },
+          include: {
+            company: {
+              select: {
+                id: true,
+                name: true,
+                industry: true,
+                address: true,
+                size: true,
+                fundingStage: true,
+              },
+            },
+            user: {
+              select: {
+                username: true,
+                email: true,
+              },
+            },
+          },
+        });
+
+        this.logger.log(`创建面试官信息成功 ID: ${interviewer.id}`);
+      }
+
+      return interviewer;
+    } catch (error) {
+      this.logger.error(`创建/更新面试官信息失败: ${error.message}`, error);
+      throw new BadRequestException(
+        '创建/更新面试官信息失败: ' + error.message,
+      );
+    }
   }
 }

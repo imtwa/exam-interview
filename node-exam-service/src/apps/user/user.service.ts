@@ -8,7 +8,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { PrismaClient } from '../../../prisma/generated/client';
 import { LoggerService } from '../../common/logger/logger.service';
-import { UserRole } from '../../common/enums/user-role.enum';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -123,53 +122,5 @@ export class UserService {
 
     this.logger.log(`删除用户成功: ${id}`);
     return null;
-  }
-
-  /**
-   * 检查用户是否已设置用户资料
-   *
-   * @param userId 用户ID
-   * 示例: 1
-   *
-   * @returns 用户资料信息，包括角色和面试官信息
-   */
-  async checkUserProfile(userId: number) {
-    this.logger.log(`检查用户是否已设置用户资料: ${userId}`);
-
-    // 获取用户
-    const user = await this.prisma.frontUser.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      this.logger.warn(`用户不存在: ${userId}`);
-      throw new NotFoundException('用户不存在');
-    }
-
-    const result = {
-      isProfileCompleted: false,
-      role: user.role,
-      isInterviewer: user.role === UserRole.INTERVIEWER,
-      interviewer: null,
-      company: null,
-    };
-
-    // 如果是面试官，检查是否已设置面试官信息和公司信息
-    if (user.role === UserRole.INTERVIEWER) {
-      const interviewer = await this.prisma.interviewer.findFirst({
-        where: { userId, deletedAt: null },
-        include: {
-          company: true,
-        },
-      });
-
-      if (interviewer) {
-        result.interviewer = interviewer;
-        result.company = interviewer.company;
-        result.isProfileCompleted = true;
-      }
-    }
-
-    return result;
   }
 }

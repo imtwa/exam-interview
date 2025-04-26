@@ -363,7 +363,9 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { setupProfile, getRegionData, searchCompanies } from '@/api/profile'
+import { updateInterviewerProfile } from '@/api/interviewer'
+import { getCompanyList } from '@/api/company'
+import { getRegionData } from '@/api/region'
 import NumberSteps from '@/components/NumberSteps.vue'
 import { Search, Loading, InfoFilled } from '@element-plus/icons-vue'
 
@@ -602,9 +604,9 @@ const nextStep = async formName => {
 const prepareSubmitData = () => {
   // 面试官信息
   profileSetupForm.interviewer = {
-    name: interviewerForm.name,
     position: interviewerForm.position,
-    gender: interviewerForm.gender
+    gender: interviewerForm.gender,
+    companyId: interviewerForm.companyId || null
   }
 
   // 公司信息
@@ -624,73 +626,15 @@ const prepareSubmitData = () => {
 const submitProfile = async () => {
   try {
     loading.value = true
-    const response = await setupProfile(profileSetupForm)
+    const response = await updateInterviewerProfile(profileSetupForm)
 
     if (response) {
       ElMessage.success('个人资料设置成功')
       // 跳转到主页或仪表板
-      router.push({ name: 'Dashboard' })
+      router.push('/profile')
     } else {
       ElMessage.error('设置失败，请重试')
     }
-  } finally {
-    loading.value = false
-  }
-}
-
-// 初始化数据
-const initData = async () => {
-  loading.value = true
-  try {
-    const data = await profileCheck()
-
-    if (data) {
-      const { needsProfileSetup, interviewer } = data
-
-      // 如果已经设置过个人资料，跳转到主页
-      if (!needsProfileSetup) {
-        ElMessageBox.confirm('您已经完善过个人资料，是否返回主页？', '提示', {
-          confirmButtonText: '返回主页',
-          cancelButtonText: '继续编辑',
-          type: 'warning'
-        })
-          .then(() => {
-            router.push({ name: 'Dashboard' })
-          })
-          .catch(() => {})
-      }
-
-      // 如果已有面试官信息，填充表单
-      if (interviewer) {
-        Object.assign(interviewerForm, {
-          name: interviewer.name || '',
-          position: interviewer.position || '',
-          gender: interviewer.gender || 'MALE',
-          companyId: interviewer.companyId
-        })
-
-        // 如果有公司ID，加载公司信息
-        if (interviewer.companyId) {
-          try {
-            const companyResponse = await searchCompanies({
-              page: 1,
-              pageSize: 5,
-              keyword: ''
-            })
-
-            // 直接使用response作为数据
-            if (companyResponse && companyResponse.list) {
-              companies.value = companyResponse.list
-            }
-          } catch (error) {
-            console.error('获取初始公司列表失败:', error)
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error('获取个人资料状态失败:', error)
-    ElMessage.error('获取数据失败，请刷新页面重试')
   } finally {
     loading.value = false
   }
@@ -737,8 +681,8 @@ const searchCompany = async query => {
   companySearchTimeout.value = setTimeout(async () => {
     try {
       companySearchLoading.value = true
-      const response = await searchCompanies({
-        keyword: query || '',
+      const response = await getCompanyList({
+        name: query || '',
         page: 1,
         pageSize: 20
       })
@@ -767,7 +711,6 @@ const searchCompany = async query => {
 }
 
 onMounted(() => {
-  initData()
   fetchRegionData()
 
   // 初始化时加载一些默认公司

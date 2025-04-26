@@ -28,6 +28,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { LoggerService } from '../../common/logger/logger.service';
+import { UpdateJobseekerProfileDto } from './dto/update-jobseeker-profile.dto';
 
 @ApiTags('jobseeker')
 @Controller('jobseeker')
@@ -39,7 +40,7 @@ export class JobSeekerController {
     loggerService: LoggerService,
   ) {
     this.logger = loggerService;
-    this.logger.setContext(JobSeekerController.name);
+    this.logger.setContext('JobSeekerController');
   }
 
   @ApiOperation({ summary: '获取当前用户的求职者资料' })
@@ -56,7 +57,7 @@ export class JobSeekerController {
     return success(result, '获取求职者资料成功');
   }
 
-  @ApiOperation({ summary: '更新求职者资料' })
+  @ApiOperation({ summary: '更新求职者基本资料' })
   @ApiResponse({ status: 200, description: '更新成功' })
   @ApiResponse({ status: 400, description: '参数错误' })
   @ApiResponse({ status: 401, description: '未授权' })
@@ -64,12 +65,31 @@ export class JobSeekerController {
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
   async updateProfile(@Body() profileDto: JobSeekerProfileDto, @Request() req) {
-    this.logger.log(`更新用户${req.user.userId}的求职者资料`);
+    this.logger.log(`更新用户${req.user.userId}的求职者基本资料`);
     const result = await this.jobSeekerService.updateJobSeekerProfile(
       req.user.userId,
       profileDto,
     );
     return success(result, '更新求职者资料成功');
+  }
+
+  @ApiOperation({ summary: '一次性同步更新求职者完整资料' })
+  @ApiResponse({ status: 200, description: '同步更新成功' })
+  @ApiResponse({ status: 400, description: '参数错误' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile/sync')
+  async syncProfile(
+    @Body() profileDto: UpdateJobseekerProfileDto,
+    @Request() req,
+  ) {
+    this.logger.log(`同步更新用户${req.user.userId}的完整求职者资料`);
+    const syncResult = await this.jobSeekerService.updateJobseekerProfile(
+      req.user.userId,
+      profileDto,
+    );
+    return success(syncResult, '同步更新求职者资料成功');
   }
 
   @ApiOperation({ summary: '分页获取求职者列表' })

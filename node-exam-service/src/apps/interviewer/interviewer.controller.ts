@@ -12,6 +12,7 @@ import {
 import { InterviewerService } from './interviewer.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateInterviewerDto } from './dto/create-interviewer.dto';
+import { UpdateInterviewerProfileDto } from './dto/update-interviewer-profile.dto';
 import { success, pagination } from '../../common/utils/response.util';
 import { LoggerService } from '../../common/logger/logger.service';
 import {
@@ -315,6 +316,38 @@ export class InterviewerController {
       return success(interview, '安排面试成功');
     } catch (error) {
       this.logger.error(`安排面试失败: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新面试官资料（支持同时创建公司）
+   */
+  @ApiOperation({ summary: '更新面试官资料（支持同时创建公司）' })
+  @ApiResponse({ status: 200, description: '更新成功' })
+  @ApiResponse({ status: 400, description: '参数错误' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBody({ type: UpdateInterviewerProfileDto })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('profile/setup')
+  async updateProfile(
+    @Body() profileDto: UpdateInterviewerProfileDto,
+    @Req() req,
+  ) {
+    const userId = req.user.userId;
+    this.logger.log(
+      `用户${userId}更新面试官资料: ${JSON.stringify(profileDto)}`,
+    );
+
+    try {
+      const result = await this.interviewerService.updateInterviewerProfile(
+        userId,
+        profileDto,
+      );
+      return success(result, '更新面试官资料成功');
+    } catch (error) {
+      this.logger.error(`更新面试官资料失败: ${error.message}`, error);
       throw error;
     }
   }

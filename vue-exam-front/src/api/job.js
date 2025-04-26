@@ -1,57 +1,9 @@
 import request from '@/utils/request'
 
 /**
- * 获取职位列表
- * @param {Object} params 查询参数
- * @example
- * {
- *   page: 1,
- *   pageSize: 10,
- *   keyword: '前端开发',
- *   city: '北京',
- *   companyId: 1,
- *   subCategoryId: 2,
- *   salaryMin: 10000,
- *   salaryMax: 20000
- * }
- * @returns {Promise} 返回职位列表和分页信息
- */
-export function getJobList(params) {
-  return request({
-    url: '/job',
-    method: 'get',
-    params
-  })
-}
-
-/**
- * 获取职位详情
- * @param {number} id 职位ID
- * @returns {Promise} 返回职位详情，包含公司和面试官信息
- */
-export function getJobDetail(id) {
-  return request({
-    url: `/job/${id}`,
-    method: 'get'
-  })
-}
-
-/**
- * 创建职位
- * @param {Object} data 职位数据
- * @example
- * {
- *   title: '前端开发工程师',
- *   description: '负责公司前端开发',
- *   requirements: '熟悉React、Vue等框架',
- *   city: '北京',
- *   salaryMin: 15000,
- *   salaryMax: 25000,
- *   companyId: 1,
- *   interviewerId: 1,
- *   subCategoryId: 2
- * }
- * @returns {Promise} 返回创建的职位信息
+ * 创建招聘信息
+ * @param {Object} data 招聘信息
+ * @returns {Promise}
  */
 export function createJob(data) {
   return request({
@@ -62,34 +14,75 @@ export function createJob(data) {
 }
 
 /**
- * 更新职位
- * @param {number} id 职位ID
- * @param {Object} data 要更新的职位数据
- * @example
- * {
- *   title: '资深前端开发工程师',
- *   salaryMin: 20000,
- *   salaryMax: 30000
- * }
- * @returns {Promise} 返回更新后的职位信息
+ * 获取分页招聘信息列表
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getJobList(params) {
+  return request({
+    url: '/job',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取招聘信息详情
+ * @param {string|number} id 招聘信息ID
+ * @returns {Promise}
+ */
+export function getJob(id) {
+  return request({
+    url: `/job/${id}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 更新招聘信息
+ * @param {string|number} id 招聘信息ID
+ * @param {Object} data 招聘信息
+ * @returns {Promise}
  */
 export function updateJob(id, data) {
   return request({
     url: `/job/${id}`,
-    method: 'put',
+    method: 'patch',
     data
   })
 }
 
 /**
- * 删除职位（软删除）
- * @param {number} id 职位ID
- * @returns {Promise} 返回删除结果
+ * 删除招聘信息
+ * @param {string|number} id 招聘信息ID
+ * @returns {Promise}
  */
 export function deleteJob(id) {
   return request({
     url: `/job/${id}`,
     method: 'delete'
+  })
+}
+
+/**
+ * 获取热门城市列表
+ * @returns {Promise}
+ */
+export function getHotCities() {
+  return request({
+    url: '/job/hot-cities',
+    method: 'get'
+  })
+}
+
+/**
+ * 获取面试官发布的职位列表
+ * @returns {Promise}
+ */
+export function getInterviewerJobs() {
+  return request({
+    url: '/job/interviewer/jobs',
+    method: 'get'
   })
 }
 
@@ -198,24 +191,6 @@ export function scheduleInterview(applicationId, data) {
     url: `/interviewer/applications/${applicationId}/interview`,
     method: 'post',
     data
-  })
-}
-
-/**
- * 面试官获取创建的职位列表
- * @param {Object} params 查询参数
- * @example
- * {
- *   page: 1,
- *   pageSize: 10
- * }
- * @returns {Promise} 返回职位列表
- */
-export function getInterviewerJobs(params) {
-  return request({
-    url: '/interviewer/jobs',
-    method: 'get',
-    params
   })
 }
 

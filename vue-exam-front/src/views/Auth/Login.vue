@@ -166,7 +166,7 @@ const handleLogin = () => {
           if (!profileCompleted) {
             ElMessage.info('请先完善您的个人资料')
             if (userStore.isInterviewer) {
-              router.push('/hr/profile-setup')
+              router.push('/interviewer/profile-setup')
             } else if (userStore.isJobSeeker) {
               router.push('job-seeker/profile-setup')
             }

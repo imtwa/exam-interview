@@ -76,14 +76,14 @@ const routes = [
       },
       // HR相关路由
       {
-        path: 'hr/profile-setup',
-        name: 'HRProfileSetup',
-        component: () => import('../views/HR/ProfileSetup.vue')
+        path: 'interviewer/profile-setup',
+        name: 'InterviewerProfileSetup',
+        component: () => import('../views/Interviewer/ProfileSetup.vue')
       },
       {
-        path: 'hr/jobs',
-        name: 'HRJobs',
-        component: () => import('../views/HR/Jobs.vue')
+        path: 'interviewer/jobs',
+        name: 'InterviewerJobs',
+        component: () => import('../views/Interviewer/Jobs.vue')
       },
       // 求职者相关路由
       {

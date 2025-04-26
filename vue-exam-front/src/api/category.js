@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 /**
- * 获取分类列表（包含二级分类）
+ * 获取所有试卷分类
  * @returns {Promise}
  */
 export function getCategoryList() {

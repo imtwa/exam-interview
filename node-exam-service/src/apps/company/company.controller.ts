@@ -68,10 +68,32 @@ export class CompanyController {
     required: false,
     type: Number,
   })
+  @ApiQuery({
+    name: 'name',
+    description: '公司名称（支持模糊搜索）',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'industry',
+    description: '行业',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'verificationStatus',
+    description: '验证状态',
+    required: false,
+    type: String,
+  })
   @ApiResponse({ status: 200, description: '返回公司列表及分页信息' })
   @Get('page')
   async findAll(@Query() query: QueryCompanyDto) {
-    this.logger.log(`查询公司列表: 页码${query.page}, 每页${query.pageSize}`);
+    this.logger.log(
+      `查询公司列表: 页码${query.page}, 每页${query.pageSize}${
+        query.name ? ', 公司名称: ' + query.name : ''
+      }`,
+    );
     const { companies, total } = await this.companyService.findAll(query);
     return pagination(companies, total, query.page, query.pageSize);
   }

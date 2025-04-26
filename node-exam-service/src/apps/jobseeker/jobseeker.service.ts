@@ -14,6 +14,7 @@ import { UpdateWorkExperienceDto } from './dto/update-work-experience.dto';
 import { QueryJobSeekerDto } from './dto/query-jobseeker.dto';
 import { LoggerService } from '../../common/logger/logger.service';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { UpdateJobseekerProfileDto } from './dto/update-jobseeker-profile.dto';
 
 @Injectable()
 export class JobSeekerService {
@@ -86,7 +87,7 @@ export class JobSeekerService {
   }
 
   /**
-   * 更新求职者资料
+   * 更新求职者资料 (保留向后兼容性)
    * @param userId 用户ID
    * @param profileDto 求职者资料DTO
    * @returns 更新后的求职者资料
@@ -146,6 +147,179 @@ export class JobSeekerService {
     } catch (error) {
       this.logger.error(`更新求职者资料失败: ${error.message}`, error.stack);
       throw new BadRequestException('更新求职者资料失败');
+    }
+  }
+
+  /**
+   * 一次性同步更新求职者全部资料
+   * @param userId 用户ID
+   * @param profileDto 完整的求职者资料DTO
+   * @returns 更新后的求职者资料
+   */
+  async updateJobseekerProfile(
+    userId: number,
+    profileDto: UpdateJobseekerProfileDto,
+  ) {
+    this.logger.log(`同步更新求职者全部资料: ${userId}`);
+
+    // 检查用户是否存在
+    const user = await this.prisma.frontUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      this.logger.warn(`用户不存在: ${userId}`);
+      throw new NotFoundException('用户不存在');
+    }
+
+    try {
+      // 使用事务确保数据一致性
+      return await this.prisma.$transaction(async (prisma) => {
+        // 1. 获取或创建求职者基本信息
+        let jobSeeker = await prisma.jobSeeker.findFirst({
+          where: { userId },
+          include: {
+            education: true,
+            workExperience: true,
+          },
+        });
+
+        // 如果求职者不存在，创建一个
+        if (!jobSeeker) {
+          jobSeeker = await prisma.jobSeeker.create({
+            data: { userId },
+            include: {
+              education: true,
+              workExperience: true,
+            },
+          });
+
+          // 确保用户角色为求职者
+          if (user.role !== UserRole.JOB_SEEKER) {
+            await prisma.frontUser.update({
+              where: { id: userId },
+              data: { role: UserRole.JOB_SEEKER },
+            });
+          }
+        }
+
+        // 2. 更新基本信息
+        if (profileDto.basic) {
+          const { gender, birthday, address } = profileDto.basic;
+          await prisma.jobSeeker.update({
+            where: { id: jobSeeker.id },
+            data: {
+              gender,
+              birthday,
+              address,
+            },
+          });
+        }
+
+        // 3. 处理求职意向
+        if (profileDto.jobIntention) {
+          const { jobTitle, currentSalary, salaryMax, cityName, cityCode } =
+            profileDto.jobIntention;
+
+          // 构造城市名称（如果提供了城市代码和名称）
+          let expectedWorkCity = cityName;
+          if (
+            cityCode &&
+            cityCode.length > 0 &&
+            profileDto.jobIntention.cityName
+          ) {
+            expectedWorkCity = profileDto.jobIntention.cityName;
+          }
+
+          await prisma.jobSeeker.update({
+            where: { id: jobSeeker.id },
+            data: {
+              expectedPosition: jobTitle,
+              currentSalary,
+              expectedSalary: salaryMax, // 暂时用最高薪资作为期望薪资
+              expectedWorkCity,
+            },
+          });
+        }
+
+        // 4. 处理教育经历
+        if (profileDto.education) {
+          if (jobSeeker.education && jobSeeker.education.length > 0) {
+            // 更新第一条教育经历
+            await prisma.education.update({
+              where: { id: jobSeeker.education[0].id },
+              data: {
+                school: profileDto.education.school,
+                degree: profileDto.education.degree,
+                major: profileDto.education.major,
+                startDate: profileDto.education.startDate,
+                endDate: profileDto.education.endDate,
+              },
+            });
+          } else {
+            // 创建新的教育经历
+            await prisma.education.create({
+              data: {
+                jobSeekerId: jobSeeker.id,
+                school: profileDto.education.school,
+                degree: profileDto.education.degree,
+                major: profileDto.education.major,
+                startDate: profileDto.education.startDate,
+                endDate: profileDto.education.endDate,
+              },
+            });
+          }
+        }
+
+        // 5. 处理工作经历
+        if (profileDto.experience) {
+          if (jobSeeker.workExperience && jobSeeker.workExperience.length > 0) {
+            // 更新第一条工作经历
+            await prisma.workExperience.update({
+              where: { id: jobSeeker.workExperience[0].id },
+              data: {
+                company: profileDto.experience.company,
+                position: profileDto.experience.position,
+                startDate: profileDto.experience.startDate,
+                endDate: profileDto.experience.endDate,
+                description: profileDto.experience.description,
+              },
+            });
+          } else {
+            // 创建新的工作经历
+            await prisma.workExperience.create({
+              data: {
+                jobSeekerId: jobSeeker.id,
+                company: profileDto.experience.company,
+                position: profileDto.experience.position,
+                startDate: profileDto.experience.startDate,
+                endDate: profileDto.experience.endDate,
+                description: profileDto.experience.description,
+              },
+            });
+          }
+        }
+
+        // 6. 返回更新后的完整资料
+        const updatedJobSeeker = await prisma.jobSeeker.findUnique({
+          where: { id: jobSeeker.id },
+          include: {
+            education: true,
+            workExperience: true,
+          },
+        });
+
+        return {
+          ...updatedJobSeeker,
+          user: {
+            username: user.username,
+            email: user.email,
+          },
+        };
+      });
+    } catch (error) {
+      this.logger.error(`更新求职者资料失败: ${error.message}`, error.stack);
+      throw new BadRequestException(`更新求职者资料失败: ${error.message}`);
     }
   }
 

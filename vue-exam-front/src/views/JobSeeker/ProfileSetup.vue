@@ -343,12 +343,12 @@
                       </div>
                       <div class="confirm-item" v-if="jobIntentionForm.currentSalary">
                         <span class="label">当前薪资:</span>
-                        <span class="value">{{ jobIntentionForm.currentSalary }}K</span>
+                        <span class="value">{{ jobIntentionForm.currentSalary }}</span>
                       </div>
                       <div class="confirm-item" v-if="jobIntentionForm.salaryMin || jobIntentionForm.salaryMax">
                         <span class="label">期望薪资:</span>
                         <span class="value">
-                          {{ jobIntentionForm.salaryMin }}K - {{ jobIntentionForm.salaryMax }}K
+                          {{ jobIntentionForm.salaryMin }} - {{ jobIntentionForm.salaryMax }}
                         </span>
                       </div>
                     </div>
@@ -373,8 +373,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import NumberSteps from '@/components/NumberSteps.vue'
-import { getRegionData } from '@/api/profile'
-import { createJobseekerProfile } from '@/api/profile'
+import { getRegionData } from '@/api/region'
+import { syncJobseekerProfile } from '@/api/jobseeker'
 
 const router = useRouter()
 const activeStep = ref(0)
@@ -551,7 +551,7 @@ const submitProfile = async () => {
     loading.value = true
 
     // 这里应该调用API保存求职者信息
-    const response = await createJobseekerProfile({
+    const response = await syncJobseekerProfile({
       basic: basicForm,
       education: educationForm,
       experience: experienceForm,
