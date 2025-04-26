@@ -6,7 +6,7 @@ import EmojiText from '../emojo'
 const axiosInstance = axios.create({
   timeout: 15000, // 请求超时时间(毫秒)
   baseURL: import.meta.env.VITE_API_URL, // API地址
-  withCredentials: true, // 异步请求携带cookie
+  withCredentials: false, // 异步请求不携带cookie，避免CORS问题
   transformRequest: [(data) => JSON.stringify(data)], // 请求数据转换为 JSON 字符串
   validateStatus: (status) => status >= 200 && status < 300, // 只接受 2xx 的状态码
   headers: {
@@ -99,6 +99,9 @@ const api = {
   },
   put<T>(config: AxiosRequestConfig): Promise<T> {
     return request({ ...config, method: 'PUT' }) // PUT 请求
+  },
+  patch<T>(config: AxiosRequestConfig): Promise<T> {
+    return request({ ...config, method: 'PATCH' }) // PATCH 请求
   },
   del<T>(config: AxiosRequestConfig): Promise<T> {
     return request({ ...config, method: 'DELETE' }) // DELETE 请求

@@ -1,13 +1,14 @@
-// import request from '@/utils/http'
-// import { BaseResult } from '@/types/axios'
-import AppConfig from '@/config'
+import request from '@/utils/http'
 import { BaseResult } from '@/types/axios'
 import { UserInfo } from '@/types/store'
+import AppConfig from '@/config'
 import avatar from '@imgs/user/avatar.png'
 
 export class UserService {
-  // 模拟登录接口
+  // Login API
   static login(options: { body: string }): Promise<BaseResult> {
+    // Keeping the mock implementation for now
+    // In production, this would be replaced with a real API call
     return new Promise((resolve) => {
       const { username, password } = JSON.parse(options.body)
 
@@ -31,10 +32,17 @@ export class UserService {
         })
       }
     })
+
+    // Real API implementation would be:
+    // return request.post<BaseResult>({
+    //   url: '/api/admin/login',
+    //   data: JSON.parse(options.body)
+    // })
   }
 
-  // 获取用户信息
+  // Get user info API
   static getUserInfo(): Promise<BaseResult<UserInfo>> {
+    // Keeping the mock implementation for now
     return new Promise((resolve) => {
       resolve({
         code: 200,
@@ -47,6 +55,62 @@ export class UserService {
           email: 'art.design@gmail.com'
         }
       })
+    })
+
+    // Real API implementation would be:
+    // return request.get<BaseResult<UserInfo>>({
+    //   url: '/api/admin/userinfo'
+    // })
+  }
+
+  // Get admin user list
+  static getAdminUserList(params: { page: number; size: number; searchVal?: string }) {
+    return request.get<BaseResult>({
+      url: `/api/admin/users?page=${params.page}&size=${params.size}&search=${params.searchVal || ''}`
+    })
+  }
+
+  // Add admin user
+  static addAdminUser(params: {
+    username: string
+    password: string
+    name: string
+    email: string
+    roleIds: number[]
+  }) {
+    return request.post<BaseResult>({
+      url: '/api/admin/users',
+      data: params
+    })
+  }
+
+  // Update admin user
+  static updateAdminUser(
+    id: number,
+    params: {
+      name?: string
+      email?: string
+      roleIds?: number[]
+    }
+  ) {
+    return request.put<BaseResult>({
+      url: `/api/admin/users/${id}`,
+      data: params
+    })
+  }
+
+  // Delete admin user
+  static deleteAdminUser(id: number) {
+    return request.del<BaseResult>({
+      url: `/api/admin/users/${id}`
+    })
+  }
+
+  // Change password
+  static changePassword(params: { oldPassword: string; newPassword: string }) {
+    return request.put<BaseResult>({
+      url: '/api/admin/change-password',
+      data: params
     })
   }
 }

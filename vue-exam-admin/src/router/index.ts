@@ -17,7 +17,7 @@ import 'nprogress/nprogress.css'
 import { useTheme } from '@/composables/useTheme'
 import { RoutesAlias } from './modules/routesAlias'
 import { setWorktab } from '@/utils/worktab'
-import { registerAsyncRoutes } from './modules/dynamicRoutes'
+import { registerMenuRoutes } from './modules/dynamicRoutes'
 import { formatMenuTitle } from '@/utils/menu'
 
 /** 顶部进度条配置 */
@@ -206,7 +206,7 @@ async function getMenuData(): Promise<void> {
     // 设置菜单列表
     useMenuStore().setMenuList(menuList as [])
     // 注册异步路由
-    registerAsyncRoutes(router, menuList)
+    registerMenuRoutes(menuList)
     // 标记路由已注册
     isRouteRegistered.value = true
     // 关闭加载动画
