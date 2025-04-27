@@ -1,25 +1,38 @@
 <template>
-  <div class="interviewer-list-page">
+  <div class="interviewer-management-page">
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
           <span>面试官管理</span>
+          <el-button type="primary" @click="handleCreateInterviewer">添加面试官</el-button>
         </div>
       </template>
 
-      <CommonCrudTable
-        :data="interviewerList"
-        :total="total"
-        :loading="loading"
-        search-placeholder="输入面试官姓名/公司名称搜索"
-        @search="handleSearch"
-        @add="handleAdd"
-        @edit="handleEdit"
-        @view="handleView"
-        @delete="handleDelete"
-        @page-change="handlePageChange"
-        @size-change="handleSizeChange"
-      >
+      <!-- 搜索区域 -->
+      <el-form :inline="true" :model="searchForm" class="search-form">
+        <el-form-item label="关键词">
+          <el-input
+            v-model="searchForm.keyword"
+            placeholder="姓名/职位/公司"
+            clearable
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+        <el-form-item label="认证状态">
+          <el-select v-model="searchForm.verificationStatus" placeholder="全部" clearable>
+            <el-option label="待认证" value="PENDING" />
+            <el-option label="已认证" value="VERIFIED" />
+            <el-option label="已拒绝" value="REJECTED" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="resetSearch">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- 表格区域 -->
+      <el-table :data="interviewerList" v-loading="loading" border style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="用户名" min-width="120">
           <template #default="scope">
@@ -39,39 +52,60 @@
         </el-table-column>
         <el-table-column label="认证状态" width="120">
           <template #default="scope">
-            <el-tag :type="getStatusType(scope.row.verificationStatus) || 'info'">
+            <el-tag :type="getStatusType(scope.row.verificationStatus)">
               {{ getStatusText(scope.row.verificationStatus) }}
             </el-tag>
           </template>
         </el-table-column>
-        <template #extraActions="{ row }">
-          <el-button
-            v-if="row.verificationStatus === 'PENDING'"
-            type="success"
-            size="small"
-            @click="handleVerify(row, 'VERIFIED')"
-            link
-          >
-            通过
-          </el-button>
-          <el-button
-            v-if="row.verificationStatus === 'PENDING'"
-            type="danger"
-            size="small"
-            @click="handleVerify(row, 'REJECTED')"
-            link
-          >
-            拒绝
-          </el-button>
-        </template>
-      </CommonCrudTable>
+        <el-table-column label="创建时间" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="250">
+          <template #default="scope">
+            <el-button type="primary" link @click="handleViewProfile(scope.row)">查看</el-button>
+            <el-button type="primary" link @click="handleEditInterviewer(scope.row)"
+              >编辑</el-button
+            >
+            <el-button type="danger" link @click="handleDeleteInterviewer(scope.row)"
+              >删除</el-button
+            >
+            <el-dropdown
+              v-if="scope.row.verificationStatus === 'PENDING'"
+              @command="(command) => handleVerify(scope.row, command)"
+            >
+              <el-button type="warning" link>认证</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="VERIFIED">通过认证</el-dropdown-item>
+                  <el-dropdown-item command="REJECTED">拒绝认证</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页区域 -->
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </el-card>
 
-    <!-- 添加/编辑弹窗 -->
+    <!-- 添加/编辑面试官对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑面试官' : '添加面试官'"
-      width="50%"
+      width="500px"
       :close-on-click-modal="false"
     >
       <el-form
@@ -131,8 +165,8 @@
       </template>
     </el-dialog>
 
-    <!-- 查看详情弹窗 -->
-    <el-dialog v-model="viewDialogVisible" title="面试官详情" width="60%">
+    <!-- 查看面试官详情对话框 -->
+    <el-dialog v-model="viewDialogVisible" title="面试官详情" width="600px">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="ID" :span="1">{{
           currentInterviewer?.id
@@ -153,7 +187,7 @@
           {{ currentInterviewer?.company?.name }}
         </el-descriptions-item>
         <el-descriptions-item label="认证状态" :span="1">
-          <el-tag :type="getStatusType(currentInterviewer?.verificationStatus) || 'info'">
+          <el-tag :type="getStatusType(currentInterviewer?.verificationStatus)">
             {{ getStatusText(currentInterviewer?.verificationStatus) }}
           </el-tag>
         </el-descriptions-item>
@@ -168,7 +202,8 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="viewDialogVisible = false">关闭</el-button>
-          <el-button type="primary" @click="handleViewDetails">查看详细</el-button>
+          <el-button type="primary" @click="handleViewJobs">查看发布的职位</el-button>
+          <el-button type="primary" @click="handleViewApplications">查看收到的申请</el-button>
         </span>
       </template>
     </el-dialog>
@@ -179,7 +214,6 @@
   import { ref, reactive, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
-  import CommonCrudTable from '@/components/CommonCrudTable.vue'
   import { InterviewerService, CompanyService } from '@/api/userApi'
   import { Interviewer, Company } from '@/api/model/userModel'
 
@@ -191,7 +225,12 @@
   const loading = ref(false)
   const currentPage = ref(1)
   const pageSize = ref(10)
-  const searchKeyword = ref('')
+
+  // 搜索表单
+  const searchForm = reactive({
+    keyword: '',
+    verificationStatus: undefined as string | undefined
+  })
 
   // 公司列表
   const companies = ref<Company[]>([])
@@ -242,7 +281,8 @@
       const res = await InterviewerService.getInterviewerList({
         page: currentPage.value,
         size: pageSize.value,
-        keyword: searchKeyword.value
+        keyword: searchForm.keyword,
+        verificationStatus: searchForm.verificationStatus
       })
 
       if (res.code === 200) {
@@ -276,32 +316,38 @@
   }
 
   // 处理搜索
-  const handleSearch = (keyword: string) => {
-    searchKeyword.value = keyword
+  const handleSearch = () => {
     currentPage.value = 1
     fetchData()
   }
 
-  // 处理分页
-  const handlePageChange = (page: number) => {
-    currentPage.value = page
-    fetchData()
+  // 重置搜索
+  const resetSearch = () => {
+    searchForm.keyword = ''
+    searchForm.verificationStatus = undefined
+    handleSearch()
   }
 
+  // 处理分页
   const handleSizeChange = (size: number) => {
     pageSize.value = size
     fetchData()
   }
 
+  const handleCurrentChange = (page: number) => {
+    currentPage.value = page
+    fetchData()
+  }
+
   // 添加面试官
-  const handleAdd = () => {
+  const handleCreateInterviewer = () => {
     isEdit.value = false
     resetForm()
     dialogVisible.value = true
   }
 
   // 编辑面试官
-  const handleEdit = (row: Interviewer) => {
+  const handleEditInterviewer = (row: Interviewer) => {
     isEdit.value = true
     resetForm()
 
@@ -317,20 +363,33 @@
   }
 
   // 查看面试官
-  const handleView = (row: Interviewer) => {
+  const handleViewProfile = (row: Interviewer) => {
     currentInterviewer.value = row
     viewDialogVisible.value = true
   }
 
-  // 查看详细信息
-  const handleViewDetails = () => {
+  // 查看面试官发布的职位
+  const handleViewJobs = () => {
     if (!currentInterviewer.value?.id) return
-    router.push(`/user/interviewer/${currentInterviewer.value.id}`)
+    router.push({
+      path: '/recruitment/jobs',
+      query: { interviewerId: currentInterviewer.value.id.toString() }
+    })
+    viewDialogVisible.value = false
+  }
+
+  // 查看面试官收到的申请
+  const handleViewApplications = () => {
+    if (!currentInterviewer.value?.id) return
+    router.push({
+      path: '/recruitment/applications',
+      query: { interviewerId: currentInterviewer.value.id.toString() }
+    })
     viewDialogVisible.value = false
   }
 
   // 删除面试官
-  const handleDelete = (row: Interviewer) => {
+  const handleDeleteInterviewer = (row: Interviewer) => {
     ElMessageBox.confirm('确定要删除此面试官吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -479,7 +538,7 @@
 </script>
 
 <style scoped>
-  .interviewer-list-page {
+  .interviewer-management-page {
     padding: 20px;
   }
 
@@ -487,5 +546,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .search-form {
+    margin-bottom: 20px;
+  }
+
+  .pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
   }
 </style>

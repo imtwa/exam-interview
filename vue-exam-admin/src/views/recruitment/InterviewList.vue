@@ -1,5 +1,5 @@
 <template>
-  <div class="interview-list-page">
+  <div class="interview-container">
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
@@ -8,65 +8,74 @@
       </template>
 
       <CommonCrudTable
+        ref="crudTable"
         :data="interviewList"
-        :total="total"
+        :columns="columns"
         :loading="loading"
-        search-placeholder="输入求职者姓名/职位名称搜索"
-        @search="handleSearch"
-        @view="handleView"
+        :pagination="pagination"
         @page-change="handlePageChange"
-        @size-change="handleSizeChange"
-        :show-add-button="false"
+        @search="handleSearch"
       >
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column label="求职者" min-width="120">
-          <template #default="scope">
-            {{ scope.row.application?.jobSeeker?.user?.username || '未知求职者' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="职位名称" min-width="150">
-          <template #default="scope">
-            {{ scope.row.application?.job?.title || '未知职位' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="公司" min-width="120">
-          <template #default="scope">
-            {{ scope.row.application?.job?.company?.name || '未知公司' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="面试时间" width="180">
-          <template #default="scope">
-            {{ formatDate(scope.row.scheduleTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="时长" width="100">
-          <template #default="scope">
-            {{ scope.row.duration }}分钟
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="120">
-          <template #default="scope">
-            <el-tag :type="getStatusType(scope.row.status) || 'info'">
-              {{ getStatusText(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <template #extraActions="{ row }">
+        <!-- 搜索区域 -->
+        <template #search>
+          <el-form :inline="true" :model="searchParams" ref="searchForm">
+            <el-form-item label="职位" prop="jobId">
+              <el-select v-model="searchParams.jobId" placeholder="选择职位" clearable>
+                <el-option
+                  v-for="job in jobOptions"
+                  :key="job.id"
+                  :label="job.title"
+                  :value="job.id"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="面试官" prop="interviewerId">
+              <el-select v-model="searchParams.interviewerId" placeholder="选择面试官" clearable>
+                <el-option
+                  v-for="interviewer in interviewerOptions"
+                  :key="interviewer.id"
+                  :label="interviewer.name"
+                  :value="interviewer.id"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态" prop="status">
+              <el-select v-model="searchParams.status" placeholder="面试状态" clearable>
+                <el-option label="待面试" value="PENDING" />
+                <el-option label="已完成" value="COMPLETED" />
+                <el-option label="已取消" value="CANCELED" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="面试日期">
+              <el-date-picker
+                v-model="dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-form>
+        </template>
+
+        <!-- 表格操作列 -->
+        <template #operation="{ row }">
+          <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
           <el-button
-            v-if="row.status === 'SCHEDULED'"
+            v-if="row.status === 'PENDING'"
             type="success"
             size="small"
-            @click="handleComplete(row)"
-            link
+            @click="handleFeedback(row)"
           >
-            完成面试
+            提交反馈
           </el-button>
           <el-button
-            v-if="row.status === 'SCHEDULED'"
+            v-if="row.status === 'PENDING'"
             type="danger"
             size="small"
             @click="handleCancel(row)"
-            link
           >
             取消面试
           </el-button>
@@ -74,132 +83,123 @@
       </CommonCrudTable>
     </el-card>
 
-    <!-- 查看详情弹窗 -->
-    <el-dialog v-model="viewDialogVisible" title="面试详情" width="60%">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="面试ID" :span="1">{{ currentInterview?.id }}</el-descriptions-item>
-        <el-descriptions-item label="面试时间" :span="1">
-          {{ formatDate(currentInterview?.scheduleTime) }}
+    <!-- 查看面试详情 -->
+    <el-dialog v-model="viewDialogVisible" title="面试详情" width="600px">
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="职位">{{ currentInterview.jobTitle }}</el-descriptions-item>
+        <el-descriptions-item label="公司">{{ currentInterview.companyName }}</el-descriptions-item>
+        <el-descriptions-item label="应聘者">{{
+          currentInterview.applicantName
+        }}</el-descriptions-item>
+        <el-descriptions-item label="面试官">{{
+          currentInterview.interviewerName
+        }}</el-descriptions-item>
+        <el-descriptions-item label="面试时间">
+          {{ formatDateTime(currentInterview.scheduledTime) }}
         </el-descriptions-item>
-        <el-descriptions-item label="时长" :span="1">
-          {{ currentInterview?.duration }}分钟
-        </el-descriptions-item>
-        <el-descriptions-item label="状态" :span="1">
-          <el-tag :type="getStatusType(currentInterview?.status) || 'info'">
-            {{ getStatusText(currentInterview?.status) }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="求职者" :span="1">
-          {{ currentInterview?.application?.jobSeeker?.user?.username }}
-        </el-descriptions-item>
-        <el-descriptions-item label="职位名称" :span="1">
-          {{ currentInterview?.application?.job?.title }}
-        </el-descriptions-item>
-        <el-descriptions-item label="公司名称" :span="1">
-          {{ currentInterview?.application?.job?.company?.name }}
-        </el-descriptions-item>
-        <el-descriptions-item label="申请状态" :span="1">
-          <el-tag :type="getApplicationStatusType(currentInterview?.application?.status) || 'info'">
-            {{ getApplicationStatusText(currentInterview?.application?.status) }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="面试链接" :span="2" v-if="currentInterview?.meetingLink">
-          <el-link :href="currentInterview.meetingLink" type="primary" target="_blank">
-            {{ currentInterview.meetingLink }}
-          </el-link>
-        </el-descriptions-item>
-        <el-descriptions-item label="面试反馈" :span="2">
-          <div class="interview-feedback">{{ currentInterview?.feedback || '暂无反馈' }}</div>
-        </el-descriptions-item>
+        <el-descriptions-item label="面试地点">{{
+          currentInterview.location
+        }}</el-descriptions-item>
+        <el-descriptions-item label="面试类型">{{
+          interviewTypeMap[currentInterview.type]
+        }}</el-descriptions-item>
+        <el-descriptions-item label="面试状态">{{
+          statusMap[currentInterview.status]
+        }}</el-descriptions-item>
+        <el-descriptions-item label="备注">{{ currentInterview.notes }}</el-descriptions-item>
       </el-descriptions>
+
+      <template v-if="currentInterview.feedback && currentInterview.status === 'COMPLETED'">
+        <div class="feedback-section">
+          <h3>面试反馈</h3>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="技术评分">
+              {{ currentInterview.feedback.technicalScore }} / 5
+            </el-descriptions-item>
+            <el-descriptions-item label="沟通评分">
+              {{ currentInterview.feedback.communicationScore }} / 5
+            </el-descriptions-item>
+            <el-descriptions-item label="文化匹配度">
+              {{ currentInterview.feedback.cultureFitScore }} / 5
+            </el-descriptions-item>
+            <el-descriptions-item label="推荐结果">
+              {{ recommendationMap[currentInterview.feedback.recommendation] }}
+            </el-descriptions-item>
+            <el-descriptions-item label="评价">
+              {{ currentInterview.feedback.comments }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </template>
 
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="viewDialogVisible = false">关闭</el-button>
-          <el-button
-            v-if="currentInterview?.status === 'SCHEDULED'"
-            type="success"
-            @click="handleComplete(currentInterview)"
-          >
-            完成面试
-          </el-button>
-          <el-button
-            v-if="currentInterview?.status === 'SCHEDULED'"
-            type="danger"
-            @click="handleCancel(currentInterview)"
-          >
-            取消面试
-          </el-button>
         </span>
       </template>
     </el-dialog>
 
-    <!-- 完成面试弹窗 -->
-    <el-dialog
-      v-model="completeDialogVisible"
-      title="完成面试"
-      width="40%"
-      :close-on-click-modal="false"
-    >
+    <!-- 面试反馈表单 -->
+    <el-dialog v-model="feedbackDialogVisible" title="提交面试反馈" width="600px">
       <el-form
-        ref="completeFormRef"
-        :model="completeForm"
-        :rules="completeRules"
-        label-position="top"
+        :model="feedbackForm"
+        label-width="120px"
+        :rules="feedbackRules"
+        ref="feedbackFormRef"
       >
-        <el-form-item label="面试反馈" prop="feedback">
-          <el-input
-            v-model="completeForm.feedback"
-            type="textarea"
-            :rows="6"
-            placeholder="请输入面试反馈"
-          />
+        <el-form-item label="技术评分" prop="technicalScore">
+          <el-rate v-model="feedbackForm.technicalScore" :max="5" />
         </el-form-item>
-        <el-form-item label="更新申请状态" prop="nextStatus">
-          <el-select v-model="completeForm.nextStatus" placeholder="请选择下一步状态" style="width: 100%">
-            <el-option label="二面" value="SECOND_INTERVIEW" />
-            <el-option label="HR面试" value="HR_INTERVIEW" />
-            <el-option label="发放Offer" value="OFFER" />
-            <el-option label="拒绝申请" value="REJECTED" />
-            <el-option label="不更新状态" value="NONE" />
+        <el-form-item label="沟通评分" prop="communicationScore">
+          <el-rate v-model="feedbackForm.communicationScore" :max="5" />
+        </el-form-item>
+        <el-form-item label="文化匹配度" prop="cultureFitScore">
+          <el-rate v-model="feedbackForm.cultureFitScore" :max="5" />
+        </el-form-item>
+        <el-form-item label="推荐结果" prop="recommendation">
+          <el-select v-model="feedbackForm.recommendation" placeholder="请选择推荐结果">
+            <el-option label="强烈推荐" value="STRONG_YES" />
+            <el-option label="推荐" value="YES" />
+            <el-option label="待定" value="MAYBE" />
+            <el-option label="不推荐" value="NO" />
+            <el-option label="强烈不推荐" value="STRONG_NO" />
           </el-select>
         </el-form-item>
+        <el-form-item label="评价" prop="comments">
+          <el-input
+            v-model="feedbackForm.comments"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入面试评价"
+          />
+        </el-form-item>
       </el-form>
+
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="completeDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitCompleteForm" :loading="submitLoading">确定</el-button>
+          <el-button @click="feedbackDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitFeedback">提交</el-button>
         </span>
       </template>
     </el-dialog>
 
-    <!-- 取消面试弹窗 -->
-    <el-dialog
-      v-model="cancelDialogVisible"
-      title="取消面试"
-      width="40%"
-      :close-on-click-modal="false"
-    >
-      <p>确定要取消此次面试吗？</p>
-      <el-form
-        ref="cancelFormRef"
-        :model="cancelForm"
-        :rules="cancelRules"
-        label-position="top"
-      >
+    <!-- 取消面试 -->
+    <el-dialog v-model="cancelDialogVisible" title="取消面试" width="500px">
+      <el-form :model="cancelForm" label-width="100px" :rules="cancelRules" ref="cancelFormRef">
         <el-form-item label="取消原因" prop="reason">
           <el-input
             v-model="cancelForm.reason"
             type="textarea"
             :rows="4"
-            placeholder="请输入取消原因"
+            placeholder="请输入取消面试的原因"
           />
         </el-form-item>
       </el-form>
+
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="cancelDialogVisible = false">关闭</el-button>
-          <el-button type="danger" @click="submitCancelForm" :loading="submitLoading">确定取消</el-button>
+          <el-button @click="cancelDialogVisible = false">取消</el-button>
+          <el-button type="danger" @click="confirmCancel">确认取消面试</el-button>
         </span>
       </template>
     </el-dialog>
@@ -207,306 +207,340 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import CommonCrudTable from '@/components/CommonCrudTable.vue'
-import { InterviewService, JobApplicationService } from '@/api/userApi'
-import { Interview } from '@/api/model/userModel'
-import { ElMessage, FormInstance, FormRules } from 'element-plus'
+  import { ref, reactive, onMounted, computed } from 'vue'
+  import { ElMessage, ElMessageBox, FormInstance } from 'element-plus'
+  import { InterviewService, InterviewListParams } from '@/api/interview'
+  import { JobService } from '@/api/job'
+  import { UserService } from '@/api/user'
+  import type { Interview, InterviewFeedback } from '@/api/model/userModel'
+  import CommonCrudTable from '@/components/CommonCrudTable.vue'
 
-// 数据列表
-const interviewList = ref<Interview[]>([])
-const total = ref(0)
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(10)
-const searchKeyword = ref('')
+  // 表格列配置
+  const columns = [
+    { prop: 'id', label: 'ID', width: '80' },
+    { prop: 'jobTitle', label: '职位', minWidth: '120' },
+    { prop: 'companyName', label: '公司', minWidth: '120' },
+    { prop: 'applicantName', label: '应聘者', minWidth: '120' },
+    { prop: 'interviewerName', label: '面试官', minWidth: '120' },
+    {
+      prop: 'scheduledTime',
+      label: '面试时间',
+      minWidth: '150',
+      formatter: (row: Interview) => formatDateTime(row.scheduledTime)
+    },
+    {
+      prop: 'type',
+      label: '面试类型',
+      width: '100',
+      formatter: (row: Interview) => interviewTypeMap[row.type]
+    },
+    {
+      prop: 'status',
+      label: '状态',
+      width: '100',
+      formatter: (row: Interview) => statusMap[row.status]
+    },
+    { slot: 'operation', label: '操作', fixed: 'right', width: '240' }
+  ]
 
-// 查看详情
-const viewDialogVisible = ref(false)
-const currentInterview = ref<Interview | null>(null)
+  // 状态映射
+  const statusMap = {
+    PENDING: '待面试',
+    COMPLETED: '已完成',
+    CANCELED: '已取消'
+  }
 
-// 完成面试
-const completeDialogVisible = ref(false)
-const completeFormRef = ref<FormInstance>()
-const completeForm = ref({
-  feedback: '',
-  nextStatus: 'NONE' // 默认不更新申请状态
-})
-const completeRules = ref<FormRules>({
-  feedback: [{ required: true, message: '请输入面试反馈', trigger: 'blur' }],
-  nextStatus: [{ required: true, message: '请选择下一步状态', trigger: 'change' }]
-})
+  // 面试类型映射
+  const interviewTypeMap = {
+    ONSITE: '现场面试',
+    PHONE: '电话面试',
+    VIDEO: '视频面试'
+  }
 
-// 取消面试
-const cancelDialogVisible = ref(false)
-const cancelFormRef = ref<FormInstance>()
-const cancelForm = ref({
-  reason: ''
-})
-const cancelRules = ref<FormRules>({
-  reason: [{ required: true, message: '请输入取消原因', trigger: 'blur' }]
-})
+  // 推荐结果映射
+  const recommendationMap = {
+    STRONG_YES: '强烈推荐',
+    YES: '推荐',
+    MAYBE: '待定',
+    NO: '不推荐',
+    STRONG_NO: '强烈不推荐'
+  }
 
-const submitLoading = ref(false)
+  // 数据
+  const interviewList = ref<Interview[]>([])
+  const loading = ref(false)
+  const pagination = reactive({
+    total: 0,
+    page: 1,
+    size: 10
+  })
 
-// 获取数据
-onMounted(() => {
-  fetchInterviewList()
-})
+  // 下拉选项
+  const jobOptions = ref<{ id: number; title: string }[]>([])
+  const interviewerOptions = ref<{ id: number; name: string }[]>([])
 
-const fetchInterviewList = async () => {
-  loading.value = true
-  try {
-    const res = await InterviewService.getInterviewList({
-      page: currentPage.value,
-      size: pageSize.value,
-      keyword: searchKeyword.value
+  // 搜索参数
+  const searchParams = reactive<InterviewListParams>({
+    page: 1,
+    size: 10,
+    jobId: undefined,
+    interviewerId: undefined,
+    status: undefined,
+    fromDate: undefined,
+    toDate: undefined
+  })
+
+  const dateRange = ref<[string, string] | null>(null)
+
+  // 当前选中的面试
+  const currentInterview = ref<Interview>({} as Interview)
+
+  // 对话框显示状态
+  const viewDialogVisible = ref(false)
+  const feedbackDialogVisible = ref(false)
+  const cancelDialogVisible = ref(false)
+
+  // 反馈表单
+  const feedbackFormRef = ref<FormInstance>()
+  const feedbackForm = reactive<InterviewFeedback>({
+    technicalScore: 0,
+    communicationScore: 0,
+    cultureFitScore: 0,
+    recommendation: 'MAYBE',
+    comments: ''
+  })
+
+  const feedbackRules = {
+    technicalScore: [{ required: true, message: '请评分', trigger: 'change' }],
+    communicationScore: [{ required: true, message: '请评分', trigger: 'change' }],
+    cultureFitScore: [{ required: true, message: '请评分', trigger: 'change' }],
+    recommendation: [{ required: true, message: '请选择推荐结果', trigger: 'change' }]
+  }
+
+  // 取消面试表单
+  const cancelFormRef = ref<FormInstance>()
+  const cancelForm = reactive({
+    reason: ''
+  })
+
+  const cancelRules = {
+    reason: [
+      { required: true, message: '请输入取消原因', trigger: 'blur' },
+      { min: 5, message: '取消原因不能少于5个字符', trigger: 'blur' }
+    ]
+  }
+
+  // 监听日期范围变化
+  const watchDateRange = computed(() => {
+    if (dateRange.value) {
+      searchParams.fromDate = dateRange.value[0]
+      searchParams.toDate = dateRange.value[1]
+    } else {
+      searchParams.fromDate = undefined
+      searchParams.toDate = undefined
+    }
+    return dateRange.value
+  })
+
+  // 初始化
+  onMounted(async () => {
+    await Promise.all([fetchInterviewList(), fetchJobOptions(), fetchInterviewerOptions()])
+  })
+
+  // 获取面试列表
+  const fetchInterviewList = async () => {
+    loading.value = true
+    try {
+      const res = await InterviewService.getInterviewList(searchParams)
+      if (res.success) {
+        interviewList.value = res.data.items
+        pagination.total = res.data.total
+      }
+    } catch (error) {
+      console.error('获取面试列表失败', error)
+      ElMessage.error('获取面试列表失败')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 获取职位选项
+  const fetchJobOptions = async () => {
+    try {
+      const res = await JobService.getJobList({ page: 1, size: 100 })
+      if (res.success) {
+        jobOptions.value = res.data.items.map((job) => ({
+          id: job.id,
+          title: job.title
+        }))
+      }
+    } catch (error) {
+      console.error('获取职位选项失败', error)
+    }
+  }
+
+  // 获取面试官选项
+  const fetchInterviewerOptions = async () => {
+    try {
+      const res = await UserService.getInterviewerList({ page: 1, size: 100 })
+      if (res.success) {
+        interviewerOptions.value = res.data.items.map((interviewer) => ({
+          id: interviewer.id,
+          name: interviewer.name
+        }))
+      }
+    } catch (error) {
+      console.error('获取面试官选项失败', error)
+    }
+  }
+
+  // 处理分页变化
+  const handlePageChange = (page: number) => {
+    searchParams.page = page
+    fetchInterviewList()
+  }
+
+  // 处理搜索
+  const handleSearch = () => {
+    searchParams.page = 1
+    fetchInterviewList()
+  }
+
+  // 查看面试详情
+  const handleView = async (row: Interview) => {
+    try {
+      const res = await InterviewService.getInterviewDetail(row.id)
+      if (res.success) {
+        currentInterview.value = res.data
+        viewDialogVisible.value = true
+
+        // 如果有反馈，获取反馈信息
+        if (res.data.status === 'COMPLETED') {
+          try {
+            const feedbackRes = await InterviewService.getFeedback(row.id)
+            if (feedbackRes.success) {
+              currentInterview.value.feedback = feedbackRes.data
+            }
+          } catch (error) {
+            console.error('获取面试反馈失败', error)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('获取面试详情失败', error)
+      ElMessage.error('获取面试详情失败')
+    }
+  }
+
+  // 提交反馈对话框
+  const handleFeedback = (row: Interview) => {
+    currentInterview.value = row
+
+    // 重置表单
+    Object.assign(feedbackForm, {
+      technicalScore: 0,
+      communicationScore: 0,
+      cultureFitScore: 0,
+      recommendation: 'MAYBE',
+      comments: ''
     })
 
-    if (res.code === 200) {
-      interviewList.value = res.data || []
-      total.value = res.total || 0
-    } else {
-      ElMessage.error(res.message || '获取面试列表失败')
-    }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_error) {
-    ElMessage.error('获取面试列表失败')
-  } finally {
-    loading.value = false
+    feedbackDialogVisible.value = true
   }
-}
 
-// 处理搜索
-const handleSearch = (params: { keyword: string; page: number; pageSize: number }) => {
-  searchKeyword.value = params.keyword
-  currentPage.value = params.page
-  pageSize.value = params.pageSize
-  fetchInterviewList()
-}
+  // 提交反馈
+  const submitFeedback = async () => {
+    if (!feedbackFormRef.value) return
 
-// 处理分页
-const handlePageChange = (params: { page: number; pageSize: number }) => {
-  currentPage.value = params.page
-  pageSize.value = params.pageSize
-  fetchInterviewList()
-}
+    await feedbackFormRef.value.validate(async (valid) => {
+      if (valid) {
+        try {
+          const res = await InterviewService.submitFeedback(currentInterview.value.id, feedbackForm)
+          if (res.success) {
+            // 更新面试状态为已完成
+            await InterviewService.updateInterviewStatus(currentInterview.value.id, 'COMPLETED')
 
-const handleSizeChange = (params: { page: number; pageSize: number }) => {
-  currentPage.value = params.page
-  pageSize.value = params.pageSize
-  fetchInterviewList()
-}
-
-// 查看详情
-const handleView = async (row: Interview) => {
-  try {
-    const res = await InterviewService.getInterviewById(row.id!)
-    if (res.code === 200) {
-      currentInterview.value = res.data
-      viewDialogVisible.value = true
-    } else {
-      ElMessage.error(res.message || '获取面试详情失败')
-    }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_error) {
-    ElMessage.error('获取面试详情失败')
-  }
-}
-
-// 完成面试
-const handleComplete = (interview: Interview | null) => {
-  if (!interview) return
-
-  currentInterview.value = interview
-  completeForm.value = {
-    feedback: '',
-    nextStatus: 'NONE'
-  }
-  completeDialogVisible.value = true
-}
-
-// 提交完成面试表单
-const submitCompleteForm = async () => {
-  if (!completeFormRef.value || !currentInterview.value) return
-
-  await completeFormRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        // 更新面试状态为已完成
-        const res = await InterviewService.updateInterviewStatus(
-          currentInterview.value.id!,
-          'COMPLETED',
-          completeForm.value.feedback
-        )
-
-        if (res.code === 200) {
-          ElMessage.success('面试已标记为完成')
-          
-          // 如果需要更新申请状态
-          if (completeForm.value.nextStatus !== 'NONE' && currentInterview.value.application?.id) {
-            try {
-              await JobApplicationService.updateApplicationStatus(
-                currentInterview.value.application.id,
-                completeForm.value.nextStatus
-              )
-              ElMessage.success('求职申请状态已更新')
-            } catch (_error) {
-              ElMessage.warning('面试状态已更新，但申请状态更新失败')
-            }
+            ElMessage.success('反馈提交成功')
+            feedbackDialogVisible.value = false
+            fetchInterviewList()
           }
-          
-          completeDialogVisible.value = false
-          fetchInterviewList()
-          if (viewDialogVisible.value) {
-            handleView(currentInterview.value)
-          }
-        } else {
-          ElMessage.error(res.message || '操作失败')
+        } catch (error) {
+          console.error('提交反馈失败', error)
+          ElMessage.error('提交反馈失败')
         }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_error) {
-        ElMessage.error('操作失败')
-      } finally {
-        submitLoading.value = false
       }
-    }
-  })
-}
-
-// 取消面试
-const handleCancel = (interview: Interview | null) => {
-  if (!interview) return
-
-  currentInterview.value = interview
-  cancelForm.value = {
-    reason: ''
+    })
   }
-  cancelDialogVisible.value = true
-}
 
-// 提交取消面试表单
-const submitCancelForm = async () => {
-  if (!cancelFormRef.value || !currentInterview.value) return
+  // 取消面试对话框
+  const handleCancel = (row: Interview) => {
+    currentInterview.value = row
+    cancelForm.reason = ''
+    cancelDialogVisible.value = true
+  }
 
-  await cancelFormRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        // 更新面试状态为已取消
-        const res = await InterviewService.updateInterviewStatus(
-          currentInterview.value.id!,
-          'CANCELLED',
-          cancelForm.value.reason
-        )
+  // 确认取消面试
+  const confirmCancel = async () => {
+    if (!cancelFormRef.value) return
 
-        if (res.code === 200) {
-          ElMessage.success('面试已取消')
-          cancelDialogVisible.value = false
-          fetchInterviewList()
-          if (viewDialogVisible.value) {
-            viewDialogVisible.value = false
+    await cancelFormRef.value.validate(async (valid) => {
+      if (valid) {
+        try {
+          const res = await InterviewService.cancelInterview(
+            currentInterview.value.id,
+            cancelForm.reason
+          )
+          if (res.success) {
+            ElMessage.success('面试已取消')
+            cancelDialogVisible.value = false
+            fetchInterviewList()
           }
-        } else {
-          ElMessage.error(res.message || '操作失败')
+        } catch (error) {
+          console.error('取消面试失败', error)
+          ElMessage.error('取消面试失败')
         }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_error) {
-        ElMessage.error('操作失败')
-      } finally {
-        submitLoading.value = false
       }
-    }
-  })
-}
-
-// 格式化日期
-const formatDate = (date: Date | string | undefined) => {
-  if (!date) return '-'
-  if (typeof date === 'string') {
-    return new Date(date).toLocaleString()
+    })
   }
-  return date.toLocaleString()
-}
 
-// 获取面试状态标签类型
-const getStatusType = (status: string | undefined) => {
-  if (!status) return 'info'
-  const statusMap: Record<string, string> = {
-    SCHEDULED: 'warning',
-    COMPLETED: 'success',
-    CANCELLED: 'info'
+  // 格式化日期时间
+  const formatDateTime = (dateTime: string) => {
+    if (!dateTime) return '-'
+    const date = new Date(dateTime)
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
-  return statusMap[status] || 'info'
-}
-
-// 获取面试状态文本
-const getStatusText = (status: string | undefined) => {
-  if (!status) return '未知'
-  const statusMap: Record<string, string> = {
-    SCHEDULED: '已安排',
-    COMPLETED: '已完成',
-    CANCELLED: '已取消'
-  }
-  return statusMap[status] || '未知'
-}
-
-// 获取申请状态标签类型
-const getApplicationStatusType = (status: string | undefined) => {
-  if (!status) return 'info'
-  const statusMap: Record<string, string> = {
-    RESUME_SCREENING: 'info',
-    WRITTEN_TEST: 'info',
-    FIRST_INTERVIEW: 'warning',
-    SECOND_INTERVIEW: 'warning',
-    HR_INTERVIEW: 'warning',
-    SCHEDULED: 'primary',
-    OFFER: 'success',
-    REJECTED: 'danger'
-  }
-  return statusMap[status] || 'info'
-}
-
-// 获取申请状态文本
-const getApplicationStatusText = (status: string | undefined) => {
-  if (!status) return '未知'
-  const statusMap: Record<string, string> = {
-    RESUME_SCREENING: '简历筛选',
-    WRITTEN_TEST: '笔试',
-    FIRST_INTERVIEW: '一面',
-    SECOND_INTERVIEW: '二面',
-    HR_INTERVIEW: 'HR面试',
-    SCHEDULED: '已安排面试',
-    OFFER: 'Offer',
-    REJECTED: '已拒绝'
-  }
-  return statusMap[status] || '未知'
-}
 </script>
 
 <style scoped>
-.interview-list-page {
-  padding: 20px;
-}
+  .interview-container {
+    padding: 20px;
+  }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+  .box-card {
+    margin-bottom: 20px;
+  }
 
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-}
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-.interview-feedback {
-  white-space: pre-line;
-  max-height: 200px;
-  overflow-y: auto;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-}
-</style> 
+  .feedback-section {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+  }
+
+  .feedback-section h3 {
+    margin-bottom: 15px;
+    font-weight: 500;
+    color: #303133;
+  }
+</style>

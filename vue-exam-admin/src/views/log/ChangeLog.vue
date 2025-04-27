@@ -20,7 +20,15 @@
 </template>
 
 <script setup lang="ts">
-  import { upgradeLogList } from '@/mock/upgradeLog'
+  // 系统升级日志数据
+  const upgradeLogList = [
+    {
+      version: import.meta.env.VITE_VERSION || '1.0.0',
+      title: '系统功能优化与Bug修复',
+      detail: ['优化系统性能', '修复已知问题'],
+      date: new Date().toISOString().split('T')[0]
+    }
+  ]
 </script>
 
 <style lang="scss" scoped>

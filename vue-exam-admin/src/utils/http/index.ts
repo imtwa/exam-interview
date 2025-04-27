@@ -1,7 +1,8 @@
-import axios, { InternalAxiosRequestConfig, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/modules/user'
 import EmojiText from '../emojo'
+import { useRouter } from 'vue-router'
 
 const axiosInstance = axios.create({
   timeout: 15000, // 请求超时时间(毫秒)
@@ -34,11 +35,9 @@ axiosInstance.interceptors.request.use(
     const { accessToken } = useUserStore()
 
     // 如果 token 存在，则设置请求头
-    if (accessToken) {
-      request.headers.set({
-        'Content-Type': 'application/json',
-        Authorization: accessToken
-      })
+    if (accessToken && request.headers) {
+      request.headers.set('Content-Type', 'application/json')
+      request.headers.set('Authorization', accessToken)
     }
 
     return request // 返回修改后的配置
@@ -51,7 +50,31 @@ axiosInstance.interceptors.request.use(
 
 // 响应拦截器
 axiosInstance.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response) => {
+    const res = response.data
+
+    // 根据状态码判断请求是否成功
+    if (res.code !== 200) {
+      ElMessage({
+        message: res.message || 'Error',
+        type: 'error',
+        duration: 5 * 1000
+      })
+
+      // 特殊状态码处理
+      if (res.code === 401) {
+        // 清除用户信息并跳转到登录页
+        const userStore = useUserStore()
+        userStore.logOut() // 使用logOut方法替代resetState
+        const router = useRouter()
+        router.push('/login')
+      }
+
+      return Promise.reject(new Error(res.message || 'Error'))
+    } else {
+      return res
+    }
+  },
   (error) => {
     if (axios.isCancel(error)) {
       console.log('repeated request: ' + error.message)
@@ -79,8 +102,8 @@ async function request<T = any>(config: AxiosRequestConfig): Promise<T> {
   }
 
   try {
-    const res = await axiosInstance.request<T>({ ...config })
-    return res.data
+    const res = await axiosInstance.request<any, T>(config)
+    return res
   } catch (e) {
     if (axios.isAxiosError(e)) {
       // 可以在这里处理 Axios 错误
@@ -91,20 +114,20 @@ async function request<T = any>(config: AxiosRequestConfig): Promise<T> {
 
 // API 方法集合
 const api = {
-  get<T>(config: AxiosRequestConfig): Promise<T> {
-    return request({ ...config, method: 'GET' }) // GET 请求
+  get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return request({ ...config, url, method: 'GET' }) // GET 请求
   },
-  post<T>(config: AxiosRequestConfig): Promise<T> {
-    return request({ ...config, method: 'POST' }) // POST 请求
+  post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    return request({ ...config, url, data, method: 'POST' }) // POST 请求
   },
-  put<T>(config: AxiosRequestConfig): Promise<T> {
-    return request({ ...config, method: 'PUT' }) // PUT 请求
+  put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    return request({ ...config, url, data, method: 'PUT' }) // PUT 请求
   },
-  patch<T>(config: AxiosRequestConfig): Promise<T> {
-    return request({ ...config, method: 'PATCH' }) // PATCH 请求
+  patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    return request({ ...config, url, data, method: 'PATCH' }) // PATCH 请求
   },
-  del<T>(config: AxiosRequestConfig): Promise<T> {
-    return request({ ...config, method: 'DELETE' }) // DELETE 请求
+  delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return request({ ...config, url, method: 'DELETE' }) // DELETE 请求
   }
 }
 

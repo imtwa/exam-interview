@@ -5,14 +5,24 @@ export interface Result<T = any> {
   code: number
   message: string
   data: T
-  success: boolean
+  success?: boolean
 }
 
 /**
  * Pagination information
  */
 export interface Paging {
+  page: number
+  pageSize: number
+}
+
+/**
+ * Paginated data structure
+ */
+export interface PageResult<T = any> {
+  records: T[]
   total: number
   page: number
-  size: number
+  pageSize: number
+  totalPages: number
 }

@@ -1,6 +1,15 @@
-import { upgradeLogList } from '@/mock/upgradeLog'
 import { ElNotification } from 'element-plus'
 import { useUserStore } from '@/store/modules/user'
+
+// 系统升级日志数据
+const upgradeLogList = {
+  value: [
+    {
+      title: '系统功能优化与Bug修复',
+      requireReLogin: false
+    }
+  ]
+}
 
 // 系统升级
 export function systemUpgrade() {

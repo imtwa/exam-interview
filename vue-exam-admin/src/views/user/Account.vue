@@ -32,7 +32,16 @@
       </template>
     </art-table-bar>
 
-    <art-table :data="tableData" selection :currentPage="1" :pageSize="10" :total="50">
+    <art-table 
+      :data="tableData" 
+      selection 
+      :currentPage="currentPage" 
+      :pageSize="pageSize" 
+      :total="total"
+      :loading="loading"
+      @current-change="handlePageChange"
+      @size-change="handleSizeChange"
+    >
       <template #default>
         <el-table-column
           label="用户名"
@@ -77,7 +86,7 @@
         <el-table-column fixed="right" label="操作" width="150px">
           <template #default="scope">
             <ArtButtonTable type="edit" @click="showDialog('edit', scope.row)" />
-            <ArtButtonTable type="delete" @click="deleteUser" />
+            <ArtButtonTable type="delete" @click="deleteUser(scope.row)" />
           </template>
         </el-table-column>
       </template>
@@ -94,6 +103,9 @@
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="formData.phone" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="formData.email" />
         </el-form-item>
         <el-form-item label="性别" prop="sex">
           <el-select v-model="formData.sex">
@@ -120,17 +132,24 @@
 </template>
 
 <script setup lang="ts">
-  import { ACCOUNT_TABLE_DATA } from '@/mock/temp/formData'
   import { FormInstance } from 'element-plus'
   import { ElMessageBox, ElMessage } from 'element-plus'
   import type { FormRules } from 'element-plus'
+  import { UserService } from '@/api/userApi'
+  import { ApiStatus } from '@/utils/http/status'
 
   const dialogType = ref('add')
   const dialogVisible = ref(false)
+  const loading = ref(false)
+  const currentPage = ref(1)
+  const pageSize = ref(10)
+  const total = ref(0)
 
   const formData = reactive({
+    id: 0,
     username: '',
     phone: '',
+    email: '',
     sex: '',
     dep: ''
   })
@@ -181,36 +200,103 @@
     formEl.resetFields()
   }
 
-  const tableData = ACCOUNT_TABLE_DATA
+  const tableData = ref<any[]>([])
+
+  // 获取用户列表数据
+  const getUserList = async () => {
+    loading.value = true
+    try {
+      const params = {
+        page: currentPage.value,
+        size: pageSize.value,
+        name: searchForm.name || undefined,
+        phone: searchForm.phone || undefined,
+        email: searchForm.email || undefined,
+        account: searchForm.account || undefined,
+        id: searchForm.id ? Number(searchForm.id) : undefined,
+        sex: searchForm.sex || undefined,
+        level: searchForm.level || undefined
+      }
+
+      const res = await UserService.getUserList(params)
+      if (res.code === ApiStatus.success) {
+        tableData.value = res.data.list || []
+        total.value = res.data.paging?.total || 0
+      } else {
+        ElMessage.error(res.message || '获取用户列表失败')
+      }
+    } catch (error) {
+      console.error('获取用户列表出错:', error)
+      ElMessage.error('获取用户列表失败')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 页码变化
+  const handlePageChange = (page: number) => {
+    currentPage.value = page
+    getUserList()
+  }
+
+  // 每页条数变化
+  const handleSizeChange = (size: number) => {
+    pageSize.value = size
+    currentPage.value = 1
+    getUserList()
+  }
+
+  // 初始化获取数据
+  onMounted(() => {
+    getUserList()
+  })
 
   const showDialog = (type: string, row?: any) => {
     dialogVisible.value = true
     dialogType.value = type
 
     if (type === 'edit' && row) {
+      formData.id = row.id
       formData.username = row.username
-      formData.phone = row.mobile
+      formData.phone = row.mobile || row.phone
+      formData.email = row.email
       formData.sex = row.sex === 1 ? '男' : '女'
       formData.dep = row.dep
     } else {
+      formData.id = 0
       formData.username = ''
       formData.phone = ''
+      formData.email = ''
       formData.sex = '男'
       formData.dep = ''
     }
   }
 
-  const deleteUser = () => {
+  const deleteUser = (row: any) => {
     ElMessageBox.confirm('确定要注销该用户吗？', '注销用户', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'error'
-    }).then(() => {
-      ElMessage.success('注销成功')
+    }).then(async () => {
+      try {
+        const res = await UserService.deleteUser(row.id)
+        if (res.code === ApiStatus.success) {
+          ElMessage.success('注销成功')
+          getUserList()
+        } else {
+          ElMessage.error(res.message || '注销失败')
+        }
+      } catch (error) {
+        console.error('删除用户出错:', error)
+        ElMessage.error('注销失败')
+      }
     })
   }
 
-  const search = () => {}
+  const search = () => {
+    currentPage.value = 1
+    getUserList()
+  }
 
   const changeColumn = (list: any) => {
     columns.values = list
@@ -258,6 +344,10 @@
       { required: true, message: '请输入手机号', trigger: 'blur' },
       { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
     ],
+    email: [
+      { required: true, message: '请输入邮箱', trigger: 'blur' },
+      { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    ],
     sex: [{ required: true, message: '请选择性别', trigger: 'change' }],
     dep: [{ required: true, message: '请选择部门', trigger: 'change' }]
   })
@@ -267,10 +357,35 @@
   const handleSubmit = async () => {
     if (!formRef.value) return
 
-    await formRef.value.validate((valid) => {
+    await formRef.value.validate(async (valid) => {
       if (valid) {
-        ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
-        dialogVisible.value = false
+        try {
+          const userData = {
+            username: formData.username,
+            mobile: formData.phone,
+            email: formData.email,
+            sex: formData.sex === '男' ? 1 : 2,
+            dep: formData.dep
+          }
+
+          let res
+          if (dialogType.value === 'add') {
+            res = await UserService.createUser(userData)
+          } else {
+            res = await UserService.updateUser(formData.id, userData)
+          }
+
+          if (res.code === ApiStatus.success) {
+            ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
+            dialogVisible.value = false
+            getUserList()
+          } else {
+            ElMessage.error(res.message || (dialogType.value === 'add' ? '添加失败' : '更新失败'))
+          }
+        } catch (error) {
+          console.error(dialogType.value === 'add' ? '添加用户出错:' : '更新用户出错:', error)
+          ElMessage.error(dialogType.value === 'add' ? '添加失败' : '更新失败')
+        }
       }
     })
   }

@@ -1,5 +1,5 @@
 import http from '@/utils/http'
-import { Result, Paging } from './model/baseModel'
+import { Result, Paging, PageResult } from './model/baseModel'
 import {
   FrontUser,
   JobSeeker,
@@ -16,7 +16,9 @@ import {
   JobApplicationListParams,
   InterviewListParams,
   WorkExperience,
-  Education
+  Education,
+  CompanyVerifyParams,
+  Industry
 } from './model/userModel'
 
 /**
@@ -24,9 +26,41 @@ import {
  */
 export class UserService {
   /**
+   * 用户登录
+   */
+  static async login(options: { body: string }): Promise<Result<any>> {
+    return http.post({
+      url: '/auth/login',
+      data: JSON.parse(options.body)
+    })
+  }
+
+  /**
+   * 获取当前用户信息
+   */
+  static async getUserInfo(): Promise<Result<any>> {
+    return http.get({
+      url: '/auth/profile'
+    })
+  }
+
+  /**
+   * 修改密码
+   */
+  static async changePassword(params: {
+    oldPassword: string
+    newPassword: string
+  }): Promise<Result<any>> {
+    return http.put({
+      url: '/auth/change-password',
+      data: params
+    })
+  }
+
+  /**
    * 获取用户列表（分页）
    */
-  static async getUserList(params: UserListParams): Promise<Result<FrontUser[]> & Paging> {
+  static async getUserList(params: UserListParams): Promise<Result<PageResult<FrontUser>>> {
     return http.get({
       url: '/user/page',
       params
@@ -89,7 +123,7 @@ export class JobSeekerService {
    */
   static async getJobSeekerList(
     params: JobSeekerListParams
-  ): Promise<Result<JobSeeker[]> & Paging> {
+  ): Promise<Result<PageResult<JobSeeker>>> {
     return http.get({
       url: '/jobseeker/page',
       params
@@ -214,7 +248,7 @@ export class InterviewerService {
    */
   static async getInterviewerList(
     params: InterviewerListParams
-  ): Promise<Result<Interviewer[]> & Paging> {
+  ): Promise<Result<PageResult<Interviewer>>> {
     return http.get({
       url: '/interviewer/page',
       params
@@ -311,66 +345,50 @@ export class InterviewerService {
 /**
  * 公司API服务
  */
-export class CompanyService {
+export const CompanyService = {
   /**
    * 获取公司列表（分页）
    */
-  static async getCompanyList(params: CompanyListParams): Promise<Result<Company[]> & Paging> {
-    return http.get({
-      url: '/company/page',
-      params
-    })
-  }
+  getCompanyList: (params: CompanyListParams): Promise<Result<PageResult<Company>>> => {
+    return http.get('/company/page', { params })
+  },
 
   /**
    * 获取公司详情
    */
-  static async getCompanyById(id: number): Promise<Result<Company>> {
-    return http.get({
-      url: `/company/${id}`
-    })
-  }
+  getCompanyById: (id: number): Promise<Result<Company>> => {
+    return http.get(`/company/${id}`)
+  },
 
   /**
    * 创建公司
    */
-  static async createCompany(data: Partial<Company>): Promise<Result<Company>> {
-    return http.post({
-      url: '/company',
-      data
-    })
-  }
+  createCompany: (
+    data: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Result<Company>> => {
+    return http.post('/company', data)
+  },
 
   /**
    * 更新公司信息
    */
-  static async updateCompany(id: number, data: Partial<Company>): Promise<Result<Company>> {
-    return http.patch({
-      url: `/company/${id}`,
-      data
-    })
-  }
+  updateCompany: (id: number, data: Partial<Company>): Promise<Result<Company>> => {
+    return http.put(`/company/${id}`, data)
+  },
 
   /**
    * 删除公司
    */
-  static async deleteCompany(id: number): Promise<Result<boolean>> {
-    return http.del({
-      url: `/company/${id}`
-    })
-  }
+  deleteCompany: (id: number): Promise<Result<boolean>> => {
+    return http.delete(`/company/${id}`)
+  },
 
   /**
    * 验证公司信息
    */
-  static async verifyCompany(
-    id: number,
-    status: 'PENDING' | 'VERIFIED' | 'REJECTED'
-  ): Promise<Result<boolean>> {
-    return http.patch({
-      url: `/company/${id}/verify`,
-      data: { status }
-    })
+  verifyCompany: (id: number, status: 'VERIFIED' | 'REJECTED'): Promise<Result<Company>> => {
+    const params: CompanyVerifyParams = { status }
+    return http.put(`/company/${id}/verify`, params)
   }
 }
 
@@ -383,7 +401,7 @@ export class JobPostingService {
    */
   static async getJobPostingList(
     params: JobPostingListParams
-  ): Promise<Result<JobPosting[]> & Paging> {
+  ): Promise<Result<PageResult<JobPosting>>> {
     return http.get({
       url: '/job',
       params
@@ -436,7 +454,7 @@ export class JobPostingService {
    */
   static async getJobsByInterviewer(
     params?: Partial<JobPostingListParams>
-  ): Promise<Result<JobPosting[]> & Paging> {
+  ): Promise<Result<PageResult<JobPosting>>> {
     return http.get({
       url: `/job/interviewer/jobs`,
       params
@@ -462,7 +480,7 @@ export class JobApplicationService {
    */
   static async getJobApplicationList(
     params: JobApplicationListParams
-  ): Promise<Result<JobApplication[]> & Paging> {
+  ): Promise<Result<PageResult<JobApplication>>> {
     return http.get({
       url: '/interviewer/applications',
       params
@@ -511,7 +529,7 @@ export class InterviewService {
    */
   static async getInterviewList(
     params: InterviewListParams
-  ): Promise<Result<Interview[]> & Paging> {
+  ): Promise<Result<PageResult<Interview>>> {
     return http.get({
       url: '/interview/page',
       params
@@ -524,7 +542,7 @@ export class InterviewService {
   static async getInterviewsByInterviewer(
     interviewerId: number,
     params?: Partial<InterviewListParams>
-  ): Promise<Result<Interview[]> & Paging> {
+  ): Promise<Result<PageResult<Interview>>> {
     return http.get({
       url: `/interview/interviewer/${interviewerId}`,
       params
@@ -587,99 +605,40 @@ export class InterviewService {
 /**
  * 行业分类API服务
  */
-export class IndustryService {
+export const IndustryService = {
   /**
-   * 创建行业一级分类
+   * 获取行业树
    */
-  static async createCategory(data: any): Promise<Result<any>> {
-    return http.post({
-      url: '/industry/category',
-      data
-    })
-  }
+  getIndustryTree: (): Promise<Result<Industry[]>> => {
+    return http.get('/industry/tree')
+  },
 
   /**
-   * 获取行业一级分类列表
+   * 获取行业列表
    */
-  static async getCategoryList(): Promise<Result<any[]>> {
-    return http.get({
-      url: '/industry/category'
-    })
-  }
+  getIndustryList: (): Promise<Result<Industry[]>> => {
+    return http.get('/industry/list')
+  },
 
   /**
-   * 获取行业一级分类详情
+   * 创建行业
    */
-  static async getCategoryById(id: number): Promise<Result<any>> {
-    return http.get({
-      url: `/industry/category/${id}`
-    })
-  }
+  createIndustry: (data: Omit<Industry, 'id' | 'children'>): Promise<Result<Industry>> => {
+    return http.post('/industry', data)
+  },
 
   /**
-   * 更新行业一级分类
+   * 更新行业
    */
-  static async updateCategory(id: number, data: any): Promise<Result<any>> {
-    return http.patch({
-      url: `/industry/category/${id}`,
-      data
-    })
-  }
+  updateIndustry: (id: number, data: Partial<Industry>): Promise<Result<Industry>> => {
+    return http.put(`/industry/${id}`, data)
+  },
 
   /**
-   * 删除行业一级分类
+   * 删除行业
    */
-  static async deleteCategory(id: number): Promise<Result<boolean>> {
-    return http.del({
-      url: `/industry/category/${id}`
-    })
-  }
-
-  /**
-   * 创建行业二级分类
-   */
-  static async createSubCategory(data: any): Promise<Result<any>> {
-    return http.post({
-      url: '/industry/subcategory',
-      data
-    })
-  }
-
-  /**
-   * 获取行业二级分类列表
-   */
-  static async getSubCategoryList(categoryId: number): Promise<Result<any[]>> {
-    return http.get({
-      url: `/industry/category/${categoryId}/subcategories`
-    })
-  }
-
-  /**
-   * 获取行业二级分类详情
-   */
-  static async getSubCategoryById(id: number): Promise<Result<any>> {
-    return http.get({
-      url: `/industry/subcategory/${id}`
-    })
-  }
-
-  /**
-   * 更新行业二级分类
-   */
-  static async updateSubCategory(id: number, data: any): Promise<Result<any>> {
-    return http.patch({
-      url: `/industry/subcategory/${id}`,
-      data
-    })
-  }
-
-  /**
-   * 删除行业二级分类
-   */
-  static async deleteSubCategory(id: number): Promise<Result<boolean>> {
-    return http.del({
-      url: `/industry/subcategory/${id}`
-    })
+  deleteIndustry: (id: number): Promise<Result<boolean>> => {
+    return http.delete(`/industry/${id}`)
   }
 }
 
@@ -699,7 +658,7 @@ export class ExamService {
   /**
    * 分页获取试卷列表
    */
-  static async getExamList(params: any): Promise<Result<any[]> & Paging> {
+  static async getExamList(params: any): Promise<Result<PageResult<any>>> {
     return http.get({
       url: '/exam/list',
       params

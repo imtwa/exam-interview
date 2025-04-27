@@ -248,6 +248,27 @@ export interface JobApplicationListParams extends Partial<Paging> {
 export interface InterviewListParams extends Partial<Paging> {
   applicationId?: number
   startDate?: string
-  endDate?: string
   status?: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'
+}
+
+/**
+ * 行业模型
+ */
+export interface Industry {
+  id?: number
+  name: string
+  parentId?: number | null
+  children?: Industry[]
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
+}
+
+/**
+ * 公司认证参数
+ */
+export interface CompanyVerifyParams {
+  id: number
+  verificationStatus: 'VERIFIED' | 'REJECTED'
+  reason?: string
 }

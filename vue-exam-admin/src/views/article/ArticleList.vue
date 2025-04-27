@@ -100,7 +100,7 @@
   import { useDateFormat } from '@vueuse/core'
   import { Search } from '@element-plus/icons-vue'
   import EmojiText from '@/utils/emojo'
-  import { ArticleList } from '@/mock/temp/articleList'
+  import { ArticleService } from '@/api'
   import { useCommon } from '@/composables/useCommon'
 
   const yearVal = ref('All')
@@ -152,29 +152,32 @@
     //   year
     // }
 
-    articleList.value = ArticleList
-    isLoading.value = false
-
-    if (backTop) {
-      useCommon().scrollToTop()
+    // 移除mock数据，使用真实API调用
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value,
+      searchVal: searchVal.value,
+      year: yearVal.value === 'All' ? '' : yearVal.value
     }
 
-    // const res = await ArticleService.getArticleList(params)
-    // if (res.code === ApiStatus.success) {
-    //   currentPage.value = res.currentPage
-    //   pageSize.value = res.pageSize
-    //   lastPage.value = res.lastPage
-    //   total.value = res.total
-    //   articleList.value = res.data
-
-    //   // setTimeout(() => {
-    //   isLoading.value = false
-    //   // }, 3000)
-
-    //   if (searchVal.value) {
-    //     searchVal.value = ''
-    //   }
-    // }
+    try {
+      const res = await ArticleService.getArticleList(params)
+      if (res.code === 200) {
+        currentPage.value = res.currentPage
+        pageSize.value = res.pageSize
+        total.value = res.total
+        articleList.value = res.data
+      }
+    } catch (error) {
+      console.error('获取文章列表失败', error)
+      articleList.value = []
+    } finally {
+      isLoading.value = false
+      
+      if (backTop) {
+        useCommon().scrollToTop()
+      }
+    }
   }
 
   const handleCurrentChange = (val: number) => {

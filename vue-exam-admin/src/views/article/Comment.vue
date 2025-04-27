@@ -62,7 +62,25 @@
 </template>
 
 <script setup lang="ts">
-  import { commentList } from '@/mock/temp/commentList'
+  // 替代mock数据的静态评论列表
+const commentList = ref([
+  {
+    id: 1,
+    userName: '用户1',
+    content: '这是一条评论内容',
+    date: '2023-12-01',
+    collection: 10,
+    comment: 5
+  },
+  {
+    id: 2,
+    userName: '用户2',
+    content: '感谢分享这么好的内容',
+    date: '2023-12-02',
+    collection: 8,
+    comment: 3
+  }
+])
   const showDrawer = ref(false)
 
   // const colorList = reactive([

@@ -26,8 +26,26 @@
 <script setup lang="ts">
   import { ref } from 'vue'
   import CommentItem from './widget/CommentItem.vue'
-  import { commentList, Comment } from '@/mock/temp/commentDetail'
-  const comments = commentList
+
+  // 定义评论类型接口替代mock导入
+  interface Comment {
+    id: number
+    author: string
+    content: string
+    timestamp: string
+    replies: Comment[]
+  }
+
+  // 替代mock数据的静态评论列表
+  const comments = ref<Comment[]>([
+    {
+      id: 1,
+      author: '用户A',
+      content: '这是一条评论',
+      timestamp: new Date().toISOString(),
+      replies: []
+    }
+  ])
 
   const newComment = ref<Partial<Comment>>({
     author: '',

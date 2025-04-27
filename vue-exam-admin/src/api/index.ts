@@ -1,5 +1,5 @@
 // Export all API services
-export * from './usersApi'
+export * from './userApi'
 export * from './articleApi'
 export * from './menuApi'
 

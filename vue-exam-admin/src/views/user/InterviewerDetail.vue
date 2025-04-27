@@ -200,7 +200,11 @@
           </el-select>
         </el-form-item>
         <el-form-item label="认证状态" prop="verificationStatus">
-          <el-select v-model="form.verificationStatus" placeholder="请选择认证状态" style="width: 100%">
+          <el-select
+            v-model="form.verificationStatus"
+            placeholder="请选择认证状态"
+            style="width: 100%"
+          >
             <el-option label="待认证" value="PENDING" />
             <el-option label="已认证" value="VERIFIED" />
             <el-option label="已拒绝" value="REJECTED" />
@@ -218,393 +222,398 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { InterviewerService, CompanyService, JobPostingService, InterviewService } from '@/api/userApi'
-import { Interviewer, Company, JobPosting, Interview } from '@/api/model/userModel'
-import { ElMessage, FormRules, FormInstance } from 'element-plus'
+  import { ref, reactive, onMounted, computed } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import {
+    InterviewerService,
+    CompanyService,
+    JobPostingService,
+    InterviewService
+  } from '@/api/userApi'
+  import { Interviewer, Company, JobPosting, Interview } from '@/api/model/userModel'
+  import { ElMessage, FormRules, FormInstance } from 'element-plus'
 
-const route = useRoute()
-const router = useRouter()
-const id = Number(route.params.id)
+  const route = useRoute()
+  const router = useRouter()
+  const id = Number(route.params.id)
 
-// 数据状态
-const loading = ref(false)
-const interviewer = ref<Interviewer | null>(null)
-const activeTab = ref('basic')
+  // 数据状态
+  const loading = ref(false)
+  const interviewer = ref<Interviewer | null>(null)
+  const activeTab = ref('basic')
 
-// 公司列表
-const companies = ref<Company[]>([])
+  // 公司列表
+  const companies = ref<Company[]>([])
 
-// 职位列表
-const jobs = ref<JobPosting[]>([])
-const jobsLoading = ref(false)
-const jobsPage = ref(1)
-const jobsPageSize = ref(10)
-const jobsTotal = ref(0)
+  // 职位列表
+  const jobs = ref<JobPosting[]>([])
+  const jobsLoading = ref(false)
+  const jobsPage = ref(1)
+  const jobsPageSize = ref(10)
+  const jobsTotal = ref(0)
 
-// 面试列表
-const interviews = ref<Interview[]>([])
-const interviewsLoading = ref(false)
-const interviewsPage = ref(1)
-const interviewsPageSize = ref(10)
-const interviewsTotal = ref(0)
+  // 面试列表
+  const interviews = ref<Interview[]>([])
+  const interviewsLoading = ref(false)
+  const interviewsPage = ref(1)
+  const interviewsPageSize = ref(10)
+  const interviewsTotal = ref(0)
 
-// 编辑弹窗
-const editDialogVisible = ref(false)
-const submitLoading = ref(false)
-const formRef = ref<FormInstance>()
-const form = reactive({
-  username: '',
-  email: '',
-  gender: '',
-  position: '',
-  companyId: '',
-  verificationStatus: ''
-})
+  // 编辑弹窗
+  const editDialogVisible = ref(false)
+  const submitLoading = ref(false)
+  const formRef = ref<FormInstance>()
+  const form = reactive({
+    username: '',
+    email: '',
+    gender: '',
+    position: '',
+    companyId: '',
+    verificationStatus: ''
+  })
 
-// 表单验证规则
-const rules = reactive<FormRules>({
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
-  ],
-  gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
-  position: [{ required: true, message: '请输入职位', trigger: 'blur' }],
-  companyId: [{ required: true, message: '请选择公司', trigger: 'change' }],
-  verificationStatus: [{ required: true, message: '请选择认证状态', trigger: 'change' }]
-})
+  // 表单验证规则
+  const rules = reactive<FormRules>({
+    email: [
+      { required: true, message: '请输入邮箱', trigger: 'blur' },
+      { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    ],
+    gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
+    position: [{ required: true, message: '请输入职位', trigger: 'blur' }],
+    companyId: [{ required: true, message: '请选择公司', trigger: 'change' }],
+    verificationStatus: [{ required: true, message: '请选择认证状态', trigger: 'change' }]
+  })
 
-// 初始化数据
-onMounted(async () => {
-  await fetchData()
-  await fetchCompanies()
-  if (activeTab.value === 'jobs') {
-    fetchJobs()
-  }
-})
-
-// 获取面试官详情
-const fetchData = async () => {
-  loading.value = true
-  try {
-    const res = await InterviewerService.getInterviewerById(id)
-    if (res.success && res.data) {
-      interviewer.value = res.data
-    } else {
-      ElMessage.error(res.message || '获取面试官信息失败')
-    }
-  } catch (error) {
-    console.error('获取面试官详情失败', error)
-    ElMessage.error('获取面试官信息失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 获取公司列表
-const fetchCompanies = async () => {
-  try {
-    const res = await CompanyService.getCompanyList({ page: 1, size: 100 })
-    if (res.success && res.data) {
-      companies.value = res.data.records || []
-    }
-  } catch (error) {
-    console.error('获取公司列表失败', error)
-  }
-}
-
-// 获取职位列表
-const fetchJobs = async () => {
-  if (!id) return
-  
-  jobsLoading.value = true
-  try {
-    const res = await JobPostingService.getJobsByInterviewer(id, {
-      page: jobsPage.value,
-      size: jobsPageSize.value
-    })
-    
-    if (res.success && res.data) {
-      jobs.value = res.data.records || []
-      jobsTotal.value = res.data.total || 0
-    }
-  } catch (error) {
-    console.error('获取职位列表失败', error)
-    ElMessage.error('获取职位列表失败')
-  } finally {
-    jobsLoading.value = false
-  }
-}
-
-// 获取面试列表
-const fetchInterviews = async () => {
-  if (!id) return
-  
-  interviewsLoading.value = true
-  try {
-    const res = await InterviewService.getInterviewsByInterviewer(id, {
-      page: interviewsPage.value,
-      size: interviewsPageSize.value
-    })
-    
-    if (res.success && res.data) {
-      interviews.value = res.data.records || []
-      interviewsTotal.value = res.data.total || 0
-    }
-  } catch (error) {
-    console.error('获取面试列表失败', error)
-    ElMessage.error('获取面试列表失败')
-  } finally {
-    interviewsLoading.value = false
-  }
-}
-
-// 标签页切换
-const handleTabChange = (tab: string) => {
-  if (tab === 'jobs' && jobs.value.length === 0) {
-    fetchJobs()
-  } else if (tab === 'interviews' && interviews.value.length === 0) {
-    fetchInterviews()
-  }
-}
-
-// 职位分页处理
-const handleJobsSizeChange = (size: number) => {
-  jobsPageSize.value = size
-  fetchJobs()
-}
-
-const handleJobsPageChange = (page: number) => {
-  jobsPage.value = page
-  fetchJobs()
-}
-
-// 面试分页处理
-const handleInterviewsSizeChange = (size: number) => {
-  interviewsPageSize.value = size
-  fetchInterviews()
-}
-
-const handleInterviewsPageChange = (page: number) => {
-  interviewsPage.value = page
-  fetchInterviews()
-}
-
-// 返回上一页
-const goBack = () => {
-  router.back()
-}
-
-// 格式化时间
-const formatDate = (date: string) => {
-  if (!date) return '--'
-  return new Date(date)
-    .toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })
-    .replace(/\//g, '-')
-}
-
-// 格式化薪资
-const formatSalary = (min?: number, max?: number) => {
-  if (!min && !max) return '--'
-  if (min && !max) return `${min}K+`
-  if (!min && max) return `${max}K以下`
-  return `${min}K-${max}K`
-}
-
-// 性别文本
-const getGenderText = (gender?: string) => {
-  const map: Record<string, string> = {
-    MALE: '男',
-    FEMALE: '女',
-    OTHER: '其他'
-  }
-  return gender ? map[gender] || '--' : '--'
-}
-
-// 认证状态文本
-const getStatusText = (status?: string) => {
-  const map: Record<string, string> = {
-    PENDING: '待认证',
-    VERIFIED: '已认证',
-    REJECTED: '已拒绝'
-  }
-  return status ? map[status] || '--' : '--'
-}
-
-// 认证状态类型
-const getStatusType = (status?: string) => {
-  const map: Record<string, string> = {
-    PENDING: 'warning',
-    VERIFIED: 'success',
-    REJECTED: 'danger'
-  }
-  return status ? map[status] : ''
-}
-
-// 职位状态文本
-const getJobStatusText = (status?: string) => {
-  const map: Record<string, string> = {
-    ACTIVE: '招聘中',
-    FILLED: '已招满',
-    EXPIRED: '已过期',
-    CLOSED: '已关闭'
-  }
-  return status ? map[status] || '--' : '--'
-}
-
-// 职位状态类型
-const getJobStatusType = (status?: string) => {
-  const map: Record<string, string> = {
-    ACTIVE: 'success',
-    FILLED: 'info',
-    EXPIRED: 'warning',
-    CLOSED: 'danger'
-  }
-  return status ? map[status] : ''
-}
-
-// 面试状态文本
-const getInterviewStatusText = (status?: string) => {
-  const map: Record<string, string> = {
-    PENDING: '待确认',
-    CONFIRMED: '已确认',
-    COMPLETED: '已完成',
-    CANCELED: '已取消'
-  }
-  return status ? map[status] || '--' : '--'
-}
-
-// 面试状态类型
-const getInterviewStatusType = (status?: string) => {
-  const map: Record<string, string> = {
-    PENDING: 'warning',
-    CONFIRMED: 'primary',
-    COMPLETED: 'success',
-    CANCELED: 'info'
-  }
-  return status ? map[status] : ''
-}
-
-// 编辑基本信息
-const editBasicInfo = () => {
-  if (!interviewer.value) return
-  
-  form.username = interviewer.value.user?.username || ''
-  form.email = interviewer.value.user?.email || ''
-  form.gender = interviewer.value.gender || ''
-  form.position = interviewer.value.position || ''
-  form.companyId = interviewer.value.companyId?.toString() || ''
-  form.verificationStatus = interviewer.value.verificationStatus || ''
-  
-  editDialogVisible.value = true
-}
-
-// 提交表单
-const submitForm = async () => {
-  if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return
-    
-    submitLoading.value = true
-    try {
-      const res = await InterviewerService.updateInterviewer(id, {
-        email: form.email,
-        gender: form.gender,
-        position: form.position,
-        companyId: Number(form.companyId),
-        verificationStatus: form.verificationStatus
-      })
-      
-      if (res.success) {
-        ElMessage.success('更新成功')
-        editDialogVisible.value = false
-        fetchData()
-      } else {
-        ElMessage.error(res.message || '更新失败')
-      }
-    } catch (error) {
-      console.error('更新面试官信息失败', error)
-      ElMessage.error('更新失败')
-    } finally {
-      submitLoading.value = false
+  // 初始化数据
+  onMounted(async () => {
+    await fetchData()
+    await fetchCompanies()
+    if (activeTab.value === 'jobs') {
+      fetchJobs()
     }
   })
-}
 
-// 处理认证状态
-const handleVerifyStatus = async (status: string) => {
-  try {
-    const res = await InterviewerService.updateInterviewerStatus(id, { status })
-    
-    if (res.success) {
-      ElMessage.success('状态更新成功')
-      fetchData()
-    } else {
-      ElMessage.error(res.message || '状态更新失败')
+  // 获取面试官详情
+  const fetchData = async () => {
+    loading.value = true
+    try {
+      const res = await InterviewerService.getInterviewerById(id)
+      if (res.success && res.data) {
+        interviewer.value = res.data
+      } else {
+        ElMessage.error(res.message || '获取面试官信息失败')
+      }
+    } catch (error) {
+      console.error('获取面试官详情失败', error)
+      ElMessage.error('获取面试官信息失败')
+    } finally {
+      loading.value = false
     }
-  } catch (error) {
-    console.error('更新认证状态失败', error)
-    ElMessage.error('状态更新失败')
   }
-}
 
-// 查看职位详情
-const viewJob = (job: JobPosting) => {
-  router.push(`/recruitment/job/${job.id}`)
-}
+  // 获取公司列表
+  const fetchCompanies = async () => {
+    try {
+      const res = await CompanyService.getCompanyList({ page: 1, size: 100 })
+      if (res.success && res.data) {
+        companies.value = res.data.records || []
+      }
+    } catch (error) {
+      console.error('获取公司列表失败', error)
+    }
+  }
 
-// 查看面试详情
-const viewInterview = (interview: Interview) => {
-  router.push(`/recruitment/interview/${interview.id}`)
-}
+  // 获取职位列表
+  const fetchJobs = async () => {
+    if (!id) return
 
-// 监听标签页变化
-watch(activeTab, (newValue) => {
-  handleTabChange(newValue)
-})
+    jobsLoading.value = true
+    try {
+      const res = await JobPostingService.getJobsByInterviewer(id, {
+        page: jobsPage.value,
+        size: jobsPageSize.value
+      })
+
+      if (res.success && res.data) {
+        jobs.value = res.data.records || []
+        jobsTotal.value = res.data.total || 0
+      }
+    } catch (error) {
+      console.error('获取职位列表失败', error)
+      ElMessage.error('获取职位列表失败')
+    } finally {
+      jobsLoading.value = false
+    }
+  }
+
+  // 获取面试列表
+  const fetchInterviews = async () => {
+    if (!id) return
+
+    interviewsLoading.value = true
+    try {
+      const res = await InterviewService.getInterviewsByInterviewer(id, {
+        page: interviewsPage.value,
+        size: interviewsPageSize.value
+      })
+
+      if (res.success && res.data) {
+        interviews.value = res.data.records || []
+        interviewsTotal.value = res.data.total || 0
+      }
+    } catch (error) {
+      console.error('获取面试列表失败', error)
+      ElMessage.error('获取面试列表失败')
+    } finally {
+      interviewsLoading.value = false
+    }
+  }
+
+  // 标签页切换
+  const handleTabChange = (tab: string) => {
+    if (tab === 'jobs' && jobs.value.length === 0) {
+      fetchJobs()
+    } else if (tab === 'interviews' && interviews.value.length === 0) {
+      fetchInterviews()
+    }
+  }
+
+  // 职位分页处理
+  const handleJobsSizeChange = (size: number) => {
+    jobsPageSize.value = size
+    fetchJobs()
+  }
+
+  const handleJobsPageChange = (page: number) => {
+    jobsPage.value = page
+    fetchJobs()
+  }
+
+  // 面试分页处理
+  const handleInterviewsSizeChange = (size: number) => {
+    interviewsPageSize.value = size
+    fetchInterviews()
+  }
+
+  const handleInterviewsPageChange = (page: number) => {
+    interviewsPage.value = page
+    fetchInterviews()
+  }
+
+  // 返回上一页
+  const goBack = () => {
+    router.back()
+  }
+
+  // 格式化时间
+  const formatDate = (date: string) => {
+    if (!date) return '--'
+    return new Date(date)
+      .toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+      .replace(/\//g, '-')
+  }
+
+  // 格式化薪资
+  const formatSalary = (min?: number, max?: number) => {
+    if (!min && !max) return '--'
+    if (min && !max) return `${min}K+`
+    if (!min && max) return `${max}K以下`
+    return `${min}K-${max}K`
+  }
+
+  // 性别文本
+  const getGenderText = (gender?: string) => {
+    const map: Record<string, string> = {
+      MALE: '男',
+      FEMALE: '女',
+      OTHER: '其他'
+    }
+    return gender ? map[gender] || '--' : '--'
+  }
+
+  // 认证状态文本
+  const getStatusText = (status?: string) => {
+    const map: Record<string, string> = {
+      PENDING: '待认证',
+      VERIFIED: '已认证',
+      REJECTED: '已拒绝'
+    }
+    return status ? map[status] || '--' : '--'
+  }
+
+  // 认证状态类型
+  const getStatusType = (status?: string) => {
+    const map: Record<string, string> = {
+      PENDING: 'warning',
+      VERIFIED: 'success',
+      REJECTED: 'danger'
+    }
+    return status ? map[status] : ''
+  }
+
+  // 职位状态文本
+  const getJobStatusText = (status?: string) => {
+    const map: Record<string, string> = {
+      ACTIVE: '招聘中',
+      FILLED: '已招满',
+      EXPIRED: '已过期',
+      CLOSED: '已关闭'
+    }
+    return status ? map[status] || '--' : '--'
+  }
+
+  // 职位状态类型
+  const getJobStatusType = (status?: string) => {
+    const map: Record<string, string> = {
+      ACTIVE: 'success',
+      FILLED: 'info',
+      EXPIRED: 'warning',
+      CLOSED: 'danger'
+    }
+    return status ? map[status] : ''
+  }
+
+  // 面试状态文本
+  const getInterviewStatusText = (status?: string) => {
+    const map: Record<string, string> = {
+      PENDING: '待确认',
+      CONFIRMED: '已确认',
+      COMPLETED: '已完成',
+      CANCELED: '已取消'
+    }
+    return status ? map[status] || '--' : '--'
+  }
+
+  // 面试状态类型
+  const getInterviewStatusType = (status?: string) => {
+    const map: Record<string, string> = {
+      PENDING: 'warning',
+      CONFIRMED: 'primary',
+      COMPLETED: 'success',
+      CANCELED: 'info'
+    }
+    return status ? map[status] : ''
+  }
+
+  // 编辑基本信息
+  const editBasicInfo = () => {
+    if (!interviewer.value) return
+
+    form.username = interviewer.value.user?.username || ''
+    form.email = interviewer.value.user?.email || ''
+    form.gender = interviewer.value.gender || ''
+    form.position = interviewer.value.position || ''
+    form.companyId = interviewer.value.companyId?.toString() || ''
+    form.verificationStatus = interviewer.value.verificationStatus || ''
+
+    editDialogVisible.value = true
+  }
+
+  // 提交表单
+  const submitForm = async () => {
+    if (!formRef.value) return
+
+    await formRef.value.validate(async (valid) => {
+      if (!valid) return
+
+      submitLoading.value = true
+      try {
+        const res = await InterviewerService.updateInterviewer(id, {
+          email: form.email,
+          gender: form.gender,
+          position: form.position,
+          companyId: Number(form.companyId),
+          verificationStatus: form.verificationStatus
+        })
+
+        if (res.success) {
+          ElMessage.success('更新成功')
+          editDialogVisible.value = false
+          fetchData()
+        } else {
+          ElMessage.error(res.message || '更新失败')
+        }
+      } catch (error) {
+        console.error('更新面试官信息失败', error)
+        ElMessage.error('更新失败')
+      } finally {
+        submitLoading.value = false
+      }
+    })
+  }
+
+  // 处理认证状态
+  const handleVerifyStatus = async (status: string) => {
+    try {
+      const res = await InterviewerService.updateInterviewerStatus(id, { status })
+
+      if (res.success) {
+        ElMessage.success('状态更新成功')
+        fetchData()
+      } else {
+        ElMessage.error(res.message || '状态更新失败')
+      }
+    } catch (error) {
+      console.error('更新认证状态失败', error)
+      ElMessage.error('状态更新失败')
+    }
+  }
+
+  // 查看职位详情
+  const viewJob = (job: JobPosting) => {
+    router.push(`/recruitment/job/${job.id}`)
+  }
+
+  // 查看面试详情
+  const viewInterview = (interview: Interview) => {
+    router.push(`/recruitment/interview/${interview.id}`)
+  }
+
+  // 监听标签页变化
+  watch(activeTab, (newValue) => {
+    handleTabChange(newValue)
+  })
 </script>
 
 <style lang="scss" scoped>
-.interviewer-detail-page {
-  padding: 20px;
-  
-  .page-title {
-    font-size: 18px;
-    font-weight: 600;
-  }
-  
-  .detail-card {
-    margin-top: 20px;
-  }
-  
-  .action-buttons {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-  }
-  
-  .list-header {
-    margin-bottom: 15px;
-    
-    h3 {
-      margin: 0;
-      font-size: 16px;
+  .interviewer-detail-page {
+    padding: 20px;
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .detail-card {
+      margin-top: 20px;
+    }
+
+    .action-buttons {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .list-header {
+      margin-bottom: 15px;
+
+      h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+    }
+
+    .pagination-container {
+      margin-top: 20px;
+      display: flex;
+      justify-content: flex-end;
     }
   }
-  
-  .pagination-container {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
-}
-</style> 
+</style>

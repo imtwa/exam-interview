@@ -8,7 +8,7 @@
   import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
   import * as echarts from 'echarts'
   import { useSettingStore } from '@/store/modules/setting'
-  import chinaMapJson from '@/mock/json/chinaMap.json'
+  // 移除mock数据引用，改为直接使用echarts内置的中国地图数据
 
   // 响应式引用与主题
   const chinaMapRef = ref<HTMLElement | null>(null)
