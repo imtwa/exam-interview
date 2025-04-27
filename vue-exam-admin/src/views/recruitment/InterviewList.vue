@@ -208,7 +208,8 @@
 
 <script setup lang="ts">
   import { ref, reactive, onMounted, computed } from 'vue'
-  import { ElMessage, ElMessageBox, FormInstance } from 'element-plus'
+  import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
+  import { useRouter } from 'vue-router'
   import { InterviewService, InterviewListParams } from '@/api/interview'
   import { JobService } from '@/api/job'
   import { UserService } from '@/api/user'

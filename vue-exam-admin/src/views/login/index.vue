@@ -234,7 +234,7 @@
 
   // 切换主题
   import { useTheme } from '@/composables/useTheme'
-  import { UserService } from '@/api/userApi'
+  import { UserService } from '@/api/user'
 
   const toggleTheme = () => {
     let { LIGHT, DARK } = SystemThemeEnum

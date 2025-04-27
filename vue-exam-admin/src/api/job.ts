@@ -1,6 +1,6 @@
 import http from '@/utils/http'
 import { Result, Paging } from './model/baseModel'
-import { Job, JobApplication, Interview } from './model/userModel'
+import { JobPosting, JobApplication, Interview } from './model/userModel'
 
 export interface JobListParams extends Paging {
   keyword?: string
@@ -29,94 +29,94 @@ export const JobService = {
   /**
    * 获取职位列表
    */
-  getJobList(params: JobListParams): Promise<Result<{ items: Job[]; total: number }>> {
-    return http.get('/api/v1/jobs', { params })
+  getJobList: (params: JobListParams): Promise<Result<{ items: JobPosting[]; total: number }>> => {
+    return http.get('/job', { params })
   },
 
   /**
    * 获取职位详情
    */
-  getJobDetail(id: number): Promise<Result<Job>> {
-    return http.get(`/api/v1/jobs/${id}`)
+  getJobDetail: (id: number): Promise<Result<JobPosting>> => {
+    return http.get(`/job/${id}`)
   },
 
   /**
    * 创建职位
    */
-  createJob(data: Job): Promise<Result<Job>> {
-    return http.post('/api/v1/jobs', data)
+  createJob: (data: JobPosting): Promise<Result<JobPosting>> => {
+    return http.post('/job', data)
   },
 
   /**
    * 更新职位
    */
-  updateJob(id: number, data: Partial<Job>): Promise<Result<Job>> {
-    return http.put(`/api/v1/jobs/${id}`, data)
+  updateJob: (id: number, data: Partial<JobPosting>): Promise<Result<JobPosting>> => {
+    return http.put(`/job/${id}`, data)
   },
 
   /**
    * 删除职位
    */
-  deleteJob(id: number): Promise<Result<void>> {
-    return http.delete(`/api/v1/jobs/${id}`)
+  deleteJob: (id: number): Promise<Result<void>> => {
+    return http.delete(`/job/${id}`)
   },
 
   /**
    * 更新职位状态
    */
-  updateJobStatus(id: number, status: 'ACTIVE' | 'FILLED' | 'EXPIRED'): Promise<Result<void>> {
-    return http.put(`/api/v1/jobs/${id}/status`, { status })
+  updateJobStatus: (id: number, status: 'ACTIVE' | 'FILLED' | 'EXPIRED'): Promise<Result<void>> => {
+    return http.put(`/job/${id}/status`, { status })
   },
 
   /**
    * 获取职位申请列表
    */
-  getJobApplicationList(
+  getJobApplicationList: (
     params: JobApplicationParams
-  ): Promise<Result<{ items: JobApplication[]; total: number }>> {
-    return http.get('/api/v1/job-applications', { params })
+  ): Promise<Result<{ items: JobApplication[]; total: number }>> => {
+    return http.get('/interviewer/applications', { params })
   },
 
   /**
    * 获取职位申请详情
    */
-  getJobApplicationDetail(id: number): Promise<Result<JobApplication>> {
-    return http.get(`/api/v1/job-applications/${id}`)
+  getJobApplicationDetail: (id: number): Promise<Result<JobApplication>> => {
+    return http.get(`/interviewer/applications/${id}`)
   },
 
   /**
    * 更新职位申请状态
    */
-  updateJobApplicationStatus(
+  updateJobApplicationStatus: (
     id: number,
     status: 'PENDING' | 'INTERVIEWING' | 'OFFERED' | 'REJECTED' | 'ACCEPTED' | 'DECLINED'
-  ): Promise<Result<void>> {
-    return http.put(`/api/v1/job-applications/${id}/status`, { status })
+  ): Promise<Result<void>> => {
+    return http.put(`/interviewer/applications/${id}/status`, { status })
   },
 
   /**
    * 创建面试
    */
-  createInterview(data: Interview): Promise<Result<Interview>> {
-    return http.post('/api/v1/interviews', data)
+  createInterview: (data: Interview): Promise<Result<Interview>> => {
+    return http.post('/interview', data)
   },
 
   /**
    * 获取面试列表
    */
-  getInterviewList(
+  getInterviewList: (
     params: InterviewParams
-  ): Promise<Result<{ items: Interview[]; total: number }>> {
-    return http.get('/api/v1/interviews', { params })
+  ): Promise<Result<{ items: Interview[]; total: number }>> => {
+    return http.get('/interview/page', { params })
   },
 
   /**
    * 更新面试状态
    */
-  updateInterviewStatus(
+  updateInterviewStatus: (
     id: number,
     status: 'PENDING' | 'COMPLETED' | 'CANCELED'
-  ): Promise<Result<void>> {
-    return http.put(`/api/v1/interviews/${id}/status`, { status })
+  ): Promise<Result<void>> => {
+    return http.put(`/interview/${id}/status`, { status })
   }
 }

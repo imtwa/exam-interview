@@ -124,10 +124,10 @@
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import CommonCrudTable from '@/components/CommonCrudTable.vue'
-  import { UserService } from '@/api/userApi'
-  import { FrontUser } from '@/api/model/userModel'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
+  import CommonCrudTable from '@/components/CommonCrudTable.vue'
+  import { UserService } from '@/api/user'
+  import { FrontUser } from '@/api/model/userModel'
   import { Key } from '@element-plus/icons-vue'
 
   // Data

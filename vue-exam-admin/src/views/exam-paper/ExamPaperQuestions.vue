@@ -269,7 +269,7 @@
   import { ref, onMounted, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
-  import { ExamPaperService } from '@/api/examPaperApi'
+  import { ExamPaperService } from '@/api/examPaper'
   import { QuestionService } from '@/api/questionApi'
   import { QuestionModel, ExamQuestionModel } from '@/api/model/examModels'
 

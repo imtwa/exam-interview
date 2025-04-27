@@ -7,68 +7,86 @@
         </div>
       </template>
 
-      <CommonCrudTable
-        :loading="loading"
-        :data="tableData"
-        :total="total"
-        :columns="columns"
-        :searchForm="searchForm"
-        :page="page"
-        :size="size"
-        @search="handleSearch"
-        @reset="handleReset"
-        @sizeChange="handleSizeChange"
-        @currentChange="handleCurrentChange"
-        @add="handleAdd"
-      >
-        <template #searchItems>
-          <el-form-item label="关键词" prop="keyword">
-            <el-input v-model="searchForm.keyword" placeholder="公司名称/描述" clearable />
-          </el-form-item>
-          <el-form-item label="融资阶段" prop="fundingStage">
-            <el-select v-model="searchForm.fundingStage" placeholder="融资阶段" clearable>
-              <el-option
-                v-for="(label, value) in fundingStageMap"
-                :key="value"
-                :label="label"
-                :value="value"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="认证状态" prop="verificationStatus">
-            <el-select v-model="searchForm.verificationStatus" placeholder="认证状态" clearable>
-              <el-option
-                v-for="(label, value) in verificationStatusMap"
-                :key="value"
-                :label="label"
-                :value="value"
-              />
-            </el-select>
-          </el-form-item>
-        </template>
-
-        <template #toolbar>
-          <el-button type="primary" @click="handleAdd">新增公司</el-button>
-        </template>
-
-        <template #operation="{ row }">
-          <el-button type="primary" link @click="handleView(row)">查看</el-button>
-          <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
-          <el-dropdown
-            v-if="row.verificationStatus !== 'VERIFIED'"
-            @command="(command) => handleVerify(row, command)"
+      <el-row class="mb-4">
+        <el-col :span="6">
+          <el-input
+            v-model="searchForm.keyword"
+            placeholder="请输入公司名称/描述"
+            clearable
+            @keyup.enter="handleSearch"
           >
-            <el-button type="warning" link>认证</el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="VERIFIED">通过认证</el-dropdown-item>
-                <el-dropdown-item command="REJECTED">拒绝认证</el-dropdown-item>
-              </el-dropdown-menu>
+            <template #append>
+              <el-button @click="handleSearch">
+                <el-icon><Search /></el-icon>
+              </el-button>
             </template>
-          </el-dropdown>
-        </template>
-      </CommonCrudTable>
+          </el-input>
+        </el-col>
+        <el-col :span="16" class="ml-4">
+          <el-button type="primary" @click="handleAdd">新增公司</el-button>
+        </el-col>
+      </el-row>
+
+      <el-table
+        :data="tableData"
+        border
+        style="width: 100%"
+        v-loading="loading"
+      >
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="name" label="公司名称" />
+        <el-table-column prop="size" label="公司规模">
+          <template #default="{ row }">
+            {{ formatCompanySize(row.size) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="fundingStage" label="融资阶段">
+          <template #default="{ row }">
+            {{ fundingStageMap[row.fundingStage] || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="verificationStatus" label="认证状态">
+          <template #default="{ row }">
+            {{ verificationStatusMap[row.verificationStatus] || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="createdAt" label="创建时间">
+          <template #default="{ row }">
+            {{ formatDate(row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="280">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="handleView(row)">查看</el-button>
+            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-dropdown
+              v-if="row.verificationStatus !== 'VERIFIED'"
+              @command="(command) => handleVerify(row, command)"
+            >
+              <el-button type="warning" link>认证</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="VERIFIED">通过认证</el-dropdown-item>
+                  <el-dropdown-item command="REJECTED">拒绝认证</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="page"
+          v-model:page-size="size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </el-card>
 
     <!-- 新增/编辑公司对话框 -->
@@ -173,13 +191,11 @@
           <span v-else>-</span>
         </el-descriptions-item>
         <el-descriptions-item label="行业">
-          <span v-if="viewData.industries && viewData.industries.length">
-            {{ viewData.industries.map((i) => i.name).join(', ') }}
-          </span>
+          <span v-if="viewData.industry">{{ viewData.industry }}</span>
           <span v-else>-</span>
         </el-descriptions-item>
         <el-descriptions-item label="认证状态">
-          <el-tag :type="getStatusTagType(viewData.verificationStatus)">
+          <el-tag type="success">
             {{ verificationStatusMap[viewData.verificationStatus] }}
           </el-tag>
         </el-descriptions-item>
@@ -203,9 +219,27 @@
   import { ref, reactive, onMounted } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { Search } from '@element-plus/icons-vue'
   import { CompanyService, IndustryService } from '@/api/userApi'
-  import type { Company, Industry } from '@/api/model/userModel'
-  import CommonCrudTable from '@/components/CommonCrudTable.vue'
+  import type { Industry } from '@/api/model/userModel'
+
+  // 定义一个新的Company接口，与后端返回的数据结构一致
+  interface Company {
+    id: number
+    name: string
+    description: string
+    address: string
+    fundingStage: string
+    size: string
+    industry: string
+    foundedYear?: number
+    verificationStatus: string
+    createdAt?: string
+    updatedAt?: string
+    deletedAt?: string | null
+    website?: string
+    industryIds?: number[]
+  }
 
   // 表格数据
   const loading = ref(false)
@@ -222,67 +256,46 @@
   })
 
   // 公司规模映射
-  const companySizeMap = {
-    LESS_THAN_50: '少于50人',
-    BETWEEN_50_200: '50-200人',
-    BETWEEN_200_500: '200-500人',
-    BETWEEN_500_1000: '500-1000人',
-    BETWEEN_1000_5000: '1000-5000人',
-    MORE_THAN_5000: '5000人以上'
+  const companySizeMap: Record<string, string> = {
+    'LESS_THAN_50': '少于50人',
+    'BETWEEN_50_200': '50-200人',
+    'BETWEEN_200_500': '200-500人',
+    'BETWEEN_500_1000': '500-1000人',
+    'BETWEEN_1000_5000': '1000-5000人',
+    'MORE_THAN_5000': '5000人以上',
+    'TINY': '少于50人',
+    'SMALL': '50-200人',
+    'MEDIUM': '200-500人',
+    'LARGE': '500-1000人',
+    'XLARGE': '1000-5000人',
+    'XXLARGE': '5000人以上'
   }
 
   // 融资阶段映射
-  const fundingStageMap = {
-    SEED: '种子轮',
-    ANGEL: '天使轮',
-    PRE_A: '天使+轮',
-    A: 'A轮',
-    A_PLUS: 'A+轮',
-    B: 'B轮',
-    B_PLUS: 'B+轮',
-    C: 'C轮',
-    C_PLUS: 'C+轮',
-    D: 'D轮及以上',
-    IPO: '已上市',
-    ACQUIRED: '已被收购',
-    STRATEGIC: '战略融资',
-    UNDISCLOSED: '未透露'
+  const fundingStageMap: Record<string, string> = {
+    'SEED': '种子轮',
+    'ANGEL': '天使轮',
+    'PRE_A': '天使+轮',
+    'A': 'A轮',
+    'A_PLUS': 'A+轮',
+    'B': 'B轮',
+    'B_PLUS': 'B+轮',
+    'C': 'C轮',
+    'C_PLUS': 'C+轮',
+    'D': 'D轮及以上',
+    'IPO': '已上市',
+    'ACQUIRED': '已被收购',
+    'STRATEGIC': '战略融资',
+    'SELF_FUNDED': '自筹资金',
+    'UNDISCLOSED': '未透露'
   }
 
   // 认证状态映射
-  const verificationStatusMap = {
-    PENDING: '未认证',
-    VERIFIED: '已认证',
-    REJECTED: '已拒绝'
+  const verificationStatusMap: Record<string, string> = {
+    'PENDING': '未认证',
+    'VERIFIED': '已认证',
+    'REJECTED': '已拒绝'
   }
-
-  // 表格列配置
-  const columns = [
-    { prop: 'id', label: 'ID', width: '80px' },
-    { prop: 'name', label: '公司名称' },
-    {
-      prop: 'size',
-      label: '公司规模',
-      formatter: (row: Company) => formatCompanySize(row.size)
-    },
-    {
-      prop: 'fundingStage',
-      label: '融资阶段',
-      formatter: (row: Company) => fundingStageMap[row.fundingStage] || '-'
-    },
-    {
-      prop: 'verificationStatus',
-      label: '认证状态',
-      formatter: (row: Company) => {
-        return verificationStatusMap[row.verificationStatus] || '-'
-      }
-    },
-    {
-      prop: 'createdAt',
-      label: '创建时间',
-      formatter: (row: Company) => formatDate(row.createdAt)
-    }
-  ]
 
   // 行业选项
   const industryOptions = ref<Industry[]>([])
@@ -300,7 +313,7 @@
     address: '',
     website: '',
     industryIds: [] as number[],
-    verificationStatus: 'PENDING' as 'PENDING' | 'VERIFIED' | 'REJECTED'
+    verificationStatus: 'PENDING'
   })
 
   // 表单验证规则
@@ -322,12 +335,12 @@
     id: 0,
     name: '',
     description: '',
-    size: 'LESS_THAN_50',
-    fundingStage: 'SEED',
+    size: '',
+    fundingStage: '',
     address: '',
-    website: '',
-    verificationStatus: 'PENDING',
-    industries: []
+    industry: '',
+    verificationStatus: '',
+    website: ''
   })
 
   // 加载数据
@@ -342,8 +355,8 @@
         verificationStatus: searchForm.verificationStatus
       }
       const res = await CompanyService.getCompanyList(params)
-      if (res.success) {
-        tableData.value = res.data.records || []
+      if (res.code === 200) {
+        tableData.value = res.data.list || []
         total.value = res.data.total || 0
       } else {
         ElMessage.error(res.message || '获取公司列表失败')
@@ -360,7 +373,7 @@
   const fetchIndustries = async () => {
     try {
       const res = await IndustryService.getIndustryTree()
-      if (res.success) {
+      if (res.code === 200) {
         industryOptions.value = res.data || []
       }
     } catch (error) {
@@ -380,10 +393,10 @@
   }
 
   const getStatusTagType = (status: string) => {
-    const map = {
-      PENDING: 'warning',
-      VERIFIED: 'success',
-      REJECTED: 'danger'
+    const map: Record<string, string> = {
+      'PENDING': 'warning',
+      'VERIFIED': 'success',
+      'REJECTED': 'danger'
     }
     return map[status] || 'info'
   }
@@ -422,16 +435,16 @@
     resetForm()
     formData.id = row.id
     formData.name = row.name
-    formData.description = row.description
-    formData.size = row.size
-    formData.fundingStage = row.fundingStage
+    formData.description = row.description || ''
+    formData.size = row.size || 'LESS_THAN_50'
+    formData.fundingStage = row.fundingStage || 'SEED'
     formData.address = row.address || ''
     formData.website = row.website || ''
-    formData.verificationStatus = row.verificationStatus
+    formData.verificationStatus = row.verificationStatus || 'PENDING'
 
     // 设置行业ID
-    if (row.industries && row.industries.length) {
-      formData.industryIds = row.industries.map((industry) => industry.id)
+    if (row.industryIds && row.industryIds.length) {
+      formData.industryIds = row.industryIds.filter(id => id !== undefined) as number[]
     } else {
       formData.industryIds = []
     }
@@ -440,7 +453,19 @@
   }
 
   const handleView = (row: Company) => {
-    Object.assign(viewData, row)
+    // 复制对象，避免直接引用导致的问题
+    viewData.id = row.id
+    viewData.name = row.name
+    viewData.description = row.description || ''
+    viewData.size = row.size || ''
+    viewData.fundingStage = row.fundingStage || ''
+    viewData.address = row.address || ''
+    viewData.industry = row.industry || ''
+    viewData.verificationStatus = row.verificationStatus
+    viewData.createdAt = row.createdAt
+    viewData.updatedAt = row.updatedAt
+    viewData.website = row.website
+    
     viewDialogVisible.value = true
   }
 
@@ -452,8 +477,8 @@
     })
       .then(async () => {
         try {
-          const res = await CompanyService.deleteCompany(row.id!)
-          if (res.success) {
+          const res = await CompanyService.deleteCompany(row.id)
+          if (res.code === 200) {
             ElMessage.success('删除成功')
             fetchCompanies()
           } else {
@@ -469,8 +494,8 @@
 
   const handleVerify = async (row: Company, status: string) => {
     try {
-      const res = await CompanyService.verifyCompany(row.id!, status as 'VERIFIED' | 'REJECTED')
-      if (res.success) {
+      const res = await CompanyService.verifyCompany(row.id, status)
+      if (res.code === 200) {
         ElMessage.success(`${status === 'VERIFIED' ? '认证通过' : '拒绝认证'}成功`)
         fetchCompanies()
       } else {
@@ -515,12 +540,12 @@
           }
 
           if (dialogType.value === 'add') {
-            res = await CompanyService.createCompany(data as any)
+            res = await CompanyService.createCompany(data)
           } else {
-            res = await CompanyService.updateCompany(formData.id!, data as any)
+            res = await CompanyService.updateCompany(formData.id!, data)
           }
 
-          if (res.success) {
+          if (res.code === 200) {
             ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
             dialogVisible.value = false
             fetchCompanies()
@@ -554,5 +579,16 @@
   .company-form {
     max-height: 60vh;
     overflow-y: auto;
+  }
+  .pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .mb-4 {
+    margin-bottom: 16px;
+  }
+  .ml-4 {
+    margin-left: 16px;
   }
 </style>

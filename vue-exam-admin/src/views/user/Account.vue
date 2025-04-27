@@ -32,11 +32,11 @@
       </template>
     </art-table-bar>
 
-    <art-table 
-      :data="tableData" 
-      selection 
-      :currentPage="currentPage" 
-      :pageSize="pageSize" 
+    <art-table
+      :data="tableData"
+      selection
+      :currentPage="currentPage"
+      :pageSize="pageSize"
       :total="total"
       :loading="loading"
       @current-change="handlePageChange"
@@ -132,10 +132,10 @@
 </template>
 
 <script setup lang="ts">
-  import { FormInstance } from 'element-plus'
-  import { ElMessageBox, ElMessage } from 'element-plus'
-  import type { FormRules } from 'element-plus'
-  import { UserService } from '@/api/userApi'
+  import { ref, onMounted } from 'vue'
+  import { ElMessage, FormInstance, FormRules } from 'element-plus'
+  import { UserService } from '@/api/user'
+  import { FrontUser } from '@/api/model/userModel'
   import { ApiStatus } from '@/utils/http/status'
 
   const dialogType = ref('add')

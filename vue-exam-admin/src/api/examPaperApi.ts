@@ -7,95 +7,101 @@ export class ExamPaperService {
   /**
    * Get exam paper list with pagination
    */
-  static async getExamPaperList(params: {
+  static getExamPaperList = (params: {
     page: number
     size: number
     searchVal?: string
     categoryId?: number | null
     subcategoryId?: number | null
-  }): Promise<Result<ExamPaperModel[]> & Paging> {
-    return http.get('/api/exam-paper', { params })
+  }): Promise<Result<ExamPaperModel[]> & Paging> => {
+    return http.get('/exam/paper/list', { params })
   }
 
   /**
    * Get exam paper by ID
    */
-  static async getExamPaperById(id: number): Promise<Result<ExamPaperModel>> {
-    return http.get(`/api/exam-paper/${id}`)
+  static getExamPaperById = (id: number): Promise<Result<ExamPaperModel>> => {
+    return http.get(`/exam/paper/detail`, { params: { id } })
   }
 
   /**
    * Create new exam paper
    */
-  static async createExamPaper(
+  static createExamPaper = (
     examPaper: Partial<ExamPaperModel>
-  ): Promise<Result<ExamPaperModel>> {
-    return http.post('/api/exam-paper', examPaper)
+  ): Promise<Result<ExamPaperModel>> => {
+    return http.post('/exam/paper/create', examPaper)
   }
 
   /**
    * Update exam paper
    */
-  static async updateExamPaper(
+  static updateExamPaper = (
     id: number,
     examPaper: Partial<ExamPaperModel>
-  ): Promise<Result<ExamPaperModel>> {
-    return http.put(`/api/exam-paper/${id}`, examPaper)
+  ): Promise<Result<ExamPaperModel>> => {
+    return http.put(`/exam/paper/update`, { id, ...examPaper })
   }
 
   /**
    * Delete exam paper
    */
-  static async deleteExamPaper(id: number): Promise<Result<boolean>> {
-    return http.delete(`/api/exam-paper/${id}`)
+  static deleteExamPaper = (id: number): Promise<Result<boolean>> => {
+    return http.delete(`/exam/paper/delete`, { params: { id } })
   }
 
   /**
    * Get questions in exam paper
    */
-  static async getExamQuestions(examId: number): Promise<Result<ExamQuestionModel[]>> {
-    return http.get(`/api/exam-paper/${examId}/questions`)
+  static getExamQuestions = (examId: number): Promise<Result<ExamQuestionModel[]>> => {
+    return http.get(`/exam/paper/questions`, { params: { examPaperId: examId } })
   }
 
   /**
    * Add questions to exam paper
    */
-  static async addExamQuestions(
+  static addExamQuestions = (
     examId: number,
     questions: Array<{
       questionId: number
       order: number
       score: number
     }>
-  ): Promise<Result<boolean>> {
-    return http.post(`/api/exam-paper/${examId}/questions`, questions)
+  ): Promise<Result<boolean>> => {
+    return http.post(`/exam/paper/questions/add`, { examPaperId: examId, questions })
   }
 
   /**
    * Update exam question (order, score)
    */
-  static async updateExamQuestion(
+  static updateExamQuestion = (
     examId: number,
     questionId: number,
     data: {
       order: number
       score: number
     }
-  ): Promise<Result<boolean>> {
-    return http.put(`/api/exam-paper/${examId}/questions/${questionId}`, data)
+  ): Promise<Result<boolean>> => {
+    return http.put(`/exam/paper/question/update`, { 
+      examPaperId: examId, 
+      questionId, 
+      ...data 
+    })
   }
 
   /**
    * Remove question from exam paper
    */
-  static async removeExamQuestion(examId: number, questionId: number): Promise<Result<boolean>> {
-    return http.delete(`/api/exam-paper/${examId}/questions/${questionId}`)
+  static removeExamQuestion = (examId: number, questionId: number): Promise<Result<boolean>> => {
+    return http.delete(`/exam/paper/question/delete`, { 
+      params: { examPaperId: examId, questionId } 
+    })
   }
 
   /**
    * Generate exam paper with AI
    */
-  static async generateExamPaper(params: {
+  static generateExamPaper = (params: {
     categoryId: number
     subcategoryId?: number
     title: string
@@ -103,7 +109,7 @@ export class ExamPaperService {
     totalScore: number
     difficulty: number
     questionCount: number
-  }): Promise<Result<ExamPaperModel>> {
-    return http.post('/api/exam-paper/generate', params)
+  }): Promise<Result<ExamPaperModel>> => {
+    return http.post('/exam/paper/generate', params)
   }
 }

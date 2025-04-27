@@ -20,7 +20,7 @@ export interface Paging {
  * Paginated data structure
  */
 export interface PageResult<T = any> {
-  records: T[]
+  list: T[]
   total: number
   page: number
   pageSize: number

@@ -10,88 +10,138 @@ import {
 import http from '@/utils/http'
 
 /**
- * Exam Paper API endpoints
+ * Exam Paper API Service
  */
+export const ExamPaperService = {
+  /**
+   * 获取试卷列表
+   */
+  getExamPaperList: (params: ExamPaperListParams): Promise<Result<{ list: ExamPaper[]; paging: Paging }>> => {
+    return http.get('/exam/paper/list', { params })
+  },
 
-const API = {
-  LIST: '/exam/paper/list',
-  DETAIL: '/exam/paper/detail',
-  CREATE: '/exam/paper/create',
-  UPDATE: '/exam/paper/update',
-  DELETE: '/exam/paper/delete',
-  QUESTIONS: '/exam/paper/questions',
-  ADD_QUESTIONS: '/exam/paper/questions/add',
-  UPDATE_QUESTION: '/exam/paper/question/update',
-  DELETE_QUESTION: '/exam/paper/question/delete',
-  GENERATE: '/exam/paper/generate'
-}
+  /**
+   * 获取试卷详情
+   */
+  getExamPaperDetail: (id: number): Promise<Result<ExamPaper>> => {
+    return http.get('/exam/paper/detail', { params: { id } })
+  },
 
-/**
- * Get exam paper list
- */
-export function getExamPaperList(params: ExamPaperListParams) {
-  return http.get<Result<{ list: ExamPaper[]; paging: Paging }>>(API.LIST, { params })
-}
+  /**
+   * 创建试卷
+   */
+  createExamPaper: (data: ExamPaper): Promise<Result<number>> => {
+    return http.post('/exam/paper/create', data)
+  },
 
-/**
- * Get exam paper detail
- */
-export function getExamPaperDetail(id: number) {
-  return http.get<Result<ExamPaper>>(API.DETAIL, { params: { id } })
-}
+  /**
+   * 更新试卷
+   */
+  updateExamPaper: (data: ExamPaper): Promise<Result<boolean>> => {
+    return http.put('/exam/paper/update', data)
+  },
 
-/**
- * Create new exam paper
- */
-export function createExamPaper(data: ExamPaper) {
-  return http.post<Result<number>>(API.CREATE, data)
-}
+  /**
+   * 删除试卷
+   */
+  deleteExamPaper: (id: number): Promise<Result<boolean>> => {
+    return http.delete('/exam/paper/delete', { params: { id } })
+  },
 
-/**
- * Update exam paper
- */
-export function updateExamPaper(data: ExamPaper) {
-  return http.put<Result<boolean>>(API.UPDATE, data)
-}
+  /**
+   * 获取试卷题目
+   */
+  getExamPaperQuestions: (examPaperId: number): Promise<Result<ExamQuestion[]>> => {
+    return http.get('/exam/paper/questions', { params: { examPaperId } })
+  },
 
-/**
- * Delete exam paper
- */
-export function deleteExamPaper(id: number) {
-  return http.delete<Result<boolean>>(API.DELETE, { params: { id } })
-}
+  /**
+   * 添加试卷题目
+   */
+  addExamPaperQuestions: (data: AddQuestionsParams): Promise<Result<boolean>> => {
+    return http.post('/exam/paper/questions/add', data)
+  },
 
-/**
- * Get exam paper questions
- */
-export function getExamPaperQuestions(examPaperId: number) {
-  return http.get<Result<ExamQuestion[]>>(API.QUESTIONS, { params: { examPaperId } })
-}
+  /**
+   * 更新试卷题目
+   */
+  updateExamPaperQuestion: (data: UpdateQuestionParams): Promise<Result<boolean>> => {
+    return http.put('/exam/paper/question/update', data)
+  },
 
-/**
- * Add questions to exam paper
- */
-export function addExamPaperQuestions(data: AddQuestionsParams) {
-  return http.post<Result<boolean>>(API.ADD_QUESTIONS, data)
-}
+  /**
+   * 删除试卷题目
+   */
+  deleteExamPaperQuestion: (id: number): Promise<Result<boolean>> => {
+    return http.delete('/exam/paper/question/delete', { params: { id } })
+  },
 
-/**
- * Update exam paper question
- */
-export function updateExamPaperQuestion(data: UpdateQuestionParams) {
-  return http.put<Result<boolean>>(API.UPDATE_QUESTION, data)
-}
+  /**
+   * 自动生成试卷
+   */
+  generateExamPaper: (data: GenerateExamParams): Promise<Result<ExamPaper>> => {
+    return http.post('/exam/paper/generate', data)
+  },
 
-/**
- * Delete exam paper question
- */
-export function deleteExamPaperQuestion(id: number) {
-  return http.delete<Result<boolean>>(API.DELETE_QUESTION, { params: { id } })
-}
+  /**
+   * 获取试卷下的题目
+   */
+  getExamQuestions: (examId: number): Promise<Result<ExamQuestion[]>> => {
+    return http.get('/exam/paper/questions', { params: { examPaperId: examId } })
+  },
 
-/**
- * Generate exam paper automatically
- */
-export function generateExamPaper(data: GenerateExamParams) {
-  return http.post<Result<ExamPaper>>(API.GENERATE, data)
+  /**
+   * 添加题目到试卷
+   */
+  addExamQuestions: (
+    examId: number,
+    questions: Array<{
+      questionId: number
+      order: number
+      score: number
+    }>
+  ): Promise<Result<boolean>> => {
+    return http.post('/exam/paper/questions/add', { examPaperId: examId, questions })
+  },
+
+  /**
+   * 更新试卷中的题目
+   */
+  updateExamQuestion: (
+    examId: number,
+    questionId: number,
+    data: {
+      order: number
+      score: number
+    }
+  ): Promise<Result<boolean>> => {
+    return http.put('/exam/paper/question/update', {
+      examPaperId: examId,
+      questionId,
+      ...data
+    })
+  },
+
+  /**
+   * 从试卷中移除题目
+   */
+  removeExamQuestion: (examId: number, questionId: number): Promise<Result<boolean>> => {
+    return http.delete('/exam/paper/question/delete', {
+      params: { examPaperId: examId, questionId }
+    })
+  },
+
+  /**
+   * 添加新的试卷
+   */
+  addExamPaper: (data: ExamPaper): Promise<Result<number>> => {
+    return http.post('/exam/paper/create', data)
+  },
+
+  /**
+   * 根据ID获取试卷
+   */
+  getExamPaperById: (id: number): Promise<Result<ExamPaper>> => {
+    return http.get('/exam/paper/detail', { params: { id } })
+  }
 }
