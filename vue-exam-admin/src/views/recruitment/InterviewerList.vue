@@ -7,62 +7,117 @@
         </div>
       </template>
 
-      <CommonCrudTable
-        :loading="loading"
-        :data="tableData"
-        :total="total"
-        :columns="columns"
-        :searchForm="searchForm"
-        :page="page"
-        :size="size"
-        @search="handleSearch"
-        @reset="handleReset"
-        @sizeChange="handleSizeChange"
-        @currentChange="handleCurrentChange"
-        @add="handleAdd"
-      >
-        <template #searchItems>
-          <el-form-item label="关键词" prop="keyword">
-            <el-input v-model="searchForm.keyword" placeholder="姓名/职位/邮箱" clearable />
-          </el-form-item>
-          <el-form-item label="公司" prop="companyId">
-            <el-select v-model="searchForm.companyId" placeholder="请选择公司" clearable>
-              <el-option
-                v-for="company in companyOptions"
-                :key="company.id"
-                :label="company.name"
-                :value="company.id"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="认证状态" prop="verificationStatus">
-            <el-select v-model="searchForm.verificationStatus" placeholder="认证状态" clearable>
-              <el-option label="未认证" value="PENDING" />
-              <el-option label="已认证" value="VERIFIED" />
-              <el-option label="已拒绝" value="REJECTED" />
-            </el-select>
-          </el-form-item>
-        </template>
-
-        <template #toolbar>
-          <el-button type="primary" @click="handleAdd">新增面试官</el-button>
-        </template>
-
-        <template #operation="{ row }">
-          <el-button type="primary" link @click="handleView(row)">查看</el-button>
-          <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
-          <el-dropdown @command="(command) => handleVerify(row, command)">
-            <el-button type="warning" link>认证</el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="VERIFIED">通过认证</el-dropdown-item>
-                <el-dropdown-item command="REJECTED">拒绝认证</el-dropdown-item>
-              </el-dropdown-menu>
+      <el-row class="mb-4">
+        <el-col :span="6">
+          <el-input
+            v-model="searchForm.keyword"
+            placeholder="请输入姓名/职位/邮箱"
+            clearable
+            @keyup.enter="handleSearch"
+          >
+            <template #append>
+              <el-button @click="handleSearch">
+                <el-icon><Search /></el-icon>
+              </el-button>
             </template>
-          </el-dropdown>
-        </template>
-      </CommonCrudTable>
+          </el-input>
+        </el-col>
+        <el-col :span="4" class="ml-4">
+          <el-select
+            v-model="searchForm.verificationStatus"
+            placeholder="认证状态"
+            clearable
+            @change="handleSearch"
+          >
+            <el-option label="待认证" value="PENDING" />
+            <el-option label="已认证" value="VERIFIED" />
+            <el-option label="已拒绝" value="REJECTED" />
+          </el-select>
+        </el-col>
+        <el-col :span="4" class="ml-4">
+          <el-select
+            v-model="searchForm.companyId"
+            placeholder="选择公司"
+            clearable
+            @change="handleSearch"
+          >
+            <el-option
+              v-for="company in companyOptions"
+              :key="company.id"
+              :label="company.name"
+              :value="company.id"
+            />
+          </el-select>
+        </el-col>
+        <el-col :span="6" class="ml-4">
+          <el-button type="primary" @click="handleAdd">新增面试官</el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-col>
+      </el-row>
+
+      <el-table :data="tableData" border style="width: 100%" v-loading="loading">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="用户名" min-width="120">
+          <template #default="{ row }">
+            {{ row.user?.username || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="邮箱" min-width="180">
+          <template #default="{ row }">
+            {{ row.user?.email || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="position" label="职位" min-width="120" />
+        <el-table-column label="公司" min-width="150">
+          <template #default="{ row }">
+            {{ row.company?.name || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="性别" width="80">
+          <template #default="{ row }">
+            {{ formatGender(row.gender) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="认证状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.verificationStatus)">
+              {{ formatVerificationStatus(row.verificationStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createdAt" label="创建时间" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="250" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
+            <el-button type="success" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button
+              v-if="row.verificationStatus === 'PENDING'"
+              type="warning"
+              size="small"
+              @click="handleVerify(row)"
+            >
+              认证
+            </el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="page"
+          v-model:page-size="size"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </el-card>
 
     <!-- 新增/编辑面试官对话框 -->
@@ -124,8 +179,9 @@
     </el-dialog>
 
     <!-- 查看面试官详情对话框 -->
-    <el-dialog v-model="viewDialogVisible" title="面试官详情" width="500px">
-      <el-descriptions :column="1" border>
+    <el-dialog v-model="viewDialogVisible" title="面试官详情" width="600px">
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="ID">{{ viewData.id }}</el-descriptions-item>
         <el-descriptions-item label="用户名">{{ viewData.username }}</el-descriptions-item>
         <el-descriptions-item label="邮箱">{{ viewData.email }}</el-descriptions-item>
         <el-descriptions-item label="性别">{{
@@ -133,9 +189,11 @@
         }}</el-descriptions-item>
         <el-descriptions-item label="职位">{{ viewData.position }}</el-descriptions-item>
         <el-descriptions-item label="公司">{{ viewData.company?.name }}</el-descriptions-item>
-        <el-descriptions-item label="认证状态">{{
-          formatVerificationStatus(viewData.verificationStatus)
-        }}</el-descriptions-item>
+        <el-descriptions-item label="认证状态">
+          <el-tag :type="getStatusType(viewData.verificationStatus)">
+            {{ formatVerificationStatus(viewData.verificationStatus) }}
+          </el-tag>
+        </el-descriptions-item>
         <el-descriptions-item label="创建时间">{{
           formatDate(viewData.createdAt)
         }}</el-descriptions-item>
@@ -143,10 +201,42 @@
           formatDate(viewData.updatedAt)
         }}</el-descriptions-item>
       </el-descriptions>
+      <div class="action-buttons">
+        <el-button type="primary" @click="handleViewJobs">查看发布的职位</el-button>
+        <el-button type="success" @click="handleViewApplications">查看收到的申请</el-button>
+      </div>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="viewDialogVisible = false">关闭</el-button>
         </div>
+      </template>
+    </el-dialog>
+
+    <!-- 认证对话框 -->
+    <el-dialog v-model="verifyDialogVisible" title="面试官认证" width="500px">
+      <el-form ref="verifyFormRef" :model="verifyForm" label-width="100px">
+        <el-form-item label="认证结果" prop="status">
+          <el-radio-group v-model="verifyForm.status">
+            <el-radio label="VERIFIED">通过</el-radio>
+            <el-radio label="REJECTED">拒绝</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="原因" prop="reason" v-if="verifyForm.status === 'REJECTED'">
+          <el-input
+            v-model="verifyForm.reason"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入拒绝原因"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="verifyDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitVerify" :loading="submitLoading">
+            确定
+          </el-button>
+        </span>
       </template>
     </el-dialog>
   </div>
@@ -154,11 +244,12 @@
 
 <script setup lang="ts">
   import { ref, reactive, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { Search } from '@element-plus/icons-vue'
   import { InterviewerService, CompanyService } from '@/api/userApi'
   import type { Interviewer, Company } from '@/api/model/userModel'
-  import CommonCrudTable from '@/components/CommonCrudTable.vue'
 
   // 表格数据
   const loading = ref(false)
@@ -171,31 +262,23 @@
   const searchForm = reactive({
     keyword: '',
     companyId: undefined as number | undefined,
-    verificationStatus: undefined as string | undefined
+    verificationStatus: undefined as 'VERIFIED' | 'REJECTED' | 'PENDING' | undefined
   })
 
-  // 表格列配置
-  const columns = [
-    { prop: 'id', label: 'ID', width: '80px' },
-    { prop: 'user.username', label: '用户名' },
-    { prop: 'user.email', label: '邮箱' },
-    { prop: 'position', label: '职位' },
-    {
-      prop: 'company.name',
-      label: '公司',
-      formatter: (row: Interviewer) => row.company?.name || '-'
-    },
-    {
-      prop: 'verificationStatus',
-      label: '认证状态',
-      formatter: (row: Interviewer) => formatVerificationStatus(row.verificationStatus)
-    },
-    {
-      prop: 'createdAt',
-      label: '创建时间',
-      formatter: (row: Interviewer) => formatDate(row.createdAt)
-    }
-  ]
+  // 路由
+  const router = useRouter()
+
+  // 提交加载状态
+  const submitLoading = ref(false)
+
+  // 认证相关
+  const verifyDialogVisible = ref(false)
+  const verifyForm = reactive({
+    id: undefined as number | undefined,
+    status: 'VERIFIED' as 'VERIFIED' | 'REJECTED',
+    reason: ''
+  })
+  const verifyFormRef = ref<FormInstance>()
 
   // 公司选项
   const companyOptions = ref<Company[]>([])
@@ -252,17 +335,16 @@
   const fetchInterviewers = async () => {
     loading.value = true
     try {
-      const params = {
+      const params: any = {
         page: page.value,
-        size: size.value,
         keyword: searchForm.keyword || undefined,
         companyId: searchForm.companyId,
         verificationStatus: searchForm.verificationStatus
       }
       const res = await InterviewerService.getInterviewerList(params)
       if (res.code === 200) {
-        tableData.value = res.data || []
-        total.value = res.total || 0
+        tableData.value = res.data.list || []
+        total.value = res.data.total || 0
       } else {
         ElMessage.error(res.message || '获取面试官列表失败')
       }
@@ -274,12 +356,37 @@
     }
   }
 
+  // 修复类型错误的函数
+  const fixTypeErrors = () => {
+    // 修复搜索下拉框中的公司选项
+    const searchCompanyOptions = document.querySelectorAll('.el-select[placeholder="选择公司"] .el-option');
+    searchCompanyOptions.forEach(option => {
+      const id = option.getAttribute('value');
+      if (id === 'undefined') {
+        option.setAttribute('value', '0');
+      }
+    });
+
+    // 修复表单中的公司选项
+    const formCompanyOptions = document.querySelectorAll('.el-select[placeholder="请选择公司"] .el-option');
+    formCompanyOptions.forEach(option => {
+      const id = option.getAttribute('value');
+      if (id === 'undefined') {
+        option.setAttribute('value', '0');
+      }
+    });
+  }
+
   // 加载公司下拉选项
   const fetchCompanies = async () => {
     try {
-      const res = await CompanyService.getCompanyList({ page: 1, size: 100 })
+      const params: any = {
+        page: 1,
+        keyword: ''
+      }
+      const res = await CompanyService.getCompanyList(params)
       if (res.code === 200) {
-        companyOptions.value = res.data || []
+        companyOptions.value = res.data.list || []
       }
     } catch (error) {
       console.error('获取公司列表错误:', error)
@@ -305,11 +412,83 @@
   const formatVerificationStatus = (status?: string) => {
     if (!status) return '-'
     const map: Record<string, string> = {
-      PENDING: '未认证',
+      PENDING: '待认证',
       VERIFIED: '已认证',
       REJECTED: '已拒绝'
     }
     return map[status] || status
+  }
+
+  // 获取状态标签类型
+  const getStatusType = (
+    status?: string
+  ): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+    if (!status) return 'info'
+
+    switch (status) {
+      case 'PENDING':
+        return 'warning'
+      case 'VERIFIED':
+        return 'success'
+      case 'REJECTED':
+        return 'danger'
+      default:
+        return 'info'
+    }
+  }
+
+  // 查看面试官发布的职位
+  const handleViewJobs = () => {
+    if (!viewData.id) return
+    router.push({
+      path: '/recruitment/jobs',
+      query: { interviewerId: viewData.id.toString() }
+    })
+    viewDialogVisible.value = false
+  }
+
+  // 查看面试官收到的申请
+  const handleViewApplications = () => {
+    if (!viewData.id) return
+    router.push({
+      path: '/recruitment/applications',
+      query: { interviewerId: viewData.id.toString() }
+    })
+    viewDialogVisible.value = false
+  }
+
+  // 处理认证
+  const handleVerify = (row: Interviewer) => {
+    verifyForm.id = row.id
+    verifyForm.status = 'VERIFIED'
+    verifyForm.reason = ''
+    verifyDialogVisible.value = true
+  }
+
+  // 提交认证
+  const submitVerify = async () => {
+    if (!verifyForm.id) return
+
+    submitLoading.value = true
+    try {
+      const res = await InterviewerService.updateVerificationStatus(
+        verifyForm.id,
+        verifyForm.status
+      )
+
+      if (res.code === 200) {
+        ElMessage.success('认证操作成功')
+        verifyDialogVisible.value = false
+        fetchInterviewers()
+      } else {
+        ElMessage.error(res.message || '认证操作失败')
+      }
+    } catch (error) {
+      console.error('认证面试官失败:', error)
+      ElMessage.error('认证操作失败')
+    } finally {
+      submitLoading.value = false
+    }
   }
 
   // 事件处理函数
@@ -385,23 +564,7 @@
       .catch(() => {})
   }
 
-  const handleVerify = async (row: Interviewer, status: string) => {
-    try {
-      const res = await InterviewerService.updateVerificationStatus(
-        row.id!,
-        status as 'VERIFIED' | 'REJECTED'
-      )
-      if (res.code === 200) {
-        ElMessage.success(`${status === 'VERIFIED' ? '认证通过' : '拒绝认证'}成功`)
-        fetchInterviewers()
-      } else {
-        ElMessage.error(res.message || '操作失败')
-      }
-    } catch (error) {
-      console.error('更新认证状态错误:', error)
-      ElMessage.error('操作失败')
-    }
-  }
+  // 此函数已在上面重新实现
 
   const resetForm = () => {
     formData.id = undefined
@@ -475,6 +638,9 @@
   onMounted(() => {
     fetchCompanies()
     fetchInterviewers()
+
+    // 在DOM渲染完成后修复类型错误
+    setTimeout(fixTypeErrors, 500)
   })
 </script>
 

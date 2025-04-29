@@ -121,7 +121,6 @@
   import { ElMessage, ElNotification } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { HOME_PAGE } from '@/router'
-  import { ApiStatus } from '@/utils/http/status'
   import { getCssVariable } from '@/utils/colors'
   import { languageOptions } from '@/language'
   import { LanguageEnum, SystemThemeEnum } from '@/enums/appEnum'
@@ -173,33 +172,37 @@
         const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
         try {
-          const res = await UserService.login({
-            body: JSON.stringify({
-              username: formData.username,
-              password: formData.password
-            })
-          })
+          // 本地验证用户名和密码
+          if (formData.username === 'admin' && formData.password === 'admin') {
+            // 模拟成功的登录响应
+            const mockToken = 'mock_token_' + Date.now()
 
-          if (res.code === ApiStatus.success && res.data) {
             // 设置 token
-            userStore.setToken(res.data.accessToken)
+            userStore.setToken(mockToken)
 
-            // 获取用户信息
-            const userRes = await UserService.getUserInfo()
-            if (userRes.code === ApiStatus.success) {
-              userStore.setUserInfo(userRes.data)
-            }
+            // 设置模拟的用户信息
+            userStore.setUserInfo({
+              id: 1,
+              name: 'Admin',
+              username: 'admin',
+              avatar: '',
+              email: 'admin@example.com'
+            })
 
             // 设置登录状态
             userStore.setLoginStatus(true)
-            // 延时辅助函数
+
+            // 延时模拟网络请求
             await delay(1000)
+
             // 登录成功提示
             showLoginSuccessNotice()
+
             // 跳转首页
             router.push(HOME_PAGE)
           } else {
-            ElMessage.error(res.message)
+            // 用户名或密码错误
+            ElMessage.error('用户名或密码错误')
           }
         } finally {
           await delay(1000)
@@ -234,7 +237,6 @@
 
   // 切换主题
   import { useTheme } from '@/composables/useTheme'
-  import { UserService } from '@/api/user'
 
   const toggleTheme = () => {
     let { LIGHT, DARK } = SystemThemeEnum

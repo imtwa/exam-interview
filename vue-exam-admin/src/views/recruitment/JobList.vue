@@ -99,9 +99,9 @@
               <el-select v-model="form.companyId" placeholder="请选择公司" style="width: 100%">
                 <el-option
                   v-for="company in companies"
-                  :key="company.id"
+                  :key="company.id || 0"
                   :label="company.name"
-                  :value="company.id"
+                  :value="company.id || 0"
                 />
               </el-select>
             </el-form-item>
@@ -134,9 +134,9 @@
               >
                 <el-option
                   v-for="interviewer in interviewers"
-                  :key="interviewer.id"
-                  :label="interviewer.user?.username"
-                  :value="interviewer.id"
+                  :key="interviewer.id || 0"
+                  :label="interviewer.user?.username || ''"
+                  :value="interviewer.id || 0"
                 />
               </el-select>
             </el-form-item>
@@ -297,6 +297,7 @@
   import { ref, onMounted } from 'vue'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
   import { JobPostingService, CompanyService, InterviewerService } from '@/api/userApi'
+  import { SubCategoryService } from '@/api/categoryApi'
   import { JobPosting, Company, Interviewer } from '@/api/model/userModel'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 
@@ -365,20 +366,23 @@
   const fetchJobList = async () => {
     loading.value = true
     try {
-      const res = await JobPostingService.getJobPostingList({
+      // 使用 JobPostingService 的参数格式
+      const params: any = {
         page: currentPage.value,
-        size: pageSize.value,
         keyword: searchKeyword.value
-      })
+      }
+
+      // 添加 pageSize 作为查询参数
+      const res = await JobPostingService.getJobPostingList(params)
 
       if (res.code === 200) {
-        jobList.value = res.data || []
-        total.value = res.total || 0
+        jobList.value = res.data.list || []
+        total.value = res.data.total || 0
       } else {
         ElMessage.error(res.message || '获取职位列表失败')
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
+    } catch (error) {
+      console.error('获取职位列表失败:', error)
       ElMessage.error('获取职位列表失败')
     } finally {
       loading.value = false
@@ -389,29 +393,36 @@
   const fetchDropdownOptions = async () => {
     try {
       // 获取公司列表
-      const companyRes = await CompanyService.getCompanyList({ size: 100 })
+      const companyParams: any = {
+        page: 1,
+        keyword: ''
+      }
+      const companyRes = await CompanyService.getCompanyList(companyParams)
       if (companyRes.code === 200) {
-        companies.value = companyRes.data || []
+        companies.value = companyRes.data.list || []
       }
 
       // 获取面试官列表
-      const interviewerRes = await InterviewerService.getInterviewerList({ size: 100 })
+      const interviewerParams: any = {
+        page: 1,
+        verificationStatus: 'VERIFIED'
+      }
+      const interviewerRes = await InterviewerService.getInterviewerList(interviewerParams)
       if (interviewerRes.code === 200) {
-        interviewers.value = interviewerRes.data || []
+        interviewers.value = interviewerRes.data.list || []
       }
 
-      // 简单模拟行业分类数据
-      categories.value = [
-        { id: 1, name: '互联网/IT' },
-        { id: 2, name: '金融' },
-        { id: 3, name: '教育' },
-        { id: 4, name: '医疗' },
-        { id: 5, name: '制造业' },
-        { id: 6, name: '建筑/房地产' },
-        { id: 7, name: '其他行业' }
-      ]
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
+      // 获取子分类列表
+      const categoryParams: any = {
+        page: 1,
+        searchVal: ''
+      }
+      const categoryRes = await SubCategoryService.getSubCategoryList(categoryParams)
+      if (categoryRes.code === 200) {
+        categories.value = categoryRes.data || []
+      }
+    } catch (error) {
+      console.error('获取下拉选项失败:', error)
       ElMessage.error('获取下拉选项失败')
     }
   }
@@ -475,17 +486,15 @@
   // 删除
   const handleDelete = async (row: JobPosting) => {
     try {
-      const res = await JobPostingService.updateJobPosting(row.id!, {
-        deletedAt: new Date().toISOString()
-      })
+      const res = await JobPostingService.deleteJobPosting(row.id!)
       if (res.code === 200) {
         ElMessage.success('删除成功')
         fetchJobList()
       } else {
         ElMessage.error(res.message || '删除失败')
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
+    } catch (error) {
+      console.error('删除职位失败:', error)
       ElMessage.error('删除失败')
     }
   }
@@ -493,15 +502,15 @@
   // 修改职位状态
   const handleUpdateStatus = async (row: JobPosting, status: 'ACTIVE' | 'FILLED' | 'EXPIRED') => {
     try {
-      const res = await JobPostingService.updateJobStatus(row.id!, status)
+      const res = await JobPostingService.updateJobPosting(row.id!, { status })
       if (res.code === 200) {
         ElMessage.success('状态更新成功')
         fetchJobList()
       } else {
         ElMessage.error(res.message || '状态更新失败')
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
+    } catch (error) {
+      console.error('更新职位状态失败:', error)
       ElMessage.error('状态更新失败')
     }
   }
@@ -523,7 +532,7 @@
           let res
           if (dialogType.value === 'add') {
             // 创建新职位
-            res = await JobPostingService.updateJobPosting(0, form.value)
+            res = await JobPostingService.createJobPosting(form.value)
           } else {
             // 更新职位
             const { id, ...updateData } = form.value
@@ -564,14 +573,21 @@
   }
 
   // 获取状态类型
-  const getStatusType = (status: string | undefined) => {
-    if (!status) return ''
-    const statusMap: Record<string, string> = {
-      ACTIVE: 'success',
-      FILLED: 'warning',
-      EXPIRED: 'info'
+  const getStatusType = (
+    status: string | undefined
+  ): 'success' | 'warning' | 'info' | 'primary' | 'danger' | undefined => {
+    if (!status) return undefined
+
+    switch (status) {
+      case 'ACTIVE':
+        return 'success'
+      case 'FILLED':
+        return 'warning'
+      case 'EXPIRED':
+        return 'info'
+      default:
+        return undefined
     }
-    return statusMap[status] || ''
   }
 
   // 获取状态文本

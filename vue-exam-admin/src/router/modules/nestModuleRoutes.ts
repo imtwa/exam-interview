@@ -84,6 +84,13 @@ export const userRoutes: AppRouteRecordRaw = {
       component: () => import('@/views/user/JobSeekerList.vue'),
       meta: { title: '求职者管理', keepAlive: true }
     },
+    // 求职者管理（新） - 对应Nest.js的jobseeker模块
+    {
+      path: 'job-seekers-new',
+      name: 'JobSeekerListNew',
+      component: () => import('@/views/recruitment/JobSeekerList.vue'),
+      meta: { title: '求职者管理（新）', keepAlive: true }
+    },
     // 求职者详情 - 对应Nest.js的jobseeker模块的详情API
     {
       path: 'job-seeker-detail/:id',
@@ -117,6 +124,13 @@ export const examRoutes: AppRouteRecordRaw = {
       name: 'SubCategoryList',
       component: () => import('@/views/category/SubCategoryList.vue'),
       meta: { title: '子分类管理', keepAlive: true }
+    },
+    // 分类管理（组合视图）- 将分类和子分类放在一起展示
+    {
+      path: 'category-management',
+      name: 'CategoryManagement',
+      component: () => import('@/views/category/CategoryManagement.vue'),
+      meta: { title: '分类管理（新）', keepAlive: true }
     },
     // 题目管理 - 对应Nest.js的exam模块的question相关API
     {
