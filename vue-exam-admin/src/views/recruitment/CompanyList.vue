@@ -27,12 +27,7 @@
         </el-col>
       </el-row>
 
-      <el-table
-        :data="tableData"
-        border
-        style="width: 100%"
-        v-loading="loading"
-      >
+      <el-table :data="tableData" border style="width: 100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="公司名称" />
         <el-table-column prop="size" label="公司规模">
@@ -257,44 +252,44 @@
 
   // 公司规模映射
   const companySizeMap: Record<string, string> = {
-    'LESS_THAN_50': '少于50人',
-    'BETWEEN_50_200': '50-200人',
-    'BETWEEN_200_500': '200-500人',
-    'BETWEEN_500_1000': '500-1000人',
-    'BETWEEN_1000_5000': '1000-5000人',
-    'MORE_THAN_5000': '5000人以上',
-    'TINY': '少于50人',
-    'SMALL': '50-200人',
-    'MEDIUM': '200-500人',
-    'LARGE': '500-1000人',
-    'XLARGE': '1000-5000人',
-    'XXLARGE': '5000人以上'
+    LESS_THAN_50: '少于50人',
+    BETWEEN_50_200: '50-200人',
+    BETWEEN_200_500: '200-500人',
+    BETWEEN_500_1000: '500-1000人',
+    BETWEEN_1000_5000: '1000-5000人',
+    MORE_THAN_5000: '5000人以上',
+    TINY: '少于50人',
+    SMALL: '50-200人',
+    MEDIUM: '200-500人',
+    LARGE: '500-1000人',
+    XLARGE: '1000-5000人',
+    XXLARGE: '5000人以上'
   }
 
   // 融资阶段映射
   const fundingStageMap: Record<string, string> = {
-    'SEED': '种子轮',
-    'ANGEL': '天使轮',
-    'PRE_A': '天使+轮',
-    'A': 'A轮',
-    'A_PLUS': 'A+轮',
-    'B': 'B轮',
-    'B_PLUS': 'B+轮',
-    'C': 'C轮',
-    'C_PLUS': 'C+轮',
-    'D': 'D轮及以上',
-    'IPO': '已上市',
-    'ACQUIRED': '已被收购',
-    'STRATEGIC': '战略融资',
-    'SELF_FUNDED': '自筹资金',
-    'UNDISCLOSED': '未透露'
+    SEED: '种子轮',
+    ANGEL: '天使轮',
+    PRE_A: '天使+轮',
+    A: 'A轮',
+    A_PLUS: 'A+轮',
+    B: 'B轮',
+    B_PLUS: 'B+轮',
+    C: 'C轮',
+    C_PLUS: 'C+轮',
+    D: 'D轮及以上',
+    IPO: '已上市',
+    ACQUIRED: '已被收购',
+    STRATEGIC: '战略融资',
+    SELF_FUNDED: '自筹资金',
+    UNDISCLOSED: '未透露'
   }
 
   // 认证状态映射
   const verificationStatusMap: Record<string, string> = {
-    'PENDING': '未认证',
-    'VERIFIED': '已认证',
-    'REJECTED': '已拒绝'
+    PENDING: '未认证',
+    VERIFIED: '已认证',
+    REJECTED: '已拒绝'
   }
 
   // 行业选项
@@ -394,9 +389,9 @@
 
   const getStatusTagType = (status: string) => {
     const map: Record<string, string> = {
-      'PENDING': 'warning',
-      'VERIFIED': 'success',
-      'REJECTED': 'danger'
+      PENDING: 'warning',
+      VERIFIED: 'success',
+      REJECTED: 'danger'
     }
     return map[status] || 'info'
   }
@@ -444,7 +439,7 @@
 
     // 设置行业ID
     if (row.industryIds && row.industryIds.length) {
-      formData.industryIds = row.industryIds.filter(id => id !== undefined) as number[]
+      formData.industryIds = row.industryIds.filter((id) => id !== undefined) as number[]
     } else {
       formData.industryIds = []
     }
@@ -465,7 +460,7 @@
     viewData.createdAt = row.createdAt
     viewData.updatedAt = row.updatedAt
     viewData.website = row.website
-    
+
     viewDialogVisible.value = true
   }
 

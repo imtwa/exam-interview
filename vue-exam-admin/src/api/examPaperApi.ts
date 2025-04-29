@@ -82,10 +82,10 @@ export class ExamPaperService {
       score: number
     }
   ): Promise<Result<boolean>> => {
-    return http.put(`/exam/paper/question/update`, { 
-      examPaperId: examId, 
-      questionId, 
-      ...data 
+    return http.put(`/exam/paper/question/update`, {
+      examPaperId: examId,
+      questionId,
+      ...data
     })
   }
 
@@ -93,8 +93,8 @@ export class ExamPaperService {
    * Remove question from exam paper
    */
   static removeExamQuestion = (examId: number, questionId: number): Promise<Result<boolean>> => {
-    return http.delete(`/exam/paper/question/delete`, { 
-      params: { examPaperId: examId, questionId } 
+    return http.delete(`/exam/paper/question/delete`, {
+      params: { examPaperId: examId, questionId }
     })
   }
 

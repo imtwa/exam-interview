@@ -16,7 +16,9 @@ export const ExamPaperService = {
   /**
    * 获取试卷列表
    */
-  getExamPaperList: (params: ExamPaperListParams): Promise<Result<{ list: ExamPaper[]; paging: Paging }>> => {
+  getExamPaperList: (
+    params: ExamPaperListParams
+  ): Promise<Result<{ list: ExamPaper[]; paging: Paging }>> => {
     return http.get('/exam/paper/list', { params })
   },
 

@@ -1,6 +1,13 @@
 import http from '@/utils/http'
 import { Result } from './model/baseModel'
-import { FrontUser, JobSeeker, Interviewer, UserListParams, Education, WorkExperience } from './model/userModel'
+import {
+  FrontUser,
+  JobSeeker,
+  Interviewer,
+  UserListParams,
+  Education,
+  WorkExperience
+} from './model/userModel'
 
 /**
  * 前台用户相关API
@@ -142,7 +149,7 @@ export const UserService = {
   },
 
   /**
-   * 获取用户列表 
+   * 获取用户列表
    */
   getUserList: (params: UserListParams): Promise<Result<{ items: FrontUser[]; total: number }>> => {
     return http.get('/user/page', { params })
@@ -156,7 +163,9 @@ export const JobSeekerService = {
   /**
    * 获取求职者列表
    */
-  getJobSeekerList: (params: UserListParams): Promise<Result<{ items: JobSeeker[]; total: number }>> => {
+  getJobSeekerList: (
+    params: UserListParams
+  ): Promise<Result<{ items: JobSeeker[]; total: number }>> => {
     return http.get('/jobseeker/page', { params })
   },
 
@@ -198,7 +207,10 @@ export const JobSeekerService = {
   /**
    * 更新工作经历
    */
-  updateWorkExperience: (id: number, data: Partial<WorkExperience>): Promise<Result<WorkExperience>> => {
+  updateWorkExperience: (
+    id: number,
+    data: Partial<WorkExperience>
+  ): Promise<Result<WorkExperience>> => {
     return http.patch(`/jobseeker/work-experience/${id}`, data)
   },
 
