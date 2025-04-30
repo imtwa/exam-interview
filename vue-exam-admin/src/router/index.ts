@@ -9,7 +9,8 @@ import { ref } from 'vue'
 import Home from '@views/index/index.vue'
 import AppConfig from '@/config'
 import { useUserStore } from '@/store/modules/user'
-import { menuService } from '@/api/menuApi'
+// 使用静态菜单数据
+import { asyncRoutes } from './modules/asyncRoutes'
 import { useMenuStore } from '@/store/modules/menu'
 import { useSettingStore } from '@/store/modules/setting'
 import NProgress from 'nprogress'
@@ -44,25 +45,13 @@ const staticRoutes: AppRouteRecordRaw[] = [
     path: '/dashboard',
     component: Home,
     name: 'Dashboard',
-    meta: { title: 'menus.dashboard.title' },
+    meta: { title: '首页' },
     children: [
       {
         path: RoutesAlias.Dashboard,
         name: 'Console',
         component: () => import('@views/dashboard/console/index.vue'),
-        meta: { title: 'menus.dashboard.console', keepAlive: false }
-      },
-      {
-        path: RoutesAlias.Analysis,
-        name: 'Analysis',
-        component: () => import('@views/dashboard/analysis/index.vue'),
-        meta: { title: 'menus.dashboard.analysis', keepAlive: false }
-      },
-      {
-        path: RoutesAlias.Ecommerce,
-        name: 'Ecommerce',
-        component: () => import('@views/dashboard/ecommerce/index.vue'),
-        meta: { title: 'menus.dashboard.ecommerce', keepAlive: false }
+        meta: { title: '控制台', keepAlive: false }
       }
     ]
   },
@@ -70,25 +59,13 @@ const staticRoutes: AppRouteRecordRaw[] = [
     path: RoutesAlias.Login,
     name: 'Login',
     component: () => import('@views/login/index.vue'),
-    meta: { title: 'menus.login.title', isHideTab: true, setTheme: true }
-  },
-  {
-    path: RoutesAlias.Register,
-    name: 'Register',
-    component: () => import('@views/register/index.vue'),
-    meta: { title: 'menus.register.title', isHideTab: true, noLogin: true, setTheme: true }
-  },
-  {
-    path: RoutesAlias.ForgetPassword,
-    name: 'ForgetPassword',
-    component: () => import('@views/forget-password/index.vue'),
-    meta: { title: 'menus.forgetPassword.title', isHideTab: true, noLogin: true, setTheme: true }
+    meta: { title: '登录', isHideTab: true, setTheme: true }
   },
   {
     path: '/exception',
     component: Home,
     name: 'Exception',
-    meta: { title: 'menus.exception.title' },
+    meta: { title: '异常页面' },
     children: [
       {
         path: RoutesAlias.Exception403,
@@ -109,26 +86,6 @@ const staticRoutes: AppRouteRecordRaw[] = [
         meta: { title: '500' }
       }
     ]
-  },
-  {
-    path: '/outside',
-    component: Home,
-    name: 'Outside',
-    meta: { title: 'menus.outside.title' },
-    children: [
-      {
-        path: '/outside/iframe/:path',
-        name: 'Iframe',
-        component: () => import('@/views/outside/Iframe.vue'),
-        meta: { title: 'iframe' }
-      }
-    ]
-  },
-  {
-    path: RoutesAlias.Pricing,
-    name: 'Pricing',
-    component: () => import('@views/template/Pricing.vue'),
-    meta: { title: 'menus.template.pricing', isHideTab: true }
   }
 ]
 
@@ -188,20 +145,12 @@ router.beforeEach(async (to, from, next) => {
 })
 
 /**
- * 根据接口返回的菜单列表注册动态路由
- * @throws 若菜单列表为空或获取失败则抛出错误
+ * 使用静态菜单数据注册动态路由
  */
 async function getMenuData(): Promise<void> {
   try {
-    // 获取菜单列表
-    const { menuList, closeLoading } = await menuService.getMenuList()
-
-    // 如果菜单列表为空，执行登出操作并跳转到登录页
-    if (!Array.isArray(menuList) || menuList.length === 0) {
-      closeLoading()
-      useUserStore().logOut()
-      throw new Error('获取菜单列表失败，请重新登录！')
-    }
+    // 使用静态菜单数据
+    const menuList = asyncRoutes
 
     // 设置菜单列表
     useMenuStore().setMenuList(menuList as [])
@@ -209,10 +158,8 @@ async function getMenuData(): Promise<void> {
     registerMenuRoutes(menuList)
     // 标记路由已注册
     isRouteRegistered.value = true
-    // 关闭加载动画
-    closeLoading()
   } catch (error) {
-    console.error('获取菜单列表失败:', error)
+    console.error('注册路由失败:', error)
     throw error
   }
 }

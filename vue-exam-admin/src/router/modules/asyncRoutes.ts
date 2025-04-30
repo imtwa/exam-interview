@@ -90,17 +90,50 @@ export const asyncRoutes: MenuListType[] = [
   },
   {
     id: 3,
-    name: 'RecruitmentSystem',
-    path: '/recruitment',
+    name: 'User',
+    path: '/user',
     component: RoutesAlias.Home,
     meta: {
-      title: '招聘系统',
-      icon: '&#xe753;',
+      title: '用户管理',
+      icon: '&#xe6b8;',
       keepAlive: false
     },
     children: [
       {
         id: 301,
+        path: 'front-users',
+        name: 'FrontUserList',
+        component: '/user/FrontUserList',
+        meta: {
+          title: '前台用户',
+          keepAlive: true
+        }
+      },
+      {
+        id: 302,
+        path: 'job-seekers',
+        name: 'JobSeekerList',
+        component: '/user/JobSeekerList',
+        meta: {
+          title: '求职者管理',
+          keepAlive: true
+        }
+      }
+    ]
+  },
+  {
+    id: 4,
+    name: 'RecruitmentSystem',
+    path: '/recruitment',
+    component: RoutesAlias.Home,
+    meta: {
+      title: '招聘系统',
+      icon: '&#xe6b7;',
+      keepAlive: false
+    },
+    children: [
+      {
+        id: 401,
         path: 'companies',
         name: 'CompanyList',
         component: '/recruitment/CompanyList',
@@ -110,7 +143,7 @@ export const asyncRoutes: MenuListType[] = [
         }
       },
       {
-        id: 302,
+        id: 402,
         path: 'jobs',
         name: 'JobList',
         component: '/recruitment/JobList',
@@ -120,17 +153,27 @@ export const asyncRoutes: MenuListType[] = [
         }
       },
       {
-        id: 303,
-        path: 'applications',
-        name: 'ApplicationList',
-        component: '/recruitment/ApplicationList',
+        id: 403,
+        path: 'interviewers',
+        name: 'InterviewerList',
+        component: '/recruitment/InterviewerList',
         meta: {
-          title: '求职申请',
+          title: '面试官管理',
           keepAlive: true
         }
       },
       {
-        id: 304,
+        id: 404,
+        path: 'applications',
+        name: 'ApplicationList',
+        component: '/recruitment/ApplicationList',
+        meta: {
+          title: '应聘管理',
+          keepAlive: true
+        }
+      },
+      {
+        id: 405,
         path: 'interviews',
         name: 'InterviewList',
         component: '/recruitment/InterviewList',
@@ -142,66 +185,24 @@ export const asyncRoutes: MenuListType[] = [
     ]
   },
   {
-    id: 4,
-    name: 'User',
-    path: '/user',
+    id: 5,
+    name: 'Industry',
+    path: '/industry',
     component: RoutesAlias.Home,
     meta: {
-      title: '用户管理',
-      icon: '&#xe86e;',
+      title: '行业管理',
+      icon: '&#xe6b5;',
       keepAlive: false
     },
     children: [
       {
-        id: 401,
-        path: 'front-users',
-        name: 'FrontUserList',
-        component: '/user/FrontUserList',
+        id: 501,
+        path: 'list',
+        name: 'IndustryList',
+        component: '/industry/IndustryList',
         meta: {
-          title: '前台用户',
+          title: '行业分类',
           keepAlive: true
-        }
-      },
-      {
-        id: 402,
-        path: 'job-seekers',
-        name: 'JobSeekerList',
-        component: '/user/JobSeekerList',
-        meta: {
-          title: '求职者管理',
-          keepAlive: true
-        }
-      },
-      {
-        id: 403,
-        path: 'interviewers',
-        name: 'InterviewerList',
-        component: '/user/InterviewerList',
-        meta: {
-          title: '面试官管理',
-          keepAlive: true
-        }
-      },
-      {
-        id: 404,
-        path: 'job-seeker-detail/:id',
-        name: 'JobSeekerDetail',
-        component: '/user/JobSeekerDetail',
-        meta: {
-          title: '求职者详情',
-          keepAlive: false,
-          isHide: true
-        }
-      },
-      {
-        id: 405,
-        path: 'interviewer-detail/:id',
-        name: 'InterviewerDetail',
-        component: '/user/InterviewerDetail',
-        meta: {
-          title: '面试官详情',
-          keepAlive: false,
-          isHide: true
         }
       }
     ]

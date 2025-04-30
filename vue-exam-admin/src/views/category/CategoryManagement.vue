@@ -196,7 +196,8 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
   import { Search } from '@element-plus/icons-vue'
-  import { CategoryService, SubCategoryService } from '@/api/categoryApi'
+  import { CategoryService } from '@/api/categoryService'
+import { SubCategoryService } from '@/api/subCategoryService'
   import { CategoryModel, SubCategoryModel } from '@/api/model/examModels'
 
   // 数据

@@ -1,19 +1,32 @@
-// Export all API services
-export * from './userApi'
-export * from './articleApi'
-export * from './menuApi'
+/**
+ * API 服务导出文件
+ * 统一导出所有 API 服务
+ */
 
-// Exam system APIs
-export * from './categoryApi'
-export * from './questionApi'
-export * from './examPaperApi'
+// 基础服务
+export { ApiService } from './apiService'
 
-// Recruitment system APIs
-export * from './recruitmentApi'
+// 用户相关服务
+export { UserService } from './userService'
+export { JobSeekerService } from './jobSeekerService'
+export { InterviewerService } from './interviewerService'
 
-// Statistics API
-export * from './statsApi'
+// 招聘相关服务
+export { CompanyService } from './companyService'
+export { JobPostingService } from './jobPostingService'
+export { JobApplicationService } from './jobApplicationService'
+export { InterviewService } from './interviewService'
 
-// Also export API models
+// 行业相关服务
+export { IndustryService } from './industryService'
+
+// 考试相关服务
+export { CategoryService } from './categoryService'
+export { SubCategoryService } from './subCategoryService'
+export { QuestionService } from './questionService'
+export { ExamPaperService } from './examPaperService'
+
+// 导出模型
+export * from './model/baseModel'
+export * from './model/userModel'
 export * from './model/examModels'
-export * from './model/articleModel'

@@ -27,6 +27,7 @@ const getRouteMap = (): RouteMap => {
     return routeMap
   }
 
+  // 考试系统路由
   const examSystem: AppRouteRecordRaw = {
     path: '/exam-system',
     component: Home,
@@ -66,7 +67,7 @@ const getRouteMap = (): RouteMap => {
     ]
   }
 
-  // 招聘系统路由（暂无组件）
+  // 招聘系统路由
   const recruitmentSystem: AppRouteRecordRaw = {
     path: '/recruitment',
     component: Home,
@@ -96,6 +97,12 @@ const getRouteMap = (): RouteMap => {
         name: 'InterviewList',
         component: () => import('@/views/recruitment/InterviewList.vue'),
         meta: { title: '面试管理', keepAlive: true }
+      },
+      {
+        path: 'interviewers',
+        name: 'InterviewerList',
+        component: () => import('@/views/recruitment/InterviewerList.vue'),
+        meta: { title: '面试官管理', keepAlive: true }
       }
     ]
   }
@@ -118,24 +125,22 @@ const getRouteMap = (): RouteMap => {
         name: 'JobSeekerList',
         component: () => import('@/views/user/JobSeekerList.vue'),
         meta: { title: '求职者管理', keepAlive: true }
-      },
+      }
+    ]
+  }
+
+  // 行业管理系统
+  const industrySystem: AppRouteRecordRaw = {
+    path: '/industry',
+    component: Home,
+    name: 'Industry',
+    meta: { title: '行业管理', isHideTab: false },
+    children: [
       {
-        path: 'interviewers',
-        name: 'InterviewerList',
-        component: () => import('@/views/user/InterviewerList.vue'),
-        meta: { title: '面试官管理', keepAlive: true }
-      },
-      {
-        path: 'job-seeker-detail/:id',
-        name: 'JobSeekerDetail',
-        component: () => import('@/views/user/JobSeekerDetail.vue'),
-        meta: { title: '求职者详情', keepAlive: false, hideInMenu: true }
-      },
-      {
-        path: 'interviewer-detail/:id',
-        name: 'InterviewerDetail',
-        component: () => import('@/views/user/InterviewerDetail.vue'),
-        meta: { title: '面试官详情', keepAlive: false, hideInMenu: true }
+        path: 'list',
+        name: 'IndustryList',
+        component: () => import('@/views/industry/IndustryList.vue'),
+        meta: { title: '行业分类', keepAlive: true }
       }
     ]
   }
@@ -144,7 +149,8 @@ const getRouteMap = (): RouteMap => {
   routeMap = {
     examSystem,
     recruitmentSystem,
-    userSystem
+    userSystem,
+    industrySystem
   }
 
   return routeMap
@@ -208,6 +214,17 @@ const buildRoutesByMenu = (menuList: MenuListType[]): AppRouteRecordRaw[] => {
       else if (path === '/user') {
         console.log('Found user path, using userSystem route')
         const route = { ...routeMap.userSystem }
+        // 设置路由标题和隐藏状态
+        route.meta = { ...route.meta, title: formatMenuTitle(title) }
+        if (hidden) {
+          route.hidden = hidden
+        }
+        currentRoutes.push(route)
+      }
+      // 检查行业管理路径
+      else if (path === '/industry') {
+        console.log('Found industry path, using industrySystem route')
+        const route = { ...routeMap.industrySystem }
         // 设置路由标题和隐藏状态
         route.meta = { ...route.meta, title: formatMenuTitle(title) }
         if (hidden) {

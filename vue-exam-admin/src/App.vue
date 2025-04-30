@@ -6,11 +6,13 @@
 
 <script setup lang="ts">
   import { useUserStore } from './store/modules/user'
+  import { storeToRefs } from 'pinia'
+  import { computed, onBeforeMount, onMounted } from 'vue'
   import zh from 'element-plus/es/locale/lang/zh-cn'
   import en from 'element-plus/es/locale/lang/en'
   import { systemUpgrade } from './utils/upgrade'
   import { initState, saveUserData } from './utils/storage'
-  import { UserService } from './api/userApi'
+  import { UserService } from './api/userService'
   import { ApiStatus } from './utils/http/status'
   import { setThemeTransitionClass } from './utils/theme/animation'
 

@@ -241,7 +241,7 @@
 <script setup lang="ts">
   import { ref, onMounted, computed, watch } from 'vue'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
-  import { QuestionService } from '@/api/questionApi'
+  import { QuestionService } from '@/api/questionService'
   import { QuestionModel } from '@/api/model/examModels'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
   import { Delete } from '@element-plus/icons-vue'

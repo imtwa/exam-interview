@@ -1,38 +1,72 @@
-export interface CategoryModel {
+import { Paging } from './baseModel'
+
+/**
+ * 题目类型枚举
+ */
+export enum QuestionType {
+  SINGLE_CHOICE = 1,
+  MULTIPLE_CHOICE = 2,
+  TRUE_FALSE = 3,
+  FILL_BLANK = 4
+}
+
+/**
+ * 难度级别枚举
+ */
+export enum DifficultyLevel {
+  EASY = 1,
+  MEDIUM = 2,
+  HARD = 3
+}
+
+/**
+ * 分类模型
+ */
+export interface Category {
   id?: number
   name: string
   description?: string
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
+  subCategories?: SubCategory[]
 }
 
-export interface SubCategoryModel {
+/**
+ * 子分类模型
+ */
+export interface SubCategory {
   id?: number
   name: string
   description?: string
   categoryId: number
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
-  category?: CategoryModel
+  category?: Category
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
 }
 
-export interface QuestionModel {
+/**
+ * 题目模型
+ */
+export interface Question {
   id?: number
-  qtype: number // 1=单选题, 2=多选题, 3=判断题, 4=填空题
+  qtype: QuestionType
   question: string
-  options?: string // JSON formatted string
+  options?: string // JSON 格式的字符串
   answer: string
   ai_analysis: string
-  difficulty?: number // 1=简单, 2=中等, 3=困难
+  difficulty?: DifficultyLevel
   userId?: number
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
 }
 
-export interface ExamPaperModel {
+/**
+ * 试卷模型
+ */
+export interface ExamPaper {
   id?: number
   name: string
   description?: string
@@ -41,94 +75,61 @@ export interface ExamPaperModel {
   userId: number
   isPublic: boolean
   favoriteCount?: number
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
-  category?: CategoryModel
-  subCategory?: SubCategoryModel
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
+  category?: Category
+  subCategory?: SubCategory
+  questions?: ExamQuestion[]
 }
 
-export interface ExamQuestionModel {
+/**
+ * 试卷题目关联模型
+ */
+export interface ExamQuestion {
   examId: number
   questionId: number
   order: number
   score: number
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
-  examPaper?: ExamPaperModel
-  question?: QuestionModel
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
+  examPaper?: ExamPaper
+  question?: Question
 }
 
-export interface FrontUserModel {
-  id?: number
-  username: string
-  password?: string
-  email: string
-  role: string // "JOB_SEEKER" | "INTERVIEWER"
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
+/**
+ * 分类查询参数
+ */
+export interface CategoryListParams extends Partial<Paging> {
+  keyword?: string
 }
 
-// Recruitment System Models
-export interface JobSeekerModel {
-  id?: number
-  userId: number
-  address?: string
-  birthday?: Date
-  gender?: string
-  currentSalary?: number
-  expectedSalary?: number
-  expectedPosition?: string
-  expectedWorkCity?: string
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
-  user?: FrontUserModel
+/**
+ * 子分类查询参数
+ */
+export interface SubCategoryListParams extends Partial<Paging> {
+  keyword?: string
+  categoryId?: number
 }
 
-export interface CompanyModel {
-  id?: number
-  name: string
-  description?: string
-  address?: string
-  fundingStage?: string
-  size?: string
-  industry?: string
-  foundedYear?: number
-  verificationStatus: string // "PENDING" | "VERIFIED" | "REJECTED"
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
+/**
+ * 题目查询参数
+ */
+export interface QuestionListParams extends Partial<Paging> {
+  keyword?: string
+  qtype?: QuestionType
+  difficulty?: DifficultyLevel
+  categoryId?: number
+  subCategoryId?: number
 }
 
-export interface JobPostingModel {
-  id?: number
-  title: string
-  companyId: number
-  interviewerId: number
-  subCategoryId: number
-  description: string
-  requirements: string
-  city: string
-  address?: string
-  salaryMin: number
-  salaryMax: number
-  experienceReq?: number
-  educationReq?: string
-  isRemote: boolean
-  status: string // "ACTIVE" | "FILLED" | "EXPIRED"
-  createdAt?: Date
-  updatedAt?: Date
-  deletedAt?: Date | null
-  company?: CompanyModel
-}
-
-// Pagination models
-export interface PaginationParams {
-  page: number
-  size: number
-  searchVal?: string
-  [key: string]: any
+/**
+ * 试卷查询参数
+ */
+export interface ExamPaperListParams extends Partial<Paging> {
+  keyword?: string
+  categoryId?: number
+  subCategoryId?: number
+  isPublic?: boolean
 }

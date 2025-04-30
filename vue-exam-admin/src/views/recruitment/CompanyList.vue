@@ -215,7 +215,8 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
   import { Search } from '@element-plus/icons-vue'
-  import { CompanyService, IndustryService } from '@/api/userApi'
+  import { CompanyService } from '@/api/companyService'
+import { IndustryService } from '@/api/industryService'
   import type { Industry } from '@/api/model/userModel'
 
   // 定义一个新的Company接口，与后端返回的数据结构一致

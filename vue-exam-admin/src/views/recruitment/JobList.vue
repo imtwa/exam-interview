@@ -296,8 +296,10 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
-  import { JobPostingService, CompanyService, InterviewerService } from '@/api/userApi'
-  import { SubCategoryService } from '@/api/categoryApi'
+  import { JobPostingService } from '@/api/jobPostingService'
+import { CompanyService } from '@/api/companyService'
+import { InterviewerService } from '@/api/interviewerService'
+  import { SubCategoryService } from '@/api/subCategoryService'
   import { JobPosting, Company, Interviewer } from '@/api/model/userModel'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 

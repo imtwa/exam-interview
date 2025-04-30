@@ -27,8 +27,7 @@
           </div>
         </div>
 
-        <!-- 快速入口 -->
-        <ArtFastEnter v-if="width >= 1200" />
+        <!-- 快速入口已移除 -->
 
         <!-- 面包屑 -->
         <ArtBreadcrumb
@@ -44,20 +43,7 @@
       </div>
 
       <div class="right">
-        <!-- 搜索 -->
-        <div class="search-wrap">
-          <div class="search-input" @click="openSearchDialog">
-            <div class="left">
-              <i class="iconfont-sys">&#xe710;</i>
-              <span>{{ $t('topBar.search.title') }}</span>
-            </div>
-            <div class="search-keydown">
-              <i class="iconfont-sys" v-if="isWindows">&#xeeac;</i>
-              <i class="iconfont-sys" v-else>&#xe9ab;</i>
-              <span>k</span>
-            </div>
-          </div>
-        </div>
+        <!-- 搜索框已移除 -->
 
         <!-- 全屏按钮 -->
         <div class="btn-box screen-box" @click="toggleFullScreen">
@@ -103,28 +89,7 @@
             </template>
           </el-dropdown>
         </div>
-        <!-- 设置 -->
-        <div class="btn-box" @click="openSetting">
-          <el-popover :visible="showSettingGuide" placement="bottom-start" :width="190" :offset="0">
-            <template #reference>
-              <div class="btn setting-btn">
-                <i class="iconfont-sys">&#xe6d0;</i>
-              </div>
-            </template>
-            <template #default>
-              <p
-                >点击这里查看<span :style="{ color: systemThemeColor }"> 主题风格 </span>、
-                <span :style="{ color: systemThemeColor }"> 开启顶栏菜单 </span>等更多配置
-              </p>
-            </template>
-          </el-popover>
-        </div>
-        <!-- 切换主题 -->
-        <div class="btn-box" @click="themeAnimation">
-          <div class="btn theme-btn">
-            <i class="iconfont-sys">{{ isDark ? '&#xe6b5;' : '&#xe725;' }}</i>
-          </div>
-        </div>
+        <!-- 设置和主题切换已移除 -->
 
         <!-- 用户头像、菜单 -->
         <div class="user">
@@ -155,18 +120,6 @@
                   <li @click="goPage('/user/user')">
                     <i class="menu-icon iconfont-sys">&#xe734;</i>
                     <span class="menu-txt">{{ $t('topBar.user.userCenter') }}</span>
-                  </li>
-                  <li @click="toDocs()">
-                    <i class="menu-icon iconfont-sys" style="font-size: 15px">&#xe828;</i>
-                    <span class="menu-txt">{{ $t('topBar.user.docs') }}</span>
-                  </li>
-                  <li @click="toGithub()">
-                    <i class="menu-icon iconfont-sys">&#xe8d6;</i>
-                    <span class="menu-txt">{{ $t('topBar.user.github') }}</span>
-                  </li>
-                  <li @click="lockScreen()">
-                    <i class="menu-icon iconfont-sys">&#xe817;</i>
-                    <span class="menu-txt">{{ $t('topBar.user.lockScreen') }}</span>
                   </li>
                   <div class="line"></div>
                   <div class="logout-btn" @click="loginOut">

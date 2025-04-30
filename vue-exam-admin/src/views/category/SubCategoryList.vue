@@ -118,7 +118,8 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
-  import { CategoryService, SubCategoryService } from '@/api/categoryApi'
+  import { CategoryService } from '@/api/categoryService'
+import { SubCategoryService } from '@/api/subCategoryService'
   import { CategoryModel, SubCategoryModel } from '@/api/model/examModels'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 

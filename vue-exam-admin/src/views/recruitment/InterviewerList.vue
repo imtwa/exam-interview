@@ -248,7 +248,8 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
   import { Search } from '@element-plus/icons-vue'
-  import { InterviewerService, CompanyService } from '@/api/userApi'
+  import { InterviewerService } from '@/api/interviewerService'
+import { CompanyService } from '@/api/companyService'
   import type { Interviewer, Company } from '@/api/model/userModel'
 
   // 表格数据
@@ -359,22 +360,26 @@
   // 修复类型错误的函数
   const fixTypeErrors = () => {
     // 修复搜索下拉框中的公司选项
-    const searchCompanyOptions = document.querySelectorAll('.el-select[placeholder="选择公司"] .el-option');
-    searchCompanyOptions.forEach(option => {
-      const id = option.getAttribute('value');
+    const searchCompanyOptions = document.querySelectorAll(
+      '.el-select[placeholder="选择公司"] .el-option'
+    )
+    searchCompanyOptions.forEach((option) => {
+      const id = option.getAttribute('value')
       if (id === 'undefined') {
-        option.setAttribute('value', '0');
+        option.setAttribute('value', '0')
       }
-    });
+    })
 
     // 修复表单中的公司选项
-    const formCompanyOptions = document.querySelectorAll('.el-select[placeholder="请选择公司"] .el-option');
-    formCompanyOptions.forEach(option => {
-      const id = option.getAttribute('value');
+    const formCompanyOptions = document.querySelectorAll(
+      '.el-select[placeholder="请选择公司"] .el-option'
+    )
+    formCompanyOptions.forEach((option) => {
+      const id = option.getAttribute('value')
       if (id === 'undefined') {
-        option.setAttribute('value', '0');
+        option.setAttribute('value', '0')
       }
-    });
+    })
   }
 
   // 加载公司下拉选项

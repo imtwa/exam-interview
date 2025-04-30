@@ -1,5 +1,5 @@
 /**
- * Base API response model
+ * API 响应基础模型
  */
 export interface Result<T = any> {
   code: number
@@ -9,7 +9,7 @@ export interface Result<T = any> {
 }
 
 /**
- * Pagination information
+ * 分页信息
  */
 export interface Paging {
   page: number
@@ -17,7 +17,7 @@ export interface Paging {
 }
 
 /**
- * Paginated data structure
+ * 分页数据结构
  */
 export interface PageResult<T = any> {
   list: T[]

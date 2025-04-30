@@ -109,7 +109,7 @@
 <script setup lang="ts">
   import { ref, onMounted, computed } from 'vue'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
-  import { IndustryService } from '@/api/userApi'
+  import { IndustryService } from '@/api/industryService'
   import { Industry } from '@/api/model/userModel'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 
