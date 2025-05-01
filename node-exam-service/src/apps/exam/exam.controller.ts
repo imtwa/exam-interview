@@ -280,7 +280,7 @@ export class ExamController {
     },
   })
   @ApiResponse({ status: 400, description: '参数错误或子分类名称已存在' })
-  @ApiResponse({ status: 404, description: '子分类不存在或父分类不存在' })
+  @ApiResponse({ status: 404, description: '子分类不存在' })
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)

@@ -33,7 +33,7 @@ export class UserService extends ApiService {
    * @returns Promise 对象
    */
   static async changePassword(oldPassword: string, newPassword: string): Promise<any> {
-    return this.put('/auth/change-password', { oldPassword, newPassword })
+    return this.post('/auth/change-password', { oldPassword, newPassword })
   }
 
   /**
@@ -70,7 +70,7 @@ export class UserService extends ApiService {
    * @returns Promise 对象
    */
   static async updateUser(id: number, data: Partial<FrontUser>): Promise<any> {
-    return this.put(`/${id}`, data)
+    return this.post(`/update/${id}`, data)
   }
 
   /**
@@ -79,7 +79,7 @@ export class UserService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteUser(id: number): Promise<any> {
-    return this.delete(`/${id}`)
+    return this.post(`/delete/${id}`)
   }
 
   /**

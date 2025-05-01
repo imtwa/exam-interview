@@ -46,8 +46,8 @@ export function getCompany(id) {
  */
 export function updateCompany(id, data) {
   return request({
-    url: `/company/${id}`,
-    method: 'patch',
+    url: `/company/update/${id}`,
+    method: 'post',
     data
   })
 }
@@ -59,8 +59,8 @@ export function updateCompany(id, data) {
  */
 export function deleteCompany(id) {
   return request({
-    url: `/company/${id}`,
-    method: 'delete'
+    url: `/company/delete/${id}`,
+    method: 'post'
   })
 }
 
@@ -72,8 +72,8 @@ export function deleteCompany(id) {
  */
 export function verifyCompany(id, data) {
   return request({
-    url: `/company/${id}/verify`,
-    method: 'patch',
+    url: `/company/verify/${id}`,
+    method: 'post',
     data
   })
 }

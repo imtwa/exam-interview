@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
   Request,
@@ -116,7 +114,7 @@ export class CompanyController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Post('update/:id')
   async update(
     @Param('id') id: string,
     @Body() updateCompanyDto: UpdateCompanyDto,
@@ -138,7 +136,7 @@ export class CompanyController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Delete(':id')
+  @Post('delete/:id')
   async remove(@Param('id') id: string, @Request() req) {
     this.logger.log(`删除公司: ${id}`);
     await this.companyService.remove(+id, req.user.userId);
@@ -152,7 +150,7 @@ export class CompanyController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch(':id/verify')
+  @Post('verify/:id')
   async verifyCompany(@Param('id') id: string, @Request() req) {
     this.logger.log(`验证公司: ${id}`);
     const result = await this.companyService.verifyCompany(

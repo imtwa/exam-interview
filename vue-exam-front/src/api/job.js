@@ -46,8 +46,8 @@ export function getJob(id) {
  */
 export function updateJob(id, data) {
   return request({
-    url: `/job/${id}`,
-    method: 'patch',
+    url: `/job/update/${id}`,
+    method: 'post',
     data
   })
 }
@@ -59,8 +59,8 @@ export function updateJob(id, data) {
  */
 export function deleteJob(id) {
   return request({
-    url: `/job/${id}`,
-    method: 'delete'
+    url: `/job/delete/${id}`,
+    method: 'post'
   })
 }
 
@@ -168,8 +168,8 @@ export function getInterviewerApplications(params) {
  */
 export function updateApplicationStatus(applicationId, data) {
   return request({
-    url: `/interviewer/applications/${applicationId}/status`,
-    method: 'put',
+    url: `/interviewer/applications/${applicationId}/status/update`,
+    method: 'post',
     data
   })
 }

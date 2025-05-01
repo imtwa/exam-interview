@@ -42,7 +42,7 @@ export class InterviewService extends ApiService {
    * @returns Promise 对象
    */
   static async updateInterview(id: number, data: Partial<Interview>): Promise<any> {
-    return this.put(`/${id}`, data)
+    return this.post(`/update/${id}`, data)
   }
 
   /**
@@ -51,7 +51,7 @@ export class InterviewService extends ApiService {
    * @returns Promise 对象
    */
   static async cancelInterview(id: number): Promise<any> {
-    return this.patch(`/${id}/cancel`)
+    return this.post(`/${id}/cancel`)
   }
 
   /**
@@ -66,7 +66,7 @@ export class InterviewService extends ApiService {
     result: 'PASS' | 'FAIL',
     feedback: string
   ): Promise<any> {
-    return this.patch(`/${id}/complete`, { result, feedback })
+    return this.post(`/${id}/complete`, { result, feedback })
   }
 
   /**

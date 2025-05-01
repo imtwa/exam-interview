@@ -119,15 +119,6 @@ const api = {
   },
   post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
     return request({ ...config, url, data, method: 'POST' }) // POST 请求
-  },
-  put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return request({ ...config, url, data, method: 'PUT' }) // PUT 请求
-  },
-  patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return request({ ...config, url, data, method: 'PATCH' }) // PATCH 请求
-  },
-  delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return request({ ...config, url, method: 'DELETE' }) // DELETE 请求
   }
 }
 

@@ -1,13 +1,12 @@
 import {
   Controller,
   Get,
-  Patch,
-  Delete,
   Param,
   Body,
   Query,
   UseGuards,
   Request,
+  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -79,7 +78,7 @@ export class UserController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Post('update/:id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     const result = await this.userService.update(+id, updateUserDto);
     return success(result, '更新成功');
@@ -92,7 +91,7 @@ export class UserController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Delete(':id')
+  @Post('delete/:id')
   async remove(@Param('id') id: string) {
     await this.userService.remove(+id);
     return success(null, '删除成功');

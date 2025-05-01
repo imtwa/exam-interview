@@ -44,8 +44,8 @@ export function getIndustryCategory(id) {
  */
 export function updateIndustryCategory(id, data) {
   return request({
-    url: `/industry/category/${id}`,
-    method: 'patch',
+    url: `/industry/category/update/${id}`,
+    method: 'post',
     data
   })
 }
@@ -57,8 +57,8 @@ export function updateIndustryCategory(id, data) {
  */
 export function deleteIndustryCategory(id) {
   return request({
-    url: `/industry/category/${id}`,
-    method: 'delete'
+    url: `/industry/category/delete/${id}`,
+    method: 'post'
   })
 }
 
@@ -107,8 +107,8 @@ export function getIndustrySubcategory(id) {
  */
 export function updateIndustrySubcategory(id, data) {
   return request({
-    url: `/industry/subcategory/${id}`,
-    method: 'patch',
+    url: `/industry/subcategory/update/${id}`,
+    method: 'post',
     data
   })
 }
@@ -120,7 +120,7 @@ export function updateIndustrySubcategory(id, data) {
  */
 export function deleteIndustrySubcategory(id) {
   return request({
-    url: `/industry/subcategory/${id}`,
-    method: 'delete'
+    url: `/industry/subcategory/delete/${id}`,
+    method: 'post'
   })
 }

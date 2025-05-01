@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
   Request,
@@ -103,7 +101,7 @@ export class InterviewController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Post('update/:id')
   async update(
     @Param('id') id: string,
     @Body() updateInterviewDto: UpdateInterviewDto,
@@ -125,7 +123,7 @@ export class InterviewController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Delete(':id')
+  @Post('delete/:id')
   async remove(@Param('id') id: string, @Request() req) {
     this.logger.log(`删除面试: ${id}`);
     await this.interviewService.remove(+id, req.user.userId);

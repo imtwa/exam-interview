@@ -33,7 +33,7 @@ export class JobSeekerService extends ApiService {
    * @returns Promise 对象
    */
   static async updateJobSeeker(id: number, data: Partial<JobSeeker>): Promise<any> {
-    return this.patch(`/${id}`, data)
+    return this.post(`/update/${id}`, data)
   }
 
   /**
@@ -61,7 +61,7 @@ export class JobSeekerService extends ApiService {
    * @returns Promise 对象
    */
   static async updateWorkExperience(id: number, data: Partial<WorkExperience>): Promise<any> {
-    return this.patch(`/work-experience/${id}`, data)
+    return this.post(`/work-experience/update/${id}`, data)
   }
 
   /**
@@ -70,7 +70,7 @@ export class JobSeekerService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteWorkExperience(id: number): Promise<any> {
-    return this.delete(`/work-experience/${id}`)
+    return this.post(`/work-experience/delete/${id}`)
   }
 
   /**
@@ -98,7 +98,7 @@ export class JobSeekerService extends ApiService {
    * @returns Promise 对象
    */
   static async updateEducation(id: number, data: Partial<Education>): Promise<any> {
-    return this.patch(`/education/${id}`, data)
+    return this.post(`/education/update/${id}`, data)
   }
 
   /**
@@ -107,6 +107,6 @@ export class JobSeekerService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteEducation(id: number): Promise<any> {
-    return this.delete(`/education/${id}`)
+    return this.post(`/education/delete/${id}`)
   }
 }

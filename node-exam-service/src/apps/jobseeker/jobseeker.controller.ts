@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
   Request,
@@ -63,7 +61,7 @@ export class JobSeekerController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch('profile')
+  @Post('profile/update')
   async updateProfile(@Body() profileDto: JobSeekerProfileDto, @Request() req) {
     this.logger.log(`更新用户${req.user.userId}的求职者基本资料`);
     const result = await this.jobSeekerService.updateJobSeekerProfile(
@@ -79,7 +77,7 @@ export class JobSeekerController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch('profile/sync')
+  @Post('profile/sync')
   async syncProfile(
     @Body() profileDto: UpdateJobseekerProfileDto,
     @Request() req,
@@ -155,7 +153,7 @@ export class JobSeekerController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch('education/:id')
+  @Post('education/update/:id')
   async updateEducation(
     @Param('id') id: string,
     @Body() updateEducationDto: UpdateEducationDto,
@@ -177,7 +175,7 @@ export class JobSeekerController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Delete('education/:id')
+  @Post('education/delete/:id')
   async removeEducation(@Param('id') id: string, @Request() req) {
     this.logger.log(`删除教育经历: ${id}`);
     await this.jobSeekerService.removeEducation(+id, req.user.userId);
@@ -211,7 +209,7 @@ export class JobSeekerController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch('work-experience/:id')
+  @Post('work-experience/update/:id')
   async updateWorkExperience(
     @Param('id') id: string,
     @Body() updateWorkExperienceDto: UpdateWorkExperienceDto,
@@ -233,7 +231,7 @@ export class JobSeekerController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Delete('work-experience/:id')
+  @Post('work-experience/delete/:id')
   async removeWorkExperience(@Param('id') id: string, @Request() req) {
     this.logger.log(`删除工作经验: ${id}`);
     await this.jobSeekerService.removeWorkExperience(+id, req.user.userId);

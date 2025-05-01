@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -102,7 +100,7 @@ export class IndustryController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch('category/:id')
+  @Post('category/update/:id')
   async updateCategory(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateIndustryCategoryDto,
@@ -123,7 +121,7 @@ export class IndustryController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Delete('category/:id')
+  @Post('category/delete/:id')
   async removeCategory(@Param('id') id: string) {
     this.logger.log(`删除行业分类: ${id}`);
     await this.industryService.removeCategory(+id);
@@ -177,7 +175,7 @@ export class IndustryController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch('subcategory/:id')
+  @Post('subcategory/update/:id')
   async updateSubCategory(
     @Param('id') id: string,
     @Body() updateSubCategoryDto: UpdateIndustrySubCategoryDto,
@@ -198,7 +196,7 @@ export class IndustryController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Delete('subcategory/:id')
+  @Post('subcategory/delete/:id')
   async removeSubCategory(@Param('id') id: string) {
     this.logger.log(`删除行业二级分类: ${id}`);
     await this.industryService.removeSubCategory(+id);

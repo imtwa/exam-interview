@@ -42,7 +42,7 @@ export class QuestionService extends ApiService {
    * @returns Promise 对象
    */
   static async updateQuestion(id: number, data: Partial<Question>): Promise<any> {
-    return this.put(`/${id}`, data)
+    return this.post(`/update/${id}`, data)
   }
 
   /**
@@ -51,7 +51,7 @@ export class QuestionService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteQuestion(id: number): Promise<any> {
-    return this.delete(`/${id}`)
+    return this.post(`/delete/${id}`)
   }
 
   /**

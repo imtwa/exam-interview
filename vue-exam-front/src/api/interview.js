@@ -46,8 +46,8 @@ export function getInterview(id) {
  */
 export function updateInterview(id, data) {
   return request({
-    url: `/interview/${id}`,
-    method: 'patch',
+    url: `/interview/update/${id}`,
+    method: 'post',
     data
   })
 }
@@ -59,7 +59,7 @@ export function updateInterview(id, data) {
  */
 export function deleteInterview(id) {
   return request({
-    url: `/interview/${id}`,
-    method: 'delete'
+    url: `/interview/delete/${id}`,
+    method: 'post'
   })
 }

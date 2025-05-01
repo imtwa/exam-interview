@@ -42,7 +42,7 @@ export class JobPostingService extends ApiService {
    * @returns Promise 对象
    */
   static async updateJobPosting(id: number, data: Partial<JobPosting>): Promise<any> {
-    return this.patch(`/${id}`, data)
+    return this.post(`/update/${id}`, data)
   }
 
   /**
@@ -51,7 +51,7 @@ export class JobPostingService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteJobPosting(id: number): Promise<any> {
-    return this.delete(`/${id}`)
+    return this.post(`/delete/${id}`)
   }
 
   /**

@@ -49,33 +49,4 @@ export class ApiService {
   protected static async post<T>(path: string, data?: any): Promise<Result<T>> {
     return http.post(this.getUrl(path), data)
   }
-
-  /**
-   * 发送 PUT 请求
-   * @param path API 路径
-   * @param data 请求数据
-   * @returns Promise 对象
-   */
-  protected static async put<T>(path: string, data?: any): Promise<Result<T>> {
-    return http.put(this.getUrl(path), data)
-  }
-
-  /**
-   * 发送 PATCH 请求
-   * @param path API 路径
-   * @param data 请求数据
-   * @returns Promise 对象
-   */
-  protected static async patch<T>(path: string, data?: any): Promise<Result<T>> {
-    return http.patch(this.getUrl(path), data)
-  }
-
-  /**
-   * 发送 DELETE 请求
-   * @param path API 路径
-   * @returns Promise 对象
-   */
-  protected static async delete<T>(path: string): Promise<Result<T>> {
-    return http.delete(this.getUrl(path))
-  }
 }

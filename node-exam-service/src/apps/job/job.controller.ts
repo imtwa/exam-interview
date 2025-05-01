@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
   Request,
@@ -138,7 +136,7 @@ export class JobController {
   @ApiResponse({ status: 404, description: '招聘信息不存在' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Post('update/:id')
   async update(
     @Param('id') id: string,
     @Body() updateJobDto: UpdateJobPostingDto,
@@ -161,7 +159,7 @@ export class JobController {
   @ApiResponse({ status: 404, description: '招聘信息不存在' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Delete(':id')
+  @Post('delete/:id')
   async remove(@Param('id') id: string, @Request() req) {
     this.logger.log(`删除招聘信息: ${id}`);
     await this.jobService.remove(+id, req.user.userId);

@@ -36,7 +36,7 @@ export class JobApplicationService extends ApiService {
     id: number,
     status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'INTERVIEW'
   ): Promise<any> {
-    return this.patch(`/${id}/status`, { status })
+    return this.post(`/${id}/status`, { status })
   }
 
   /**
@@ -72,6 +72,6 @@ export class JobApplicationService extends ApiService {
    * @returns Promise 对象
    */
   static async cancelJobApplication(id: number): Promise<any> {
-    return this.patch(`/${id}/cancel`)
+    return this.post(`/${id}/cancel`)
   }
 }

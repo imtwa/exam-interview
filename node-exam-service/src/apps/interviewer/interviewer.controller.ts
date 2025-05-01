@@ -229,7 +229,7 @@ export class InterviewerController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Put('applications/:id/status')
+  @Post('applications/:id/status')
   async updateApplicationStatus(
     @Param('id') id: string,
     @Body('status') status: string,
@@ -268,17 +268,17 @@ export class InterviewerController {
         scheduleTime: {
           type: 'string',
           description: '面试时间',
-          example: '2023-05-20T14:00:00Z',
+          example: '2023-07-05T10:00:00Z',
         },
         duration: {
           type: 'number',
-          description: '面试时长（分钟）',
+          description: '面试时长(分钟)',
           example: 60,
         },
         meetingLink: {
           type: 'string',
           description: '会议链接',
-          example: 'https://meeting.example.com/abc123',
+          example: 'https://zoom.us/j/123456789',
         },
       },
       required: ['scheduleTime', 'duration'],
@@ -286,10 +286,11 @@ export class InterviewerController {
   })
   @ApiResponse({ status: 200, description: '安排成功' })
   @ApiResponse({ status: 404, description: '申请不存在' })
+  @ApiResponse({ status: 400, description: '参数错误或申请状态不正确' })
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Post('applications/:id/interview')
+  @Post('applications/:id/schedule')
   async scheduleInterview(
     @Param('id') id: string,
     @Body()

@@ -42,7 +42,7 @@ export class ExamPaperService extends ApiService {
    * @returns Promise 对象
    */
   static async updateExamPaper(id: number, data: Partial<ExamPaper>): Promise<any> {
-    return this.put(`/${id}`, data)
+    return this.post(`/update/${id}`, data)
   }
 
   /**
@@ -51,7 +51,7 @@ export class ExamPaperService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteExamPaper(id: number): Promise<any> {
-    return this.delete(`/${id}`)
+    return this.post(`/delete/${id}`)
   }
 
   /**
@@ -92,7 +92,7 @@ export class ExamPaperService extends ApiService {
     questionId: number,
     data: Partial<ExamQuestion>
   ): Promise<any> {
-    return this.put(`/${examId}/questions/${questionId}`, data)
+    return this.post(`/${examId}/questions/update/${questionId}`, data)
   }
 
   /**
@@ -102,6 +102,6 @@ export class ExamPaperService extends ApiService {
    * @returns Promise 对象
    */
   static async removeQuestionFromExam(examId: number, questionId: number): Promise<any> {
-    return this.delete(`/${examId}/questions/${questionId}`)
+    return this.post(`/${examId}/questions/delete/${questionId}`)
   }
 }

@@ -40,7 +40,7 @@ export class IndustryService extends ApiService {
    * @returns Promise 对象
    */
   static async updateIndustry(id: number, data: Partial<Industry>): Promise<any> {
-    return this.put(`/${id}`, data)
+    return this.post(`/update/${id}`, data)
   }
 
   /**
@@ -49,6 +49,6 @@ export class IndustryService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteIndustry(id: number): Promise<any> {
-    return this.delete(`/${id}`)
+    return this.post(`/delete/${id}`)
   }
 }

@@ -42,7 +42,7 @@ export class CompanyService extends ApiService {
    * @returns Promise 对象
    */
   static async updateCompany(id: number, data: Partial<Company>): Promise<any> {
-    return this.put(`/${id}`, data)
+    return this.post(`/update/${id}`, data)
   }
 
   /**
@@ -51,7 +51,7 @@ export class CompanyService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteCompany(id: number): Promise<any> {
-    return this.delete(`/${id}`)
+    return this.post(`/delete/${id}`)
   }
 
   /**
@@ -61,6 +61,6 @@ export class CompanyService extends ApiService {
    * @returns Promise 对象
    */
   static async verifyCompany(id: number, status: 'VERIFIED' | 'REJECTED'): Promise<any> {
-    return this.put(`/${id}/verify`, { status })
+    return this.post(`/verify/${id}`, { status })
   }
 }

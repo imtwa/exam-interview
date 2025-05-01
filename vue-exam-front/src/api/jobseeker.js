@@ -18,8 +18,8 @@ export function getJobseekerProfile() {
  */
 export function updateJobseekerProfile(data) {
   return request({
-    url: '/jobseeker/profile',
-    method: 'patch',
+    url: '/jobseeker/profile/update',
+    method: 'post',
     data
   })
 }
@@ -32,7 +32,7 @@ export function updateJobseekerProfile(data) {
 export function syncJobseekerProfile(data) {
   return request({
     url: '/jobseeker/profile/sync',
-    method: 'patch',
+    method: 'post',
     data
   })
 }
@@ -83,8 +83,8 @@ export function addEducation(data) {
  */
 export function updateEducation(id, data) {
   return request({
-    url: `/jobseeker/education/${id}`,
-    method: 'patch',
+    url: `/jobseeker/education/update/${id}`,
+    method: 'post',
     data
   })
 }
@@ -96,8 +96,8 @@ export function updateEducation(id, data) {
  */
 export function deleteEducation(id) {
   return request({
-    url: `/jobseeker/education/${id}`,
-    method: 'delete'
+    url: `/jobseeker/education/delete/${id}`,
+    method: 'post'
   })
 }
 
@@ -122,8 +122,8 @@ export function addWorkExperience(data) {
  */
 export function updateWorkExperience(id, data) {
   return request({
-    url: `/jobseeker/work-experience/${id}`,
-    method: 'patch',
+    url: `/jobseeker/work-experience/update/${id}`,
+    method: 'post',
     data
   })
 }
@@ -135,7 +135,7 @@ export function updateWorkExperience(id, data) {
  */
 export function deleteWorkExperience(id) {
   return request({
-    url: `/jobseeker/work-experience/${id}`,
-    method: 'delete'
+    url: `/jobseeker/work-experience/delete/${id}`,
+    method: 'post'
   })
 }

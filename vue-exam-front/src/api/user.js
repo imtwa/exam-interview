@@ -28,8 +28,8 @@ export function getUser(id) {
 // 更新用户信息
 export function updateUser(id, data) {
   return request({
-    url: `/user/${id}`,
-    method: 'patch',
+    url: `/user/update/${id}`,
+    method: 'post',
     data
   })
 }
@@ -37,8 +37,8 @@ export function updateUser(id, data) {
 // 删除用户
 export function deleteUser(id) {
   return request({
-    url: `/user/${id}`,
-    method: 'delete'
+    url: `/user/delete/${id}`,
+    method: 'post'
   })
 }
 
