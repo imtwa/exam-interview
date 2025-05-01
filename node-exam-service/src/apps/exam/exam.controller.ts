@@ -155,10 +155,15 @@ export class ExamController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    this.logger.log(`更新分类请求: ID=${id}, 数据=${JSON.stringify(updateCategoryDto)}`);
+    this.logger.log(
+      `更新分类请求: ID=${id}, 数据=${JSON.stringify(updateCategoryDto)}`,
+    );
 
     try {
-      const category = await this.examService.updateCategory(id, updateCategoryDto);
+      const category = await this.examService.updateCategory(
+        id,
+        updateCategoryDto,
+      );
 
       return {
         code: 200,
@@ -238,7 +243,8 @@ export class ExamController {
     this.logger.log(`创建子分类请求: ${JSON.stringify(createSubCategoryDto)}`);
 
     try {
-      const subCategory = await this.examService.createSubCategory(createSubCategoryDto);
+      const subCategory =
+        await this.examService.createSubCategory(createSubCategoryDto);
 
       return {
         code: 200,
@@ -283,10 +289,15 @@ export class ExamController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateSubCategoryDto: UpdateSubCategoryDto,
   ) {
-    this.logger.log(`更新子分类请求: ID=${id}, 数据=${JSON.stringify(updateSubCategoryDto)}`);
+    this.logger.log(
+      `更新子分类请求: ID=${id}, 数据=${JSON.stringify(updateSubCategoryDto)}`,
+    );
 
     try {
-      const subCategory = await this.examService.updateSubCategory(id, updateSubCategoryDto);
+      const subCategory = await this.examService.updateSubCategory(
+        id,
+        updateSubCategoryDto,
+      );
 
       return {
         code: 200,

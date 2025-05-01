@@ -20,4 +20,4 @@ export class AdminLoginDto {
   @IsNotEmpty({ message: '密码不能为空' })
   @MinLength(6, { message: '密码长度不能少于6位' })
   password: string;
-} 
+}

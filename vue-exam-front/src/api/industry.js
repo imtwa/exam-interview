@@ -123,4 +123,4 @@ export function deleteIndustrySubcategory(id) {
     url: `/industry/subcategory/${id}`,
     method: 'delete'
   })
-} 
+}

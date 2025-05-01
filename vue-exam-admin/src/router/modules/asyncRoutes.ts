@@ -37,12 +37,6 @@ export const asyncRoutes: MenuListType[] = [
         meta: { title: '分类管理', keepAlive: true, icon: '&#xe664;' }
       },
       {
-        path: '/exam-system/subcategory',
-        name: 'SubCategoryList',
-        component: () => import('@/views/category/SubCategoryList.vue'),
-        meta: { title: '子分类管理', keepAlive: true, icon: '&#xe664;', hideInMenu: true }
-      },
-      {
         path: '/exam-system/question',
         name: 'QuestionList',
         component: () => import('@/views/question/QuestionList.vue'),

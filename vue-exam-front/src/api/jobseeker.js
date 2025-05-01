@@ -138,4 +138,4 @@ export function deleteWorkExperience(id) {
     url: `/jobseeker/work-experience/${id}`,
     method: 'delete'
   })
-} 
+}

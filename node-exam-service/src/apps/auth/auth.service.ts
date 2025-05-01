@@ -114,13 +114,13 @@ export class AuthService {
     this.logger.log(`管理员登录成功: ${username}, ID: ${admin.id}`);
 
     // 生成管理员JWT
-    const payload = { 
-      username: admin.username, 
+    const payload = {
+      username: admin.username,
       sub: admin.id,
       role: admin.role,
-      isAdmin: true // 添加管理员标识
+      isAdmin: true, // 添加管理员标识
     };
-    
+
     return {
       user: {
         id: admin.id,
@@ -427,7 +427,7 @@ export class AuthService {
     const { password, ...result } = admin;
     return result;
   }
-  
+
   // 校验管理员是否有权限
   async validateAdmin(userId: number) {
     const admin = await this.prisma.adminUser.findUnique({

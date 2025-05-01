@@ -41,13 +41,13 @@ export function formatRelativeTime(dateString) {
     const now = new Date()
     const diffMs = now - date
     const diffSec = Math.floor(diffMs / 1000)
-    
+
     if (diffSec < 60) return '刚刚'
     if (diffSec < 3600) return `${Math.floor(diffSec / 60)}分钟前`
     if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}小时前`
     if (diffSec < 2592000) return `${Math.floor(diffSec / 86400)}天前`
     if (diffSec < 31536000) return `${Math.floor(diffSec / 2592000)}个月前`
-    
+
     return `${Math.floor(diffSec / 31536000)}年前`
   } catch (error) {
     console.error('相对时间格式化错误:', error)
@@ -69,25 +69,25 @@ export function formatFriendlyDate(dateString) {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    
+
     const hours = String(date.getHours()).padStart(2, '0')
     const minutes = String(date.getMinutes()).padStart(2, '0')
-    
+
     if (date >= today) {
       return `今天 ${hours}:${minutes}`
     }
-    
+
     if (date >= yesterday && date < today) {
       return `昨天 ${hours}:${minutes}`
     }
-    
+
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-    
+
     return `${year}-${month}-${day}`
   } catch (error) {
     console.error('友好日期格式化错误:', error)
     return dateString || '-'
   }
-} 
+}

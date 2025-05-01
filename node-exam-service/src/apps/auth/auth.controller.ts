@@ -142,10 +142,10 @@ export class AuthController {
     if (!req.user.isAdmin) {
       throw new BadRequestException('无权限访问管理员接口');
     }
-    
+
     const adminId = req.user.userId;
     await this.authService.validateAdmin(adminId);
-    
+
     const admin = await this.authService.getAdminById(adminId);
     return admin;
   }

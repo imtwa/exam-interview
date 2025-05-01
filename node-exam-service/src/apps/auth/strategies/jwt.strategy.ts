@@ -26,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     this.logger.log(`验证JWT: ${JSON.stringify(payload)}`);
-    
+
     // 检查是否是管理员
     if (payload.isAdmin) {
       return this.validateAdmin(payload);

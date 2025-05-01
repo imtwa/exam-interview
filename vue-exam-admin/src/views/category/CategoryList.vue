@@ -33,12 +33,11 @@
       >
         <el-table-column type="expand">
           <template #default="props">
-            <div class="subcategory-wrapper" v-if="props.row.children && props.row.children.length > 0">
-              <el-table
-                :data="props.row.children"
-                border
-                style="width: 100%; margin-bottom: 10px;"
-              >
+            <div
+              class="subcategory-wrapper"
+              v-if="props.row.children && props.row.children.length > 0"
+            >
+              <el-table :data="props.row.children" border style="width: 100%; margin-bottom: 10px">
                 <el-table-column prop="id" label="ID" width="80" />
                 <el-table-column prop="name" label="子分类名称" />
                 <el-table-column prop="description" label="描述" show-overflow-tooltip />
@@ -47,10 +46,18 @@
                 </el-table-column>
                 <el-table-column label="操作" width="200">
                   <template #default="scope">
-                    <el-button type="primary" size="small" @click="handleEditSubCategory(scope.row, props.row.id)">
+                    <el-button
+                      type="primary"
+                      size="small"
+                      @click="handleEditSubCategory(scope.row, props.row.id)"
+                    >
                       编辑
                     </el-button>
-                    <el-button type="danger" size="small" @click="handleDeleteSubCategory(scope.row)">
+                    <el-button
+                      type="danger"
+                      size="small"
+                      @click="handleDeleteSubCategory(scope.row)"
+                    >
                       删除
                     </el-button>
                   </template>
@@ -70,9 +77,7 @@
         </el-table-column>
         <el-table-column label="操作" width="280">
           <template #default="scope">
-            <el-button type="primary" size="small" @click="handleEdit(scope.row)">
-              编辑
-            </el-button>
+            <el-button type="primary" size="small" @click="handleEdit(scope.row)"> 编辑 </el-button>
             <el-button type="success" size="small" @click="handleAddSubCategory(scope.row)">
               添加子分类
             </el-button>
@@ -131,9 +136,20 @@
       width="50%"
       :close-on-click-modal="false"
     >
-      <el-form ref="subFormRef" :model="subForm" :rules="rules" label-position="top" label-width="100px">
+      <el-form
+        ref="subFormRef"
+        :model="subForm"
+        :rules="rules"
+        label-position="top"
+        label-width="100px"
+      >
         <el-form-item label="所属分类" prop="categoryId">
-          <el-select v-model="subForm.categoryId" placeholder="选择所属分类" style="width: 100%" :disabled="subDialogType === 'edit'">
+          <el-select
+            v-model="subForm.categoryId"
+            placeholder="选择所属分类"
+            style="width: 100%"
+            :disabled="subDialogType === 'edit'"
+          >
             <el-option
               v-for="item in categoryList"
               :key="item.id!"
@@ -157,7 +173,9 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="subDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitSubForm" :loading="submitLoading"> 确定 </el-button>
+          <el-button type="primary" @click="submitSubForm" :loading="submitLoading">
+            确定
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -170,7 +188,10 @@
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
   import { CategoryService } from '@/api/categoryService'
   import { SubCategoryService } from '@/api/subCategoryService'
-  import { Category as CategoryModel, SubCategory as SubCategoryModel } from '@/api/model/examModels'
+  import {
+    Category as CategoryModel,
+    SubCategory as SubCategoryModel
+  } from '@/api/model/examModels'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 
   // Setup router
@@ -211,9 +232,7 @@
       { required: true, message: '请输入分类名称', trigger: 'blur' },
       { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
     ],
-    categoryId: [
-      { required: true, message: '请选择所属分类', trigger: 'change' }
-    ]
+    categoryId: [{ required: true, message: '请选择所属分类', trigger: 'change' }]
   })
 
   // Fetch Data
@@ -433,7 +452,9 @@
             subDialogVisible.value = false
             fetchCategoryList()
           } else {
-            ElMessage.error(res.message || (subDialogType.value === 'add' ? '添加失败' : '更新失败'))
+            ElMessage.error(
+              res.message || (subDialogType.value === 'add' ? '添加失败' : '更新失败')
+            )
           }
         } catch (error) {
           console.error('提交表单失败:', error)

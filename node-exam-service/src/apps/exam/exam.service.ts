@@ -611,7 +611,9 @@ export class ExamService {
       });
 
       if (existingCategory) {
-        throw new BadRequestException(`分类名称 "${createCategoryDto.name}" 已存在`);
+        throw new BadRequestException(
+          `分类名称 "${createCategoryDto.name}" 已存在`,
+        );
       }
 
       // 创建分类
@@ -663,7 +665,9 @@ export class ExamService {
         });
 
         if (existingCategory) {
-          throw new BadRequestException(`分类名称 "${updateCategoryDto.name}" 已存在`);
+          throw new BadRequestException(
+            `分类名称 "${updateCategoryDto.name}" 已存在`,
+          );
         }
       }
 
@@ -719,12 +723,16 @@ export class ExamService {
 
       // 检查是否有关联的子分类
       if (category.subCategories.length > 0) {
-        throw new BadRequestException(`无法删除分类，该分类下有 ${category.subCategories.length} 个子分类`);
+        throw new BadRequestException(
+          `无法删除分类，该分类下有 ${category.subCategories.length} 个子分类`,
+        );
       }
 
       // 检查是否有关联的试卷
       if (category.examPapers.length > 0) {
-        throw new BadRequestException(`无法删除分类，该分类下有 ${category.examPapers.length} 个试卷`);
+        throw new BadRequestException(
+          `无法删除分类，该分类下有 ${category.examPapers.length} 个试卷`,
+        );
       }
 
       // 软删除分类
@@ -748,7 +756,9 @@ export class ExamService {
    * @returns 创建的子分类
    */
   async createSubCategory(createSubCategoryDto: any) {
-    this.logger.log(`创建子分类: ${createSubCategoryDto.name}, 所属分类ID: ${createSubCategoryDto.categoryId}`);
+    this.logger.log(
+      `创建子分类: ${createSubCategoryDto.name}, 所属分类ID: ${createSubCategoryDto.categoryId}`,
+    );
 
     try {
       // 检查父分类是否存在
@@ -760,7 +770,9 @@ export class ExamService {
       });
 
       if (!parentCategory) {
-        throw new NotFoundException(`父分类不存在: ${createSubCategoryDto.categoryId}`);
+        throw new NotFoundException(
+          `父分类不存在: ${createSubCategoryDto.categoryId}`,
+        );
       }
 
       // 检查子分类名称是否已存在于同一父分类下
@@ -773,7 +785,9 @@ export class ExamService {
       });
 
       if (existingSubCategory) {
-        throw new BadRequestException(`子分类名称 "${createSubCategoryDto.name}" 在该父分类下已存在`);
+        throw new BadRequestException(
+          `子分类名称 "${createSubCategoryDto.name}" 在该父分类下已存在`,
+        );
       }
 
       // 创建子分类
@@ -816,7 +830,10 @@ export class ExamService {
       }
 
       // 如果更新父分类ID，检查父分类是否存在
-      if (updateSubCategoryDto.categoryId && updateSubCategoryDto.categoryId !== subCategory.categoryId) {
+      if (
+        updateSubCategoryDto.categoryId &&
+        updateSubCategoryDto.categoryId !== subCategory.categoryId
+      ) {
         const parentCategory = await this.prisma.category.findUnique({
           where: {
             id: updateSubCategoryDto.categoryId,
@@ -825,13 +842,19 @@ export class ExamService {
         });
 
         if (!parentCategory) {
-          throw new NotFoundException(`父分类不存在: ${updateSubCategoryDto.categoryId}`);
+          throw new NotFoundException(
+            `父分类不存在: ${updateSubCategoryDto.categoryId}`,
+          );
         }
       }
 
       // 如果更新名称，检查名称是否已被同一父分类下的其他子分类使用
-      if (updateSubCategoryDto.name && updateSubCategoryDto.name !== subCategory.name) {
-        const categoryId = updateSubCategoryDto.categoryId || subCategory.categoryId;
+      if (
+        updateSubCategoryDto.name &&
+        updateSubCategoryDto.name !== subCategory.name
+      ) {
+        const categoryId =
+          updateSubCategoryDto.categoryId || subCategory.categoryId;
         const existingSubCategory = await this.prisma.subCategory.findFirst({
           where: {
             name: updateSubCategoryDto.name,
@@ -842,7 +865,9 @@ export class ExamService {
         });
 
         if (existingSubCategory) {
-          throw new BadRequestException(`子分类名称 "${updateSubCategoryDto.name}" 在该父分类下已存在`);
+          throw new BadRequestException(
+            `子分类名称 "${updateSubCategoryDto.name}" 在该父分类下已存在`,
+          );
         }
       }
 
@@ -894,7 +919,9 @@ export class ExamService {
 
       // 检查是否有关联的试卷
       if (subCategory.examPapers.length > 0) {
-        throw new BadRequestException(`无法删除子分类，该子分类下有 ${subCategory.examPapers.length} 个试卷`);
+        throw new BadRequestException(
+          `无法删除子分类，该子分类下有 ${subCategory.examPapers.length} 个试卷`,
+        );
       }
 
       // 软删除子分类

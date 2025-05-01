@@ -62,4 +62,4 @@ export function deleteInterview(id) {
     url: `/interview/${id}`,
     method: 'delete'
   })
-} 
+}

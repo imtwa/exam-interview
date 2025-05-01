@@ -86,4 +86,4 @@ export function arrangeInterview(id, data) {
     method: 'post',
     data
   })
-} 
+}

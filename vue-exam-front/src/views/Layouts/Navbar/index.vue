@@ -520,7 +520,7 @@ onUnmounted(() => {
         :deep(.el-input__inner) {
           transition: all 0.3s;
         }
-        
+
         :deep(.el-input__suffix) {
           right: 5px;
 
@@ -546,7 +546,7 @@ onUnmounted(() => {
       align-items: center;
       cursor: pointer;
       max-width: 200px; /* 限制最大宽度 */
-      
+
       @media (max-width: 992px) {
         max-width: 150px;
       }
@@ -560,7 +560,7 @@ onUnmounted(() => {
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 100px; /* 限制用户名最大宽度 */
-      
+
       @media (max-width: 992px) {
         max-width: 60px;
       }
@@ -705,7 +705,7 @@ onUnmounted(() => {
   border-radius: 4px;
   margin-left: 6px;
   white-space: nowrap;
-  
+
   @media (max-width: 992px) {
     display: none; /* 在窄屏幕上隐藏角色标签 */
   }

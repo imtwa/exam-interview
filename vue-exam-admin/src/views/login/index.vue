@@ -167,10 +167,10 @@
         try {
           // 调用认证服务进行管理员登录
           const result = await AuthService.adminLogin(formData.username, formData.password)
-          
+
           // 从响应中提取数据
           const { data } = result
-          
+
           // 设置 token
           userStore.setToken(data.access_token)
 

@@ -61,7 +61,9 @@
               </el-form-item>
 
               <div class="form-actions">
-                <el-button type="primary" size="large" @click="nextStep('basicFormRef')">下一步</el-button>
+                <el-button type="primary" size="large" @click="nextStep('basicFormRef')"
+                  >下一步</el-button
+                >
               </div>
             </el-form>
           </div>
@@ -79,7 +81,11 @@
               class="setup-form"
             >
               <el-form-item label="最高学历" prop="degree">
-                <el-select v-model="educationForm.degree" placeholder="请选择学历" style="width: 100%">
+                <el-select
+                  v-model="educationForm.degree"
+                  placeholder="请选择学历"
+                  style="width: 100%"
+                >
                   <el-option label="高中" value="HIGH_SCHOOL" />
                   <el-option label="大专" value="COLLEGE" />
                   <el-option label="本科" value="BACHELOR" />
@@ -205,17 +211,17 @@
                 <el-cascader
                   v-model="jobIntentionForm.cityCode"
                   :options="regionData"
-                  :props="{...regionProps, checkStrictly: true}"
+                  :props="{ ...regionProps, checkStrictly: true }"
                   placeholder="请选择期望工作城市"
                   style="width: 100%"
                 />
               </el-form-item>
 
               <el-form-item label="当前薪资" prop="currentSalary">
-                <el-input-number 
-                  v-model="jobIntentionForm.currentSalary" 
-                  :min="0" 
-                  :step="1000" 
+                <el-input-number
+                  v-model="jobIntentionForm.currentSalary"
+                  :min="0"
+                  :step="1000"
                   controls-position="right"
                   style="width: 25%"
                 />
@@ -224,22 +230,22 @@
               <el-form-item label="期望薪资" prop="salary">
                 <el-row :gutter="20">
                   <el-col :xs="24" :sm="11">
-                    <el-input-number 
-                      v-model="jobIntentionForm.salaryMin" 
-                      :min="0" 
-                      :step="1000" 
+                    <el-input-number
+                      v-model="jobIntentionForm.salaryMin"
+                      :min="0"
+                      :step="1000"
                       controls-position="right"
                       style="width: 100%"
                     />
                   </el-col>
-                  <el-col :xs="24" :sm="2" style="text-align: center;">
+                  <el-col :xs="24" :sm="2" style="text-align: center">
                     <span>至</span>
                   </el-col>
                   <el-col :xs="24" :sm="11">
-                    <el-input-number 
-                      v-model="jobIntentionForm.salaryMax" 
-                      :min="0" 
-                      :step="1000" 
+                    <el-input-number
+                      v-model="jobIntentionForm.salaryMax"
+                      :min="0"
+                      :step="1000"
                       controls-position="right"
                       style="width: 100%"
                     />
@@ -249,7 +255,9 @@
 
               <div class="form-actions">
                 <el-button @click="prevStep">上一步</el-button>
-                <el-button type="primary" @click="nextStep('jobIntentionFormRef')">下一步</el-button>
+                <el-button type="primary" @click="nextStep('jobIntentionFormRef')"
+                  >下一步</el-button
+                >
               </div>
             </el-form>
           </div>
@@ -282,7 +290,7 @@
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="confirm-card">
                     <div class="confirm-card-header">
                       <i class="el-icon-office-building"></i>
@@ -304,7 +312,7 @@
                     </div>
                   </div>
                 </el-col>
-                
+
                 <el-col :xs="24" :md="12">
                   <div class="confirm-card">
                     <div class="confirm-card-header">
@@ -326,7 +334,7 @@
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="confirm-card">
                     <div class="confirm-card-header">
                       <i class="el-icon-aim"></i>
@@ -345,7 +353,10 @@
                         <span class="label">当前薪资:</span>
                         <span class="value">{{ jobIntentionForm.currentSalary }}</span>
                       </div>
-                      <div class="confirm-item" v-if="jobIntentionForm.salaryMin || jobIntentionForm.salaryMax">
+                      <div
+                        class="confirm-item"
+                        v-if="jobIntentionForm.salaryMin || jobIntentionForm.salaryMax"
+                      >
                         <span class="label">期望薪资:</span>
                         <span class="value">
                           {{ jobIntentionForm.salaryMin }} - {{ jobIntentionForm.salaryMax }}
@@ -358,7 +369,9 @@
 
               <div class="form-actions">
                 <el-button @click="prevStep">上一步</el-button>
-                <el-button type="primary" size="large" @click="submitProfile" :loading="loading">提交</el-button>
+                <el-button type="primary" size="large" @click="submitProfile" :loading="loading"
+                  >提交</el-button
+                >
               </div>
             </div>
           </div>
@@ -392,13 +405,7 @@ const regionProps = {
 }
 
 // 步骤标题
-const stepTitles = computed(() => [
-  '基本信息',
-  '教育经历',
-  '工作经验',
-  '求职意向',
-  '确认信息'
-])
+const stepTitles = computed(() => ['基本信息', '教育经历', '工作经验', '求职意向', '确认信息'])
 
 // 性别映射
 const genderMap = {
@@ -504,12 +511,9 @@ const handleRegionChange = value => {
 // 更新完整地址
 const updateFullAddress = () => {
   const regionPart =
-    basicForm.regionNames && basicForm.regionNames.length > 0
-      ? basicForm.regionNames.join(' ')
-      : ''
+    basicForm.regionNames && basicForm.regionNames.length > 0 ? basicForm.regionNames.join(' ') : ''
 
-  basicForm.address =
-    regionPart + (basicForm.detailAddress ? ' ' + basicForm.detailAddress : '')
+  basicForm.address = regionPart + (basicForm.detailAddress ? ' ' + basicForm.detailAddress : '')
 }
 
 // 上一步
@@ -526,11 +530,16 @@ const nextStep = async formName => {
     return
   }
 
-  const formRef = 
-    formName === 'basicFormRef' ? basicFormRef.value : 
-    formName === 'educationFormRef' ? educationFormRef.value : 
-    formName === 'experienceFormRef' ? experienceFormRef.value : 
-    formName === 'jobIntentionFormRef' ? jobIntentionFormRef.value : null
+  const formRef =
+    formName === 'basicFormRef'
+      ? basicFormRef.value
+      : formName === 'educationFormRef'
+        ? educationFormRef.value
+        : formName === 'experienceFormRef'
+          ? experienceFormRef.value
+          : formName === 'jobIntentionFormRef'
+            ? jobIntentionFormRef.value
+            : null
 
   if (formRef) {
     await formRef.validate(valid => {
@@ -556,10 +565,9 @@ const submitProfile = async () => {
       education: educationForm,
       experience: experienceForm,
       jobIntention: jobIntentionForm
-    });
+    })
 
-    console.log(response);
-    
+    console.log(response)
 
     ElMessage.success('个人资料设置成功')
     // 跳转到首页或仪表板
@@ -595,18 +603,18 @@ const fetchRegionData = async () => {
 }
 
 // 添加格式化日期的辅助函数
-const formatDate = (date) => {
-  if (!date) return '';
-  
+const formatDate = date => {
+  if (!date) return ''
+
   if (typeof date === 'string') {
-    date = new Date(date);
+    date = new Date(date)
   }
-  
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
 }
 
 onMounted(() => {

@@ -76,4 +76,4 @@ export function verifyCompany(id, data) {
     method: 'patch',
     data
   })
-} 
+}
