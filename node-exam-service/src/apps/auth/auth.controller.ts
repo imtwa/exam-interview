@@ -13,6 +13,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { LoginDto } from './dto/login.dto';
+import { AdminLoginDto } from './dto/admin-login.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -88,6 +89,24 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @ApiOperation({ summary: '管理员登录' })
+  @ApiBody({ type: AdminLoginDto })
+  @ApiResponse({
+    status: 200,
+    description: '登录成功',
+    schema: {
+      properties: {
+        token: { type: 'string', description: 'JWT令牌' },
+        user: { type: 'object', description: '管理员信息' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: '用户名或密码错误' })
+  @Post('admin/login')
+  async adminLogin(@Body() adminLoginDto: AdminLoginDto) {
+    return this.authService.adminLogin(adminLoginDto);
+  }
+
   @ApiOperation({ summary: '重置密码' })
   @ApiBody({ type: ResetPasswordDto })
   @ApiResponse({ status: 200, description: '密码重置成功' })
@@ -110,6 +129,25 @@ export class AuthController {
       ...user,
       password: undefined, // 不返回密码
     };
+  }
+
+  @ApiOperation({ summary: '获取管理员详细信息' })
+  @ApiResponse({ status: 200, description: '返回管理员详细信息' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/profile')
+  async getAdminProfile(@Request() req) {
+    // 检查是否是管理员
+    if (!req.user.isAdmin) {
+      throw new BadRequestException('无权限访问管理员接口');
+    }
+    
+    const adminId = req.user.userId;
+    await this.authService.validateAdmin(adminId);
+    
+    const admin = await this.authService.getAdminById(adminId);
+    return admin;
   }
 
   @ApiOperation({ summary: '检查用户资料完成状态' })

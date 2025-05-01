@@ -198,7 +198,10 @@
   import { Search } from '@element-plus/icons-vue'
   import { CategoryService } from '@/api/categoryService'
   import { SubCategoryService } from '@/api/subCategoryService'
-  import { CategoryModel, SubCategoryModel } from '@/api/model/examModels'
+  import {
+    Category as CategoryModel,
+    SubCategory as SubCategoryModel
+  } from '@/api/model/examModels'
 
   // 数据
   const categoryList = ref<CategoryModel[]>([])
@@ -261,22 +264,18 @@
   const fetchCategoryList = async () => {
     loading.value = true
     try {
-      const res = await CategoryService.getCategoryList({
-        page: currentPage.value,
-        size: pageSize.value,
-        searchVal: searchForm.keyword
-      })
+      const res = await CategoryService.getAllCategories()
 
       if (res.code === 200) {
         categoryList.value = res.data || []
-        total.value = res.total || 0
+        total.value = categoryList.value.length || 0
 
-        // 预加载每个分类的子分类
-        await Promise.all(
-          categoryList.value.map(async (category) => {
-            await fetchSubCategories(category.id)
-          })
-        )
+        // 子分类数据已经包含在返回结果中，不需要额外加载
+        categoryList.value.forEach((category) => {
+          if (category.subCategories) {
+            category.children = category.subCategories
+          }
+        })
       } else {
         ElMessage.error(res.message || '获取分类列表失败')
       }
@@ -291,14 +290,8 @@
   // 获取子分类列表
   const fetchSubCategories = async (categoryId: number) => {
     try {
-      const res = await SubCategoryService.getSubCategoriesByCategoryId(categoryId)
-      if (res.code === 200) {
-        // 找到对应的分类并更新其子分类
-        const category = categoryList.value.find((item) => item.id === categoryId)
-        if (category) {
-          category.children = res.data || []
-        }
-      }
+      // 由于getAllCategories已经包含了子分类信息，这里只需要重新获取分类列表
+      await fetchCategoryList()
     } catch (error) {
       console.error(`获取分类ID:${categoryId}的子分类失败:`, error)
     }
@@ -307,13 +300,17 @@
   // 处理展开行变化
   const handleExpandChange = (row: CategoryModel, expanded: boolean) => {
     if (expanded) {
-      expandedRows.value = [row.id.toString()]
+      expandedRows.value = [row.id ? row.id.toString() : '']
       // 如果展开，确保子分类数据已加载
       if (!row.children || row.children.length === 0) {
         subCategoryLoading.value = true
-        fetchSubCategories(row.id).finally(() => {
+        if (row.id) {
+          fetchSubCategories(row.id).finally(() => {
+            subCategoryLoading.value = false
+          })
+        } else {
           subCategoryLoading.value = false
-        })
+        }
       }
     } else {
       expandedRows.value = []
@@ -356,6 +353,11 @@
   }
 
   const handleDeleteCategory = (row: CategoryModel) => {
+    if (!row.id) {
+      ElMessage.error('分类ID不存在')
+      return
+    }
+
     ElMessageBox.confirm(
       '确定要删除该分类吗？删除后将无法恢复，且会同时删除其下所有子分类。',
       '警告',
@@ -367,7 +369,7 @@
     )
       .then(async () => {
         try {
-          const res = await CategoryService.deleteCategory(row.id)
+          const res = await CategoryService.deleteCategory(row.id!)
           if (res.code === 200) {
             ElMessage.success('删除成功')
             fetchCategoryList()
@@ -393,7 +395,7 @@
         try {
           let res
           if (categoryDialogType.value === 'add') {
-            res = await CategoryService.addCategory(categoryForm)
+            res = await CategoryService.createCategory(categoryForm)
           } else {
             res = await CategoryService.updateCategory(categoryForm.id!, categoryForm)
           }
@@ -422,6 +424,11 @@
 
   // 子分类操作
   const handleAddSubCategory = (category: CategoryModel) => {
+    if (!category.id) {
+      ElMessage.error('分类ID不存在')
+      return
+    }
+
     subCategoryDialogType.value = 'add'
     subCategoryForm.id = undefined
     subCategoryForm.name = ''
@@ -431,6 +438,11 @@
   }
 
   const handleEditSubCategory = (row: SubCategoryModel, category: CategoryModel) => {
+    if (!category.id) {
+      ElMessage.error('分类ID不存在')
+      return
+    }
+
     subCategoryDialogType.value = 'edit'
     subCategoryForm.id = row.id
     subCategoryForm.name = row.name
@@ -440,6 +452,11 @@
   }
 
   const handleDeleteSubCategory = (row: SubCategoryModel) => {
+    if (!row.id) {
+      ElMessage.error('子分类ID不存在')
+      return
+    }
+
     ElMessageBox.confirm('确定要删除该子分类吗？删除后将无法恢复。', '警告', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -447,12 +464,12 @@
     })
       .then(async () => {
         try {
-          const res = await SubCategoryService.deleteSubCategory(row.id)
+          const res = await SubCategoryService.deleteSubCategory(row.id!)
           if (res.code === 200) {
             ElMessage.success('删除成功')
             // 重新获取该分类的子分类
             const category = categoryList.value.find((item) => item.id === row.categoryId)
-            if (category) {
+            if (category && category.id) {
               fetchSubCategories(category.id)
             }
           } else {
@@ -477,7 +494,7 @@
         try {
           let res
           if (subCategoryDialogType.value === 'add') {
-            res = await SubCategoryService.addSubCategory(subCategoryForm)
+            res = await SubCategoryService.createSubCategory(subCategoryForm)
           } else {
             res = await SubCategoryService.updateSubCategory(subCategoryForm.id!, subCategoryForm)
           }

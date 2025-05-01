@@ -19,6 +19,10 @@ import { ExamService } from './exam.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { CreatePrivateExamDto } from './dto/create-private-exam.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CreateSubCategoryDto } from './dto/create-subcategory.dto';
+import { UpdateSubCategoryDto } from './dto/update-subcategory.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -76,6 +80,259 @@ export class ExamController {
       message: '获取分类列表成功',
       data: categories,
     };
+  }
+
+  @ApiOperation({ summary: '创建试卷分类' })
+  @ApiBody({ type: CreateCategoryDto })
+  @ApiResponse({
+    status: 201,
+    description: '创建成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '创建分类成功' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            name: { type: 'string', example: '前端开发' },
+            description: { type: 'string', example: '前端开发相关试题' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: '参数错误或分类名称已存在' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('category')
+  async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
+    this.logger.log(`创建分类请求: ${JSON.stringify(createCategoryDto)}`);
+
+    try {
+      const category = await this.examService.createCategory(createCategoryDto);
+
+      return {
+        code: 200,
+        message: '创建分类成功',
+        data: category,
+      };
+    } catch (error) {
+      this.logger.error(`创建分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: '更新试卷分类' })
+  @ApiParam({ name: 'id', description: '分类ID', type: 'number' })
+  @ApiBody({ type: UpdateCategoryDto })
+  @ApiResponse({
+    status: 200,
+    description: '更新成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '更新分类成功' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            name: { type: 'string', example: '前端开发' },
+            description: { type: 'string', example: '前端开发相关试题' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: '参数错误或分类名称已存在' })
+  @ApiResponse({ status: 404, description: '分类不存在' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('category/:id')
+  async updateCategory(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCategoryDto: UpdateCategoryDto,
+  ) {
+    this.logger.log(`更新分类请求: ID=${id}, 数据=${JSON.stringify(updateCategoryDto)}`);
+
+    try {
+      const category = await this.examService.updateCategory(id, updateCategoryDto);
+
+      return {
+        code: 200,
+        message: '更新分类成功',
+        data: category,
+      };
+    } catch (error) {
+      this.logger.error(`更新分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: '删除试卷分类' })
+  @ApiParam({ name: 'id', description: '分类ID', type: 'number' })
+  @ApiResponse({
+    status: 200,
+    description: '删除成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '删除分类成功' },
+        data: { type: 'null', example: null },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: '分类下有子分类或试卷，无法删除' })
+  @ApiResponse({ status: 404, description: '分类不存在' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('category/delete/:id')
+  async deleteCategory(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`删除分类请求: ID=${id}`);
+
+    try {
+      await this.examService.deleteCategory(id);
+
+      return {
+        code: 200,
+        message: '删除分类成功',
+        data: null,
+      };
+    } catch (error) {
+      this.logger.error(`删除分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: '创建试卷子分类' })
+  @ApiBody({ type: CreateSubCategoryDto })
+  @ApiResponse({
+    status: 201,
+    description: '创建成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '创建子分类成功' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 2 },
+            name: { type: 'string', example: 'Vue' },
+            description: { type: 'string', example: 'Vue框架相关试题' },
+            categoryId: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: '参数错误或子分类名称已存在' })
+  @ApiResponse({ status: 404, description: '父分类不存在' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('subcategory')
+  async createSubCategory(@Body() createSubCategoryDto: CreateSubCategoryDto) {
+    this.logger.log(`创建子分类请求: ${JSON.stringify(createSubCategoryDto)}`);
+
+    try {
+      const subCategory = await this.examService.createSubCategory(createSubCategoryDto);
+
+      return {
+        code: 200,
+        message: '创建子分类成功',
+        data: subCategory,
+      };
+    } catch (error) {
+      this.logger.error(`创建子分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: '更新试卷子分类' })
+  @ApiParam({ name: 'id', description: '子分类ID', type: 'number' })
+  @ApiBody({ type: UpdateSubCategoryDto })
+  @ApiResponse({
+    status: 200,
+    description: '更新成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '更新子分类成功' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 2 },
+            name: { type: 'string', example: 'Vue' },
+            description: { type: 'string', example: 'Vue框架相关试题' },
+            categoryId: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: '参数错误或子分类名称已存在' })
+  @ApiResponse({ status: 404, description: '子分类不存在或父分类不存在' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('subcategory/:id')
+  async updateSubCategory(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateSubCategoryDto: UpdateSubCategoryDto,
+  ) {
+    this.logger.log(`更新子分类请求: ID=${id}, 数据=${JSON.stringify(updateSubCategoryDto)}`);
+
+    try {
+      const subCategory = await this.examService.updateSubCategory(id, updateSubCategoryDto);
+
+      return {
+        code: 200,
+        message: '更新子分类成功',
+        data: subCategory,
+      };
+    } catch (error) {
+      this.logger.error(`更新子分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: '删除试卷子分类' })
+  @ApiParam({ name: 'id', description: '子分类ID', type: 'number' })
+  @ApiResponse({
+    status: 200,
+    description: '删除成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '删除子分类成功' },
+        data: { type: 'null', example: null },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: '子分类下有试卷，无法删除' })
+  @ApiResponse({ status: 404, description: '子分类不存在' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('subcategory/delete/:id')
+  async deleteSubCategory(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`删除子分类请求: ID=${id}`);
+
+    try {
+      await this.examService.deleteSubCategory(id);
+
+      return {
+        code: 200,
+        message: '删除子分类成功',
+        data: null,
+      };
+    } catch (error) {
+      this.logger.error(`删除子分类失败: ${error.message}`);
+      throw error;
+    }
   }
 
   // 试卷相关接口

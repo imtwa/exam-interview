@@ -125,6 +125,7 @@
   import { languageOptions } from '@/language'
   import { LanguageEnum, SystemThemeEnum } from '@/enums/appEnum'
   import { useI18n } from 'vue-i18n'
+  import { AuthService } from '@/api/authService'
 
   const { t } = useI18n()
   import { useSettingStore } from '@/store/modules/setting'
@@ -161,51 +162,39 @@
 
     await formRef.value.validate(async (valid) => {
       if (valid) {
-        if (!isPassing.value) {
-          isClickPass.value = true
-          return
-        }
-
         loading.value = true
 
-        // 延时辅助函数
-        const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
         try {
-          // 本地验证用户名和密码
-          if (formData.username === 'admin' && formData.password === 'admin') {
-            // 模拟成功的登录响应
-            const mockToken = 'mock_token_' + Date.now()
+          // 调用认证服务进行管理员登录
+          const result = await AuthService.adminLogin(formData.username, formData.password)
+          
+          // 从响应中提取数据
+          const { data } = result
+          
+          // 设置 token
+          userStore.setToken(data.access_token)
 
-            // 设置 token
-            userStore.setToken(mockToken)
+          // 设置用户信息
+          userStore.setUserInfo({
+            id: data.user.id,
+            name: data.user.username,
+            username: data.user.username,
+            avatar: '',
+            email: data.user.email || ''
+          })
 
-            // 设置模拟的用户信息
-            userStore.setUserInfo({
-              id: 1,
-              name: 'Admin',
-              username: 'admin',
-              avatar: '',
-              email: 'admin@example.com'
-            })
+          // 设置登录状态
+          userStore.setLoginStatus(true)
 
-            // 设置登录状态
-            userStore.setLoginStatus(true)
+          // 登录成功提示
+          showLoginSuccessNotice()
 
-            // 延时模拟网络请求
-            await delay(1000)
-
-            // 登录成功提示
-            showLoginSuccessNotice()
-
-            // 跳转首页
-            router.push(HOME_PAGE)
-          } else {
-            // 用户名或密码错误
-            ElMessage.error('用户名或密码错误')
-          }
+          // 跳转首页
+          router.push(HOME_PAGE)
+        } catch (error: any) {
+          // 登录失败
+          ElMessage.error(error.message || '用户名或密码错误')
         } finally {
-          await delay(1000)
           loading.value = false
         }
       }

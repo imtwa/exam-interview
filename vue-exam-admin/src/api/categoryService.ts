@@ -41,7 +41,7 @@ export class CategoryService extends ApiService {
    * @returns Promise 对象
    */
   static async updateCategory(id: number, data: any): Promise<any> {
-    return this.put(`/${id}`, data)
+    return this.post(`/${id}`, data)
   }
 
   /**
@@ -50,6 +50,14 @@ export class CategoryService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteCategory(id: number): Promise<any> {
-    return this.delete(`/${id}`)
+    return this.post(`/delete/${id}`)
+  }
+
+  /**
+   * 获取所有分类（包含子分类）
+   * @returns Promise 对象
+   */
+  static async getAllCategories(): Promise<any> {
+    return this.get('/list')
   }
 }

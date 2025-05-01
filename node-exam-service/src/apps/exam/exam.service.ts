@@ -594,6 +594,325 @@ export class ExamService {
   }
 
   /**
+   * 创建分类
+   * @param createCategoryDto 分类数据
+   * @returns 创建的分类
+   */
+  async createCategory(createCategoryDto: any) {
+    this.logger.log(`创建分类: ${createCategoryDto.name}`);
+
+    try {
+      // 检查分类名称是否已存在
+      const existingCategory = await this.prisma.category.findFirst({
+        where: {
+          name: createCategoryDto.name,
+          deletedAt: null,
+        },
+      });
+
+      if (existingCategory) {
+        throw new BadRequestException(`分类名称 "${createCategoryDto.name}" 已存在`);
+      }
+
+      // 创建分类
+      const category = await this.prisma.category.create({
+        data: {
+          name: createCategoryDto.name,
+          description: createCategoryDto.description,
+        },
+      });
+
+      this.logger.log(`分类创建成功: ${category.id}`);
+      return category;
+    } catch (error) {
+      this.logger.error(`创建分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新分类
+   * @param id 分类ID
+   * @param updateCategoryDto 更新数据
+   * @returns 更新后的分类
+   */
+  async updateCategory(id: number, updateCategoryDto: any) {
+    this.logger.log(`更新分类: ${id}`);
+
+    try {
+      // 检查分类是否存在
+      const category = await this.prisma.category.findUnique({
+        where: {
+          id,
+          deletedAt: null,
+        },
+      });
+
+      if (!category) {
+        throw new NotFoundException(`分类不存在: ${id}`);
+      }
+
+      // 如果更新名称，检查名称是否已被其他分类使用
+      if (updateCategoryDto.name && updateCategoryDto.name !== category.name) {
+        const existingCategory = await this.prisma.category.findFirst({
+          where: {
+            name: updateCategoryDto.name,
+            id: { not: id },
+            deletedAt: null,
+          },
+        });
+
+        if (existingCategory) {
+          throw new BadRequestException(`分类名称 "${updateCategoryDto.name}" 已存在`);
+        }
+      }
+
+      // 更新分类
+      const updatedCategory = await this.prisma.category.update({
+        where: { id },
+        data: {
+          name: updateCategoryDto.name,
+          description: updateCategoryDto.description,
+          updatedAt: new Date(),
+        },
+      });
+
+      this.logger.log(`分类更新成功: ${id}`);
+      return updatedCategory;
+    } catch (error) {
+      this.logger.error(`更新分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除分类
+   * @param id 分类ID
+   */
+  async deleteCategory(id: number) {
+    this.logger.log(`删除分类: ${id}`);
+
+    try {
+      // 检查分类是否存在
+      const category = await this.prisma.category.findUnique({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        include: {
+          subCategories: {
+            where: {
+              deletedAt: null,
+            },
+          },
+          examPapers: {
+            where: {
+              deletedAt: null,
+            },
+          },
+        },
+      });
+
+      if (!category) {
+        throw new NotFoundException(`分类不存在: ${id}`);
+      }
+
+      // 检查是否有关联的子分类
+      if (category.subCategories.length > 0) {
+        throw new BadRequestException(`无法删除分类，该分类下有 ${category.subCategories.length} 个子分类`);
+      }
+
+      // 检查是否有关联的试卷
+      if (category.examPapers.length > 0) {
+        throw new BadRequestException(`无法删除分类，该分类下有 ${category.examPapers.length} 个试卷`);
+      }
+
+      // 软删除分类
+      await this.prisma.category.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+
+      this.logger.log(`分类删除成功: ${id}`);
+    } catch (error) {
+      this.logger.error(`删除分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 创建子分类
+   * @param createSubCategoryDto 子分类数据
+   * @returns 创建的子分类
+   */
+  async createSubCategory(createSubCategoryDto: any) {
+    this.logger.log(`创建子分类: ${createSubCategoryDto.name}, 所属分类ID: ${createSubCategoryDto.categoryId}`);
+
+    try {
+      // 检查父分类是否存在
+      const parentCategory = await this.prisma.category.findUnique({
+        where: {
+          id: createSubCategoryDto.categoryId,
+          deletedAt: null,
+        },
+      });
+
+      if (!parentCategory) {
+        throw new NotFoundException(`父分类不存在: ${createSubCategoryDto.categoryId}`);
+      }
+
+      // 检查子分类名称是否已存在于同一父分类下
+      const existingSubCategory = await this.prisma.subCategory.findFirst({
+        where: {
+          name: createSubCategoryDto.name,
+          categoryId: createSubCategoryDto.categoryId,
+          deletedAt: null,
+        },
+      });
+
+      if (existingSubCategory) {
+        throw new BadRequestException(`子分类名称 "${createSubCategoryDto.name}" 在该父分类下已存在`);
+      }
+
+      // 创建子分类
+      const subCategory = await this.prisma.subCategory.create({
+        data: {
+          name: createSubCategoryDto.name,
+          description: createSubCategoryDto.description,
+          categoryId: createSubCategoryDto.categoryId,
+        },
+      });
+
+      this.logger.log(`子分类创建成功: ${subCategory.id}`);
+      return subCategory;
+    } catch (error) {
+      this.logger.error(`创建子分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新子分类
+   * @param id 子分类ID
+   * @param updateSubCategoryDto 更新数据
+   * @returns 更新后的子分类
+   */
+  async updateSubCategory(id: number, updateSubCategoryDto: any) {
+    this.logger.log(`更新子分类: ${id}`);
+
+    try {
+      // 检查子分类是否存在
+      const subCategory = await this.prisma.subCategory.findUnique({
+        where: {
+          id,
+          deletedAt: null,
+        },
+      });
+
+      if (!subCategory) {
+        throw new NotFoundException(`子分类不存在: ${id}`);
+      }
+
+      // 如果更新父分类ID，检查父分类是否存在
+      if (updateSubCategoryDto.categoryId && updateSubCategoryDto.categoryId !== subCategory.categoryId) {
+        const parentCategory = await this.prisma.category.findUnique({
+          where: {
+            id: updateSubCategoryDto.categoryId,
+            deletedAt: null,
+          },
+        });
+
+        if (!parentCategory) {
+          throw new NotFoundException(`父分类不存在: ${updateSubCategoryDto.categoryId}`);
+        }
+      }
+
+      // 如果更新名称，检查名称是否已被同一父分类下的其他子分类使用
+      if (updateSubCategoryDto.name && updateSubCategoryDto.name !== subCategory.name) {
+        const categoryId = updateSubCategoryDto.categoryId || subCategory.categoryId;
+        const existingSubCategory = await this.prisma.subCategory.findFirst({
+          where: {
+            name: updateSubCategoryDto.name,
+            categoryId,
+            id: { not: id },
+            deletedAt: null,
+          },
+        });
+
+        if (existingSubCategory) {
+          throw new BadRequestException(`子分类名称 "${updateSubCategoryDto.name}" 在该父分类下已存在`);
+        }
+      }
+
+      // 更新子分类
+      const updatedSubCategory = await this.prisma.subCategory.update({
+        where: { id },
+        data: {
+          name: updateSubCategoryDto.name,
+          description: updateSubCategoryDto.description,
+          categoryId: updateSubCategoryDto.categoryId,
+          updatedAt: new Date(),
+        },
+      });
+
+      this.logger.log(`子分类更新成功: ${id}`);
+      return updatedSubCategory;
+    } catch (error) {
+      this.logger.error(`更新子分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除子分类
+   * @param id 子分类ID
+   */
+  async deleteSubCategory(id: number) {
+    this.logger.log(`删除子分类: ${id}`);
+
+    try {
+      // 检查子分类是否存在
+      const subCategory = await this.prisma.subCategory.findUnique({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        include: {
+          examPapers: {
+            where: {
+              deletedAt: null,
+            },
+          },
+        },
+      });
+
+      if (!subCategory) {
+        throw new NotFoundException(`子分类不存在: ${id}`);
+      }
+
+      // 检查是否有关联的试卷
+      if (subCategory.examPapers.length > 0) {
+        throw new BadRequestException(`无法删除子分类，该子分类下有 ${subCategory.examPapers.length} 个试卷`);
+      }
+
+      // 软删除子分类
+      await this.prisma.subCategory.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+
+      this.logger.log(`子分类删除成功: ${id}`);
+    } catch (error) {
+      this.logger.error(`删除子分类失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * 创建试卷及其题目
    * @param createExamDto 创建试卷DTO
    * @param userId 用户ID

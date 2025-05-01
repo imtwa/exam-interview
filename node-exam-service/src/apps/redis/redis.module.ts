@@ -24,14 +24,14 @@ import { logger } from '../../common/logger/logger.config';
             reconnectStrategy: (retries) => {
               // 最大重试次数为10次，每次重试间隔为重试次数 * 1000ms
               if (retries > 10) {
-                nestLogger.error('重连失败次数过多，停止重连');
+                // nestLogger.error('重连失败次数过多，停止重连');
                 logger.error('重连失败次数过多，停止重连', {
                   context: 'Redis',
                 });
                 return new Error('Redis重连失败次数过多');
               }
-              nestLogger.log(`尝试重连，第${retries}次`);
-              logger.info(`尝试重连，第${retries}次`, { context: 'Redis' });
+              // nestLogger.log(`尝试重连，第${retries}次`);
+              // logger.info(`尝试重连，第${retries}次`, { context: 'Redis' });
               return retries * 1000; // 重连间隔时间
             },
             connectTimeout: 10000, // 连接超时设置为10秒
@@ -42,26 +42,26 @@ import { logger } from '../../common/logger/logger.config';
 
         // 错误事件处理
         client.on('error', (err) => {
-          nestLogger.error(`连接错误: ${err.message}`);
-          logger.error('连接错误', { context: 'Redis', error: err });
+          // nestLogger.error(`连接错误: ${err.message}`);
+          // logger.error('连接错误', { context: 'Redis', error: err });
         });
 
         // 重连事件
         client.on('reconnecting', () => {
-          nestLogger.log('正在重连...');
-          logger.info('正在重连...', { context: 'Redis' });
+          // nestLogger.log('正在重连...');
+          // logger.info('正在重连...', { context: 'Redis' });
         });
 
         // 连接成功
         client.on('connect', () => {
-          nestLogger.log('连接成功');
-          logger.info('连接成功', { context: 'Redis' });
+          // nestLogger.log('连接成功');
+          // logger.info('连接成功', { context: 'Redis' });
         });
 
         // 连接就绪
         client.on('ready', () => {
-          nestLogger.log('服务就绪');
-          logger.info('服务就绪', { context: 'Redis' });
+          // nestLogger.log('服务就绪');
+          // logger.info('服务就绪', { context: 'Redis' });
         });
 
         try {

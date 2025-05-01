@@ -14,6 +14,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// 管理员用户表：存储后台管理系统用户信息
+model AdminUser {
+  id        Int       @id @default(autoincrement()) /// 管理员ID，自增主键
+  username  String    @unique /// 用户名，唯一标识
+  password  String /// 用户密码，存储加密后的密码
+  email     String?   @unique /// 邮箱地址，可选
+  role      String    @default("ADMIN") /// 角色，默认为管理员
+  createdAt DateTime  @default(now()) /// 创建时间
+  updatedAt DateTime  @updatedAt /// 更新时间
+  deletedAt DateTime? /// 删除时间，用于软删除
+
+  @@map("exam_admin_user")
+}
+
 /// 用户表：存储系统用户信息，包括求职者和面试官
 model FrontUser {
   id        Int       @id @default(autoincrement()) /// 用户ID，自增主键

@@ -117,10 +117,14 @@
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
+  import { useRoute } from 'vue-router'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
   import { CategoryService } from '@/api/categoryService'
   import { SubCategoryService } from '@/api/subCategoryService'
-  import { CategoryModel, SubCategoryModel } from '@/api/model/examModels'
+  import {
+    Category as CategoryModel,
+    SubCategory as SubCategoryModel
+  } from '@/api/model/examModels'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 
   // Data
@@ -159,9 +163,19 @@
     categoryId: [{ required: true, message: '请选择所属分类', trigger: 'change' }]
   })
 
+  // 获取路由参数
+  const route = useRoute()
+
   // Fetch Data
   onMounted(async () => {
     await fetchCategories()
+
+    // 如果URL中有categoryId参数，则设置选中的分类
+    const categoryIdParam = route.query.categoryId
+    if (categoryIdParam) {
+      selectedCategoryId.value = parseInt(categoryIdParam as string, 10)
+    }
+
     fetchSubCategoryList()
   })
 
@@ -182,16 +196,52 @@
   const fetchSubCategoryList = async () => {
     loading.value = true
     try {
-      const res = await SubCategoryService.getSubCategoryList({
-        page: currentPage.value,
-        size: pageSize.value,
-        searchVal: searchKeyword.value,
-        categoryId: selectedCategoryId.value
-      })
+      const res = await CategoryService.getAllCategories()
 
       if (res.code === 200) {
-        subCategoryList.value = res.data || []
-        total.value = res.total || 0
+        // 从所有分类中提取子分类
+        let allSubCategories: SubCategoryModel[] = []
+
+        res.data.forEach((category: CategoryModel) => {
+          if (category.subCategories && category.subCategories.length > 0) {
+            // 为每个子分类添加所属分类信息
+            const subCategoriesWithCategory = category.subCategories.map((sub) => ({
+              ...sub,
+              categoryId: category.id!,
+              category: {
+                id: category.id,
+                name: category.name
+              }
+            }))
+            allSubCategories = [...allSubCategories, ...subCategoriesWithCategory]
+          }
+        })
+
+        // 过滤子分类
+        let filteredList = allSubCategories
+
+        // 按分类ID过滤
+        if (selectedCategoryId.value) {
+          filteredList = filteredList.filter((item) => item.categoryId === selectedCategoryId.value)
+        }
+
+        // 按关键词过滤
+        if (searchKeyword.value) {
+          const keyword = searchKeyword.value.toLowerCase()
+          filteredList = filteredList.filter(
+            (item: SubCategoryModel) =>
+              item.name.toLowerCase().includes(keyword) ||
+              (item.description && item.description.toLowerCase().includes(keyword))
+          )
+        }
+
+        // 计算总数
+        total.value = filteredList.length
+
+        // 分页处理
+        const start = (currentPage.value - 1) * pageSize.value
+        const end = start + pageSize.value
+        subCategoryList.value = filteredList.slice(start, end)
       } else {
         ElMessage.error(res.message || '获取子分类列表失败')
       }
@@ -274,15 +324,22 @@
       if (valid) {
         submitLoading.value = true
         try {
-          const service =
-            dialogType.value === 'add'
-              ? SubCategoryService.addSubCategory
-              : SubCategoryService.updateSubCategory
-
-          const res =
-            dialogType.value === 'add'
-              ? await service(form.value)
-              : await service(form.value.id!, form.value)
+          let res
+          if (dialogType.value === 'add') {
+            // 创建二级分类
+            res = await SubCategoryService.createSubCategory({
+              name: form.value.name,
+              description: form.value.description,
+              categoryId: form.value.categoryId
+            })
+          } else {
+            // 更新二级分类
+            res = await SubCategoryService.updateSubCategory(form.value.id!, {
+              name: form.value.name,
+              description: form.value.description,
+              categoryId: form.value.categoryId
+            })
+          }
 
           if (res.code === 200) {
             ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
@@ -292,6 +349,7 @@
             ElMessage.error(res.message || (dialogType.value === 'add' ? '添加失败' : '更新失败'))
           }
         } catch (error) {
+          console.error(dialogType.value === 'add' ? '添加子分类失败:' : '更新子分类失败:', error)
           ElMessage.error(dialogType.value === 'add' ? '添加失败' : '更新失败')
         } finally {
           submitLoading.value = false

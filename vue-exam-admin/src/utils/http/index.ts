@@ -37,7 +37,7 @@ axiosInstance.interceptors.request.use(
     // 如果 token 存在，则设置请求头
     if (accessToken && request.headers) {
       request.headers.set('Content-Type', 'application/json')
-      request.headers.set('Authorization', accessToken)
+      request.headers.set('Authorization', `Bearer ${accessToken}`)
     }
 
     return request // 返回修改后的配置

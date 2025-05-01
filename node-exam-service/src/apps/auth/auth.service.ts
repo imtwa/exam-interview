@@ -14,6 +14,7 @@ import { RedisService } from '../redis/redis.service';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { LoginDto } from './dto/login.dto';
+import { AdminLoginDto } from './dto/admin-login.dto';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
@@ -86,6 +87,48 @@ export class AuthService {
     return {
       email,
       message: '验证码已发送，请查收邮件',
+    };
+  }
+
+  // 管理员登录
+  async adminLogin(adminLoginDto: AdminLoginDto) {
+    const { username, password } = adminLoginDto;
+
+    // 查找管理员用户
+    const admin = await this.prisma.adminUser.findUnique({
+      where: { username },
+    });
+
+    if (!admin) {
+      this.logger.warn(`管理员登录失败，用户不存在: ${username}`);
+      throw new UnauthorizedException('用户名或密码不正确');
+    }
+
+    // 验证密码
+    const isPasswordValid = password === admin.password;
+    if (!isPasswordValid) {
+      this.logger.warn(`管理员登录失败，密码错误: ${username}`);
+      throw new UnauthorizedException('用户名或密码不正确');
+    }
+
+    this.logger.log(`管理员登录成功: ${username}, ID: ${admin.id}`);
+
+    // 生成管理员JWT
+    const payload = { 
+      username: admin.username, 
+      sub: admin.id,
+      role: admin.role,
+      isAdmin: true // 添加管理员标识
+    };
+    
+    return {
+      user: {
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        role: admin.role,
+      },
+      access_token: this.jwtService.sign(payload),
     };
   }
 
@@ -334,5 +377,67 @@ export class AuthService {
       message: '获取个人信息状态成功',
       data: profileStatus,
     };
+  }
+
+  // 创建管理员账户方法
+  async createAdminUser(username: string, password: string, email?: string) {
+    // 检查用户是否已存在
+    const existingUser = await this.prisma.adminUser.findFirst({
+      where: { username },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('管理员账户已存在');
+    }
+
+    // 加密密码
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 创建管理员用户
+    const adminUser = await this.prisma.adminUser.create({
+      data: {
+        username,
+        password: hashedPassword,
+        email,
+        role: 'ADMIN',
+      },
+    });
+
+    this.logger.log(`创建管理员账户: ${username}, ID: ${adminUser.id}`);
+
+    return {
+      id: adminUser.id,
+      username: adminUser.username,
+      email: adminUser.email,
+      role: adminUser.role,
+    };
+  }
+
+  // 获取管理员信息
+  async getAdminById(adminId: number) {
+    const admin = await this.prisma.adminUser.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      throw new BadRequestException('管理员不存在');
+    }
+
+    // 不返回密码
+    const { password, ...result } = admin;
+    return result;
+  }
+  
+  // 校验管理员是否有权限
+  async validateAdmin(userId: number) {
+    const admin = await this.prisma.adminUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!admin) {
+      throw new UnauthorizedException('无权限访问');
+    }
+
+    return true;
   }
 }

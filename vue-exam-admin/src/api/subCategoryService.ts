@@ -41,7 +41,7 @@ export class SubCategoryService extends ApiService {
    * @returns Promise 对象
    */
   static async updateSubCategory(id: number, data: any): Promise<any> {
-    return this.put(`/${id}`, data)
+    return this.post(`/${id}`, data)
   }
 
   /**
@@ -50,7 +50,7 @@ export class SubCategoryService extends ApiService {
    * @returns Promise 对象
    */
   static async deleteSubCategory(id: number): Promise<any> {
-    return this.delete(`/${id}`)
+    return this.post(`/delete/${id}`)
   }
 
   /**

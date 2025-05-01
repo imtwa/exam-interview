@@ -30,6 +30,7 @@ export interface Category {
   updatedAt?: string
   deletedAt?: string | null
   subCategories?: SubCategory[]
+  children?: SubCategory[] // 用于前端展示
 }
 
 /**
