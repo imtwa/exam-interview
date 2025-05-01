@@ -1,209 +1,122 @@
-import { RoutesAlias } from './routesAlias'
-import { MenuListType } from '@/types/menu'
+/**
+ * 静态路由配置
+ * 这个文件包含了所有菜单和路由的定义，以便直接引入组件而不使用动态路由
+ */
+import type { MenuListType } from '@/types/menu'
+import Home from '@views/index/index.vue'
 
 /**
- * 菜单列表、异步路由
- *
- * 支持两种模式:
- * 1. 前端静态配置 - 直接使用本文件中定义的路由配置
- * 2. 后端动态配置 - 后端返回菜单数据，前端解析生成路由
- *
- * 菜单标题（title）:
- * 可以是 i18n 的 key，也可以是字符串，比如：'用户列表'
+ * 导出静态路由配置
+ * 这些路由将直接注册到路由器中
  */
 export const asyncRoutes: MenuListType[] = [
   {
-    id: 1,
-    name: 'Dashboard',
     path: '/dashboard',
-    component: RoutesAlias.Home,
-    meta: {
-      title: '首页',
-      icon: '&#xe721;',
-      keepAlive: false
-    },
+    name: 'Dashboard',
+    component: Home,
+    meta: { title: '首页', icon: '&#xe63e;' },
     children: [
       {
-        id: 101,
-        path: 'console',
+        path: '/dashboard/console',
         name: 'Console',
-        component: RoutesAlias.Dashboard,
-        meta: {
-          title: '控制台',
-          keepAlive: true
-        }
+        component: () => import('@/views/dashboard/console/index.vue'),
+        meta: { title: '控制台', keepAlive: false, icon: '&#xe6a1;' }
       }
     ]
   },
   {
-    id: 2,
-    name: 'ExamSystem',
     path: '/exam-system',
-    component: RoutesAlias.Home,
-    meta: {
-      title: '考试系统',
-      icon: '&#xe723;',
-      keepAlive: false
-    },
+    name: 'ExamSystem',
+    component: Home,
+    meta: { title: '考试系统', icon: '&#xe699;', isHideTab: false },
     children: [
       {
-        id: 201,
-        path: 'category',
+        path: '/exam-system/category',
         name: 'CategoryList',
-        component: '/category/CategoryList',
-        meta: {
-          title: '分类管理',
-          keepAlive: true
-        }
+        component: () => import('@/views/category/CategoryList.vue'),
+        meta: { title: '分类管理', keepAlive: true, icon: '&#xe664;' }
       },
       {
-        id: 202,
-        path: 'subcategory',
-        name: 'SubCategoryList',
-        component: '/category/SubCategoryList',
-        meta: {
-          title: '子分类管理',
-          keepAlive: true
-        }
-      },
-      {
-        id: 203,
-        path: 'question',
+        path: '/exam-system/question',
         name: 'QuestionList',
-        component: '/question/QuestionList',
-        meta: {
-          title: '题目管理',
-          keepAlive: true
-        }
+        component: () => import('@/views/question/QuestionList.vue'),
+        meta: { title: '题目管理', keepAlive: true, icon: '&#xe67a;' }
       },
       {
-        id: 204,
-        path: 'exam-paper',
+        path: '/exam-system/exam-paper',
         name: 'ExamPaperList',
-        component: '/exam-paper/ExamPaperList',
-        meta: {
-          title: '试卷管理',
-          keepAlive: true
-        }
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: 'User',
-    path: '/user',
-    component: RoutesAlias.Home,
-    meta: {
-      title: '用户管理',
-      icon: '&#xe6b8;',
-      keepAlive: false
-    },
-    children: [
-      {
-        id: 301,
-        path: 'front-users',
-        name: 'FrontUserList',
-        component: '/user/FrontUserList',
-        meta: {
-          title: '前台用户',
-          keepAlive: true
-        }
+        component: () => import('@/views/exam-paper/ExamPaperList.vue'),
+        meta: { title: '试卷管理', keepAlive: true, icon: '&#xe636;' }
       },
       {
-        id: 302,
-        path: 'job-seekers',
-        name: 'JobSeekerList',
-        component: '/user/JobSeekerList',
-        meta: {
-          title: '求职者管理',
-          keepAlive: true
-        }
+        path: '/exam-system/exam-paper/questions/:id',
+        name: 'ExamPaperQuestions',
+        component: () => import('@/views/exam-paper/ExamPaperQuestions.vue'),
+        meta: { title: '试卷题目管理', keepAlive: false, hideInMenu: true, icon: '&#xe672;' }
       }
     ]
   },
   {
-    id: 4,
-    name: 'RecruitmentSystem',
     path: '/recruitment',
-    component: RoutesAlias.Home,
-    meta: {
-      title: '招聘系统',
-      icon: '&#xe6b7;',
-      keepAlive: false
-    },
+    name: 'RecruitmentSystem',
+    component: Home,
+    meta: { title: '招聘系统', icon: '&#xe66a;', isHideTab: false },
     children: [
       {
-        id: 401,
-        path: 'companies',
+        path: '/recruitment/companies',
         name: 'CompanyList',
-        component: '/recruitment/CompanyList',
-        meta: {
-          title: '公司管理',
-          keepAlive: true
-        }
+        component: () => import('@/views/recruitment/CompanyList.vue'),
+        meta: { title: '公司管理', keepAlive: true, icon: '&#xe653;' }
       },
       {
-        id: 402,
-        path: 'jobs',
+        path: '/recruitment/jobs',
         name: 'JobList',
-        component: '/recruitment/JobList',
-        meta: {
-          title: '职位管理',
-          keepAlive: true
-        }
+        component: () => import('@/views/recruitment/JobList.vue'),
+        meta: { title: '职位管理', keepAlive: true, icon: '&#xe654;' }
       },
       {
-        id: 403,
-        path: 'interviewers',
-        name: 'InterviewerList',
-        component: '/recruitment/InterviewerList',
-        meta: {
-          title: '面试官管理',
-          keepAlive: true
-        }
-      },
-      {
-        id: 404,
-        path: 'applications',
+        path: '/recruitment/applications',
         name: 'ApplicationList',
-        component: '/recruitment/ApplicationList',
-        meta: {
-          title: '应聘管理',
-          keepAlive: true
-        }
+        component: () => import('@/views/recruitment/ApplicationList.vue'),
+        meta: { title: '求职申请', keepAlive: true, icon: '&#xe668;' }
       },
       {
-        id: 405,
-        path: 'interviews',
+        path: '/recruitment/interviews',
         name: 'InterviewList',
-        component: '/recruitment/InterviewList',
-        meta: {
-          title: '面试管理',
-          keepAlive: true
-        }
+        component: () => import('@/views/recruitment/InterviewList.vue'),
+        meta: { title: '面试管理', keepAlive: true, icon: '&#xe640;' }
+      },
+      {
+        path: '/recruitment/interviewers',
+        name: 'InterviewerList',
+        component: () => import('@/views/recruitment/InterviewerList.vue'),
+        meta: { title: '面试官管理', keepAlive: true, icon: '&#xe638;' }
+      },
+      {
+        path: '/recruitment/industry',
+        name: 'IndustryList',
+        component: () => import('@/views/industry/IndustryList.vue'),
+        meta: { title: '行业分类', keepAlive: true, icon: '&#xe64e;' }
       }
     ]
   },
   {
-    id: 5,
-    name: 'Industry',
-    path: '/industry',
-    component: RoutesAlias.Home,
-    meta: {
-      title: '行业管理',
-      icon: '&#xe6b5;',
-      keepAlive: false
-    },
+    path: '/user',
+    name: 'User',
+    component: Home,
+    meta: { title: '用户管理', icon: '&#xe62c;', isHideTab: false },
     children: [
       {
-        id: 501,
-        path: 'list',
-        name: 'IndustryList',
-        component: '/industry/IndustryList',
-        meta: {
-          title: '行业分类',
-          keepAlive: true
-        }
+        path: '/user/front-users',
+        name: 'FrontUserList',
+        component: () => import('@/views/user/FrontUserList.vue'),
+        meta: { title: '前台用户', keepAlive: true, icon: '&#xe65f;' }
+      },
+      {
+        path: '/user/job-seekers',
+        name: 'JobSeekerList',
+        component: () => import('@/views/user/JobSeekerList.vue'),
+        meta: { title: '求职者管理', keepAlive: true, icon: '&#xe671;' }
       }
     ]
   }

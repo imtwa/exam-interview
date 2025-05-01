@@ -263,7 +263,7 @@
   import { ref, computed, onMounted } from 'vue'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
   import { JobApplicationService } from '@/api/jobApplicationService'
-import { InterviewService } from '@/api/interviewService'
+  import { InterviewService } from '@/api/interviewService'
   import { JobApplication, Interview } from '@/api/model/userModel'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 

@@ -272,8 +272,8 @@
   import { ElMessage, ElMessageBox, FormInstance } from 'element-plus'
   import { Search, Plus, Delete } from '@element-plus/icons-vue'
   import { useRouter } from 'vue-router'
-  import { UserService } from '@/api/user'
-  import { JobSeekerService } from '@/api/user'
+  import { UserService } from '@/api/userService'
+  import { JobSeekerService } from '@/api/jobSeekerService'
   import {
     JobSeeker,
     FrontUser,

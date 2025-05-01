@@ -197,7 +197,7 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import { Search } from '@element-plus/icons-vue'
   import { CategoryService } from '@/api/categoryService'
-import { SubCategoryService } from '@/api/subCategoryService'
+  import { SubCategoryService } from '@/api/subCategoryService'
   import { CategoryModel, SubCategoryModel } from '@/api/model/examModels'
 
   // 数据

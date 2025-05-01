@@ -269,8 +269,8 @@
   import { ref, onMounted, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
-  import { ExamPaperService } from '@/api/examPaper'
-  import { QuestionService } from '@/api/questionApi'
+  import { ExamPaperService } from '@/api/examPaperService'
+  import { QuestionService } from '@/api/questionService'
   import { QuestionModel, ExamQuestionModel } from '@/api/model/examModels'
 
   const route = useRoute()

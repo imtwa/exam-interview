@@ -126,7 +126,7 @@
   import { ref, onMounted } from 'vue'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
-  import { UserService } from '@/api/user'
+  import { UserService } from '@/api/userService'
   import { FrontUser } from '@/api/model/userModel'
   import { Key } from '@element-plus/icons-vue'
 

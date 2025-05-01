@@ -249,7 +249,7 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import { Search } from '@element-plus/icons-vue'
   import { InterviewerService } from '@/api/interviewerService'
-import { CompanyService } from '@/api/companyService'
+  import { CompanyService } from '@/api/companyService'
   import type { Interviewer, Company } from '@/api/model/userModel'
 
   // 表格数据

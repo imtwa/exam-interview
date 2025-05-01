@@ -119,7 +119,7 @@
   import { ref, onMounted } from 'vue'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
   import { CategoryService } from '@/api/categoryService'
-import { SubCategoryService } from '@/api/subCategoryService'
+  import { SubCategoryService } from '@/api/subCategoryService'
   import { CategoryModel, SubCategoryModel } from '@/api/model/examModels'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 

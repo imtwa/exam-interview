@@ -205,7 +205,7 @@
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
   import { InterviewerService } from '@/api/interviewerService'
   import { CompanyService } from '@/api/companyService'
-import { JobPostingService } from '@/api/jobPostingService'
+  import { JobPostingService } from '@/api/jobPostingService'
   import { Interviewer, Company, JobPosting } from '@/api/model/userModel'
 
   const route = useRoute()

@@ -278,8 +278,9 @@
   import { ref, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
-  import { ExamPaperService } from '@/api/examPaper'
-  import { CategoryService, SubCategoryService } from '@/api/categoryApi'
+  import { ExamPaperService } from '@/api/examPaperService'
+  import { CategoryService } from '@/api/categoryService'
+  import { SubCategoryService } from '@/api/subCategoryService'
   import { CategoryModel, SubCategoryModel, ExamPaperModel } from '@/api/model/examModels'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 

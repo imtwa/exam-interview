@@ -3,7 +3,8 @@ import {
   createRouter,
   createWebHashHistory,
   RouteLocationNormalized,
-  RouteRecordRaw
+  RouteRecordRaw,
+  type RouteComponent
 } from 'vue-router'
 import { ref } from 'vue'
 import Home from '@views/index/index.vue'
@@ -18,8 +19,8 @@ import 'nprogress/nprogress.css'
 import { useTheme } from '@/composables/useTheme'
 import { RoutesAlias } from './modules/routesAlias'
 import { setWorktab } from '@/utils/worktab'
-import { registerMenuRoutes } from './modules/dynamicRoutes'
 import { formatMenuTitle } from '@/utils/menu'
+import type { MenuListType } from '@/types/menu'
 
 /** 顶部进度条配置 */
 NProgress.configure({
@@ -89,19 +90,69 @@ const staticRoutes: AppRouteRecordRaw[] = [
   }
 ]
 
+// 将asyncRoutes中的路由配置添加到路由
+const asyncRoutesConfig: AppRouteRecordRaw[] = []
+
+// 将字符串组件转换为实际组件
+const getComponent = (component: any): RouteComponent => {
+  // 如果已经是函数或组件对象，直接返回
+  if (typeof component === 'function' || typeof component === 'object') {
+    return component
+  }
+  // 根据路径动态导入组件
+  return Home
+}
+
+// 转换菜单到路由配置
+asyncRoutes.forEach((route: MenuListType) => {
+  // 跳过已存在于静态路由中的路由
+  if (staticRoutes.some((sr) => sr.path === route.path)) {
+    return
+  }
+
+  // 创建一级路由
+  const mainRoute: AppRouteRecordRaw = {
+    path: route.path,
+    component: getComponent(route.component),
+    name: route.name,
+    meta: route.meta,
+    children: []
+  }
+
+  // 添加子路由
+  if (route.children && route.children.length > 0) {
+    route.children.forEach((child: MenuListType) => {
+      // 获取子路由路径的最后一部分作为相对路径
+      const childPath = child.path.split('/').pop() || ''
+
+      mainRoute.children?.push({
+        path: childPath,
+        component: getComponent(child.component),
+        name: child.name,
+        meta: child.meta
+      })
+    })
+  }
+
+  asyncRoutesConfig.push(mainRoute)
+})
+
+// 合并静态路由和动态路由
+const allRoutes = [...staticRoutes, ...asyncRoutesConfig]
+
 /** 创建路由实例 */
 export const router = createRouter({
   history: createWebHashHistory(),
-  routes: staticRoutes,
+  routes: allRoutes,
   scrollBehavior: () => ({ left: 0, top: 0 })
 })
 
-// 标记是否已经注册动态路由
-const isRouteRegistered = ref(false)
+// 标记菜单是否已设置
+const isMenuSet = ref(false)
 
 /**
  * 路由全局前置守卫
- * 处理进度条、获取菜单列表、动态路由注册、404 检查、工作标签页及页面标题设置
+ * 处理进度条、获取菜单列表、404 检查、工作标签页及页面标题设置
  */
 router.beforeEach(async (to, from, next) => {
   const settingStore = useSettingStore()
@@ -117,24 +168,16 @@ router.beforeEach(async (to, from, next) => {
     return next('/login')
   }
 
-  // 如果用户已登录且动态路由未注册，则注册动态路由
-  if (!isRouteRegistered.value && userStore.isLogin) {
+  // 如果用户已登录且菜单未设置，则设置菜单
+  if (!isMenuSet.value && userStore.isLogin) {
     try {
-      await getMenuData()
-      if (to.name === 'Exception404') {
-        return next({ path: to.path, query: to.query, replace: true })
-      } else {
-        return next({ ...to, replace: true })
-      }
+      // 设置菜单列表
+      useMenuStore().setMenuList(asyncRoutes as any)
+      isMenuSet.value = true
     } catch (error) {
-      console.error('Failed to register routes:', error)
+      console.error('Failed to set menu:', error)
       return next('/exception/500')
     }
-  }
-
-  // 检查路由是否存在，若不存在则跳转至404页面
-  if (to.matched.length === 0) {
-    return next('/exception/404')
   }
 
   // 设置工作标签页和页面标题
@@ -143,26 +186,6 @@ router.beforeEach(async (to, from, next) => {
 
   next()
 })
-
-/**
- * 使用静态菜单数据注册动态路由
- */
-async function getMenuData(): Promise<void> {
-  try {
-    // 使用静态菜单数据
-    const menuList = asyncRoutes
-
-    // 设置菜单列表
-    useMenuStore().setMenuList(menuList as [])
-    // 注册异步路由
-    registerMenuRoutes(menuList)
-    // 标记路由已注册
-    isRouteRegistered.value = true
-  } catch (error) {
-    console.error('注册路由失败:', error)
-    throw error
-  }
-}
 
 /* ============================
    路由守卫辅助函数
