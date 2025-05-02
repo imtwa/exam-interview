@@ -19,7 +19,9 @@ export class CreateInterviewerDto {
   @ApiProperty({
     description: '所属公司ID',
     example: 1,
+    required: false,
   })
   @IsInt({ message: '公司ID必须是整数' })
-  companyId: number;
+  @IsOptional()
+  companyId?: number;
 }

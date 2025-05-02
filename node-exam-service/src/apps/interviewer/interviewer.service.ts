@@ -369,36 +369,33 @@ export class InterviewerService {
       `更新用户${userId}的面试官资料，使用已有公司: ${profileDto.useExistingCompany}`,
     );
 
-    let companyId: number;
+    let companyId: number | null = null;
 
     // 处理公司信息
     if (profileDto.useExistingCompany) {
       // 使用现有公司
-      if (!profileDto.existingCompanyId) {
-        throw new BadRequestException('使用现有公司时，必须提供公司ID');
+      if (profileDto.existingCompanyId) {
+        // 验证公司是否存在
+        const company = await this.prisma.company.findFirst({
+          where: {
+            id: profileDto.existingCompanyId,
+            deletedAt: null,
+          },
+        });
+
+        if (!company) {
+          throw new NotFoundException(
+            `公司不存在 ID: ${profileDto.existingCompanyId}`,
+          );
+        }
+
+        companyId = profileDto.existingCompanyId;
+      } else {
+        // 用户选择使用现有公司但没有提供ID
+        this.logger.log('用户选择使用现有公司但未提供公司ID');
       }
-
-      // 验证公司是否存在
-      const company = await this.prisma.company.findFirst({
-        where: {
-          id: profileDto.existingCompanyId,
-          deletedAt: null,
-        },
-      });
-
-      if (!company) {
-        throw new NotFoundException(
-          `公司不存在 ID: ${profileDto.existingCompanyId}`,
-        );
-      }
-
-      companyId = profileDto.existingCompanyId;
-    } else {
+    } else if (profileDto.company) {
       // 创建新公司
-      if (!profileDto.company) {
-        throw new BadRequestException('创建新公司时，必须提供公司信息');
-      }
-
       try {
         // 创建新公司
         const newCompany = await this.prisma.company.create({
@@ -414,6 +411,9 @@ export class InterviewerService {
         this.logger.error(`创建新公司失败: ${error.message}`, error);
         throw new BadRequestException('创建公司失败: ' + error.message);
       }
+    } else {
+      // 用户既不使用现有公司也不创建新公司
+      this.logger.log(`用户${userId}选择不关联任何公司`);
     }
 
     try {
@@ -425,17 +425,32 @@ export class InterviewerService {
         },
       });
 
+      // 面试官的基本数据（必须字段）
+      const baseData = {
+        position: profileDto.interviewer.position,
+      };
+
+      // 可选的性别字段
+      if (profileDto.interviewer.gender) {
+        baseData['gender'] = profileDto.interviewer.gender;
+      }
+
+      // 创建或更新面试官
       let interviewer;
       if (existingInterviewer) {
-        // 更新现有面试官信息
+        // 更新现有面试官信息 - 构建更新数据
+        const updateData = { ...baseData };
+        
+        // 只在有companyId时才添加到更新数据中
+        if (companyId !== null) {
+          updateData['companyId'] = companyId;
+        }
+        
         interviewer = await this.prisma.interviewer.update({
           where: {
             id: existingInterviewer.id,
           },
-          data: {
-            ...profileDto.interviewer,
-            companyId,
-          },
+          data: updateData,
           include: {
             company: {
               select: {
@@ -468,13 +483,25 @@ export class InterviewerService {
           },
         });
 
-        // 创建面试官记录
+        // 创建面试官记录 - 构建创建数据
+        const createData: any = {
+          ...baseData,
+        };
+        
+        // 使用正确的方式设置关联
+        if (companyId !== null) {
+          createData.company = {
+            connect: { id: companyId }
+          };
+        }
+        
+        // 设置用户关联
+        createData.user = {
+          connect: { id: userId }
+        };
+        
         interviewer = await this.prisma.interviewer.create({
-          data: {
-            ...profileDto.interviewer,
-            userId,
-            companyId,
-          },
+          data: createData,
           include: {
             company: {
               select: {

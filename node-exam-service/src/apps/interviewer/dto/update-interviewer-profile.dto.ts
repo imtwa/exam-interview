@@ -39,6 +39,7 @@ export class UpdateInterviewerProfileDto {
   })
   @ValidateIf((o) => o.useExistingCompany === true)
   @IsInt({ message: '公司ID必须是整数' })
+  @IsOptional()
   existingCompanyId?: number;
 
   @ApiProperty({
