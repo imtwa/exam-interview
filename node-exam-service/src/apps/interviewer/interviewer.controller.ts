@@ -337,28 +337,32 @@ export class InterviewerController {
     @Req() req,
   ) {
     const userId = req.user.userId;
-    
+
     // 打印输入参数用于调试
     this.logger.log(
       `用户${userId}更新面试官资料，profileDto: ${JSON.stringify(profileDto)}`,
     );
-    
+
     // 手动处理公司ID验证问题
     try {
       // 如果指定了使用现有公司但没有提供ID
       if (profileDto.useExistingCompany && !profileDto.existingCompanyId) {
-        this.logger.log('用户选择了使用现有公司但未提供公司ID，将其设置为不使用现有公司');
+        this.logger.log(
+          '用户选择了使用现有公司但未提供公司ID，将其设置为不使用现有公司',
+        );
         profileDto.useExistingCompany = false;
       }
-      
+
       // 如果面试官信息中包含了可能为null的companyId，移除它
-      if (profileDto.interviewer && 
-          (profileDto.interviewer.companyId === null || 
-           profileDto.interviewer.companyId === undefined)) {
+      if (
+        profileDto.interviewer &&
+        (profileDto.interviewer.companyId === null ||
+          profileDto.interviewer.companyId === undefined)
+      ) {
         this.logger.log('检测到无效的companyId，从请求中移除');
         delete profileDto.interviewer.companyId;
       }
-      
+
       // 调用服务方法处理更新
       const result = await this.interviewerService.updateInterviewerProfile(
         userId,
@@ -368,16 +372,16 @@ export class InterviewerController {
     } catch (error) {
       // 详细记录错误信息
       this.logger.error(`更新面试官资料失败: ${error.message}`, error.stack);
-      
+
       // 自定义错误响应
       if (error.message.includes('公司ID')) {
         return {
           code: 400,
           data: null,
-          message: '更新失败：公司ID不能为空，请选择一个公司或创建新公司'
+          message: '更新失败：公司ID不能为空，请选择一个公司或创建新公司',
         };
       }
-      
+
       // 抛出其他错误
       throw error;
     }

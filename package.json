@@ -1,0 +1,24 @@
+{
+  "name": "exam-interview",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lintfix:nest": "cd node-exam-service && npm run lint",
+    "lintfix:admin": "cd vue-exam-admin && npm run fix",
+    "lintfix:front": "cd vue-exam-front && npm run lintfix",
+    "lintfix": "npm run lintfix:nest && npm run lintfix:admin && npm run lintfix:front"
+  },
+  "dependencies": {
+  
+  },
+  "devDependencies": {
+ 
+  },
+  "engines": {
+    "node": "18.x || 20.x"
+  }
+}

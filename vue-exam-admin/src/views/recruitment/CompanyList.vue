@@ -451,10 +451,10 @@
   const handleEdit = async (row: Company) => {
     dialogType.value = 'edit'
     resetForm()
-    
+
     // 先加载行业数据
     await fetchIndustries()
-    
+
     formData.id = row.id
     formData.name = row.name
     formData.description = row.description || ''

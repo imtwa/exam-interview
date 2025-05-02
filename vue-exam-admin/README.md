@@ -1,8 +1,6 @@
 简体中文 | [English](./README.en.md)
 
-## 关于 Art Design Pro
-
-作为一名开发者，我在多个项目中需要搭建后台管理系统，但发现传统系统在用户体验和视觉设计上不能完全满足需求。因此，我创建了 Art Design Pro，一款专注于用户体验和快速开发的开源后台管理解决方案。基于 ElementPlus 设计规范，进行了视觉上的精心优化，提供更美观、更实用的前端界面，帮助你轻松构建高质量的后台系统。
+## 云面官admin后台管理系统
 
 ## 演示图
 
@@ -73,16 +71,81 @@ pnpm dev
 pnpm build
 ```
 
-## 技术支持
-
-QQ群：<a href="https://qm.qq.com/cgi-bin/qm/qr?k=Gg6yzZLFaNgmRhK0T5Qcjf7-XcAFWWXm&jump_from=webapi&authKey=YpRKVJQyFKYbGTiKw0GJ/YQXnNF+GdXNZC5beQQqnGZTvuLlXoMO7nw5fNXvmVhA">821834289</a>（点击链接加入群聊）
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Daymychen/art-design-pro&type=Date)](https://www.star-history.com/#Daymychen/art-design-pro&Date)
-
-## 捐赠
-
-如果我的项目对你有所帮助，欢迎捐赠支持！你的支持将用于购买 ChatGPT、Cursor 等工具，以提升开发效率，让项目变得更好。感谢你的鼓励与支持！
-
 ![捐赠二维码](https://www.qiniu.lingchen.kim/%E7%BB%84%202%402x%202.png)
+
+# 考试系统后台管理项目
+
+## 考试系统 API 结构
+
+### 试卷管理 API
+
+试卷管理相关的 API 主要涉及以下几个端点：
+
+#### 试卷 API (/exam)
+
+- `GET /exam/list`: 获取试卷列表，支持分页、按分类和子分类筛选
+- `GET /exam/{id}`: 获取试卷详情，包括试卷基本信息和题目
+- `POST /exam/upload`: 上传试卷文件（Excel 格式），系统自动解析为题目
+- `GET /exam/{id}/questions`: 获取试卷的题目列表
+- `GET /exam/favorite/{id}`: 检查用户是否收藏了某试卷
+- `POST /exam/favorite/{id}`: 收藏或取消收藏试卷
+- `GET /exam/favorites`: 获取用户的收藏列表
+- `POST /exam/private`: 创建私有试卷
+- `GET /exam/private`: 获取用户的私有试卷列表
+
+#### 分类 API (/category)
+
+- `GET /category/list`: 获取分类列表
+- `GET /category/{id}`: 获取分类详情
+- `POST /category`: 创建分类
+- `POST /category/{id}`: 更新分类
+- `POST /category/delete/{id}`: 删除分类
+
+#### 子分类 API (/subcategory)
+
+- `POST /subcategory`: 创建子分类
+- `POST /subcategory/{id}`: 更新子分类
+- `POST /subcategory/delete/{id}`: 删除子分类
+- `GET /category/{categoryId}/subcategories`: 获取指定分类下的子分类列表
+
+### 试卷数据结构
+
+试卷数据结构主要包含以下字段：
+
+```typescript
+interface ExamPaper {
+  id?: number;                  // 试卷ID
+  name: string;                 // 试卷名称
+  description?: string;         // 试卷描述
+  categoryId: number;           // 所属分类ID
+  subCategoryId?: number;       // 所属子分类ID
+  userId: number;               // 创建用户ID
+  isPublic: boolean;            // 是否公开
+  favoriteCount?: number;       // 收藏数
+  questionsCount?: number;      // 题目数量
+  createdAt?: string;           // 创建时间
+  updatedAt?: string;           // 更新时间
+  category?: Category;          // 所属分类
+  subCategory?: SubCategory;    // 所属子分类
+}
+```
+
+### 实现细节
+
+1. **试卷列表展示**：
+   - 支持按分类、子分类筛选
+   - 显示试卷基本信息（名称、分类、收藏数等）
+   - 显示每个试卷的题目数量
+
+2. **试卷详情**：
+   - 显示试卷基本信息
+   - 显示试卷中的题目列表
+   - 支持查看题目详情、编辑题目顺序和分值
+
+3. **试卷上传**：
+   - 支持通过 Excel 文件上传试卷
+   - 系统自动解析 Excel 文件中的题目
+
+4. **试卷分类管理**：
+   - 支持创建、编辑、删除分类和子分类
+   - 支持按分类展示试卷

@@ -440,12 +440,12 @@ export class InterviewerService {
       if (existingInterviewer) {
         // 更新现有面试官信息 - 构建更新数据
         const updateData = { ...baseData };
-        
+
         // 只在有companyId时才添加到更新数据中
         if (companyId !== null) {
           updateData['companyId'] = companyId;
         }
-        
+
         interviewer = await this.prisma.interviewer.update({
           where: {
             id: existingInterviewer.id,
@@ -487,19 +487,19 @@ export class InterviewerService {
         const createData: any = {
           ...baseData,
         };
-        
+
         // 使用正确的方式设置关联
         if (companyId !== null) {
           createData.company = {
-            connect: { id: companyId }
+            connect: { id: companyId },
           };
         }
-        
+
         // 设置用户关联
         createData.user = {
-          connect: { id: userId }
+          connect: { id: userId },
         };
-        
+
         interviewer = await this.prisma.interviewer.create({
           data: createData,
           include: {

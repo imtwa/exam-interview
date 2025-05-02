@@ -63,6 +63,7 @@ declare module 'vue' {
     CommentItem: typeof import('./../components/custom/comment-widget/widget/CommentItem.vue')['default']
     CommentWidget: typeof import('./../components/custom/comment-widget/index.vue')['default']
     CommonCrudTable: typeof import('./../components/CommonCrudTable.vue')['default']
+    ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']

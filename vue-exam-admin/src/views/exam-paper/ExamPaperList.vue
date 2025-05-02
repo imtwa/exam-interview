@@ -62,6 +62,17 @@
         <el-table-column prop="name" label="试卷名称" />
         <el-table-column prop="category.name" label="分类" />
         <el-table-column prop="subCategory.name" label="子分类" />
+        <el-table-column prop="questionsCount" label="题目数量" width="100" />
+        <el-table-column prop="user.username" label="创建者" width="120">
+          <template #default="scope">
+            <span>
+              {{ scope.row.user?.username || '-' }}
+              <el-tag v-if="scope.row.user?.role" size="small" type="info">
+                {{ getUserRoleText(scope.row.user.role) }}
+              </el-tag>
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column prop="favoriteCount" label="收藏数" width="100" />
         <el-table-column prop="isPublic" label="状态" width="100">
           <template #default="scope">
@@ -75,8 +86,8 @@
         </el-table-column>
 
         <template #extraActions="{ row }">
-          <el-button type="success" size="small" @click.stop="manageQuestions(row)" link>
-            管理题目
+          <el-button type="primary" size="small" @click.stop="viewExamQuestions(row)" link>
+            查看题目
           </el-button>
         </template>
       </CommonCrudTable>
@@ -148,8 +159,8 @@
     </el-dialog>
 
     <!-- View Dialog -->
-    <el-dialog v-model="viewDialogVisible" title="试卷详情" width="60%">
-      <el-descriptions :column="1" border>
+    <el-dialog v-model="viewDialogVisible" title="试卷详情" width="800px">
+      <el-descriptions border :column="1">
         <el-descriptions-item label="ID">{{ currentExamPaper?.id }}</el-descriptions-item>
         <el-descriptions-item label="试卷名称">{{ currentExamPaper?.name }}</el-descriptions-item>
         <el-descriptions-item label="分类">{{
@@ -160,6 +171,9 @@
         }}</el-descriptions-item>
         <el-descriptions-item label="试卷描述">{{
           currentExamPaper?.description
+        }}</el-descriptions-item>
+        <el-descriptions-item label="题目数量">{{
+          currentExamPaper?.questionsCount || 0
         }}</el-descriptions-item>
         <el-descriptions-item label="发布状态">
           <el-tag :type="currentExamPaper?.isPublic ? 'success' : 'info'">
@@ -177,9 +191,13 @@
         }}</el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="viewDialogVisible = false">关闭</el-button>
-        </span>
+          <el-button type="primary" @click="viewExamQuestions(currentExamPaper)">
+            查看试卷题目
+          </el-button>
+          <el-button v-if="returnPath" type="info" @click="handleReturn"> 返回题目列表 </el-button>
+        </div>
       </template>
     </el-dialog>
 
@@ -278,16 +296,14 @@
   import { ref, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
-  import { ExamPaperService } from '@/api/examPaperService'
-  import { CategoryService } from '@/api/categoryService'
-  import { SubCategoryService } from '@/api/subCategoryService'
-  import { CategoryModel, SubCategoryModel, ExamPaperModel } from '@/api/model/examModels'
+  import { ExamPaperService, CategoryService, SubCategoryService } from '@/api/examPaperService'
+  import { Category, SubCategory, ExamPaper, ExamPaperListParams } from '@/api/model/examModels'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 
   const router = useRouter()
 
   // Data
-  const examPaperList = ref<ExamPaperModel[]>([])
+  const examPaperList = ref<ExamPaper[]>([])
   const total = ref(0)
   const loading = ref(false)
   const currentPage = ref(1)
@@ -295,15 +311,16 @@
   const searchKeyword = ref('')
 
   // Category Filters
-  const selectedCategoryId = ref<number | null>(null)
-  const selectedSubCategoryId = ref<number | null>(null)
+  const selectedCategoryId = ref<number | undefined>(undefined)
+  const selectedSubCategoryId = ref<number | undefined>(undefined)
   const categoryOptions = ref<Array<{ label: string; value: number }>>([])
   const subCategoryOptions = ref<Array<{ label: string; value: number }>>([])
+  const categoriesCache = ref<any[]>([]) // 缓存分类数据
 
   // Form
   const dialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
-  const form = ref<ExamPaperModel>({
+  const form = ref<ExamPaper>({
     name: '',
     description: '',
     categoryId: 0,
@@ -317,7 +334,7 @@
 
   // View Dialog
   const viewDialogVisible = ref(false)
-  const currentExamPaper = ref<ExamPaperModel | null>(null)
+  const currentExamPaper = ref<ExamPaper | null>(null)
 
   // Generate Dialog
   const generateDialogVisible = ref(false)
@@ -352,60 +369,90 @@
     questionCount: [{ required: true, message: '请设置题目数量', trigger: 'change' }]
   })
 
+  // 添加返回路径变量和处理方法
+  const returnPath = ref<string | null>(null)
+
   // Fetch Data
   onMounted(async () => {
     await fetchCategories()
-    fetchExamPaperList()
+
+    // 检查URL参数，如果有view参数，则查看试卷详情
+    const viewExamId = router.currentRoute.value.query.view
+    if (viewExamId) {
+      const examId = Number(viewExamId)
+      const examName = router.currentRoute.value.query.name as string
+      // 保存返回路径
+      returnPath.value = (router.currentRoute.value.query.returnPath as string) || null
+      await fetchExamPaperDetail(examId, examName)
+    } else {
+      fetchExamPaperList()
+    }
   })
 
   const fetchCategories = async () => {
     try {
-      const res = await CategoryService.getAllCategories()
+      const res = await CategoryService.getCategoryList({ page: 1, size: 999 })
+      console.log('分类数据返回:', res)
       if (res.code === 200 && res.data) {
-        categoryOptions.value = res.data.map((category: CategoryModel) => ({
+        // 根据API实际返回的数据结构调整
+        const categories = Array.isArray(res.data) ? res.data : res.data.items || []
+        categoriesCache.value = categories // 存储完整分类数据，包括子分类
+        categoryOptions.value = categories.map((category) => ({
           label: category.name,
-          value: category.id!
+          value: category.id
         }))
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('获取分类列表失败:', error)
       ElMessage.error('获取分类列表失败')
     }
   }
 
-  const fetchSubCategories = async (categoryId: number) => {
-    try {
-      const res = await SubCategoryService.getSubCategoriesByCategoryId(categoryId)
-      if (res.code === 200 && res.data) {
-        return res.data.map((subCategory: SubCategoryModel) => ({
-          label: subCategory.name,
-          value: subCategory.id!
-        }))
-      }
-      return []
-    } catch (error) {
-      ElMessage.error('获取子分类列表失败')
-      return []
+  // 从缓存中获取子分类，不再发送请求
+  const getSubCategoriesFromCache = (categoryId: number) => {
+    const category = categoriesCache.value.find((cat) => cat.id === categoryId)
+    if (category && Array.isArray(category.children)) {
+      return category.children.map((subCat) => ({
+        label: subCat.name,
+        value: subCat.id
+      }))
     }
+    return []
   }
 
   const fetchExamPaperList = async () => {
     loading.value = true
     try {
-      const res = await ExamPaperService.getExamPaperList({
+      const params: ExamPaperListParams = {
         page: currentPage.value,
         size: pageSize.value,
-        searchVal: searchKeyword.value,
-        categoryId: selectedCategoryId.value,
-        subCategoryId: selectedSubCategoryId.value
-      })
+        keyword: searchKeyword.value
+      }
+
+      if (selectedCategoryId.value) {
+        params.categoryId = selectedCategoryId.value
+      }
+
+      if (selectedSubCategoryId.value) {
+        params.subCategoryId = selectedSubCategoryId.value
+      }
+
+      const res = await ExamPaperService.getExamPaperList(params)
 
       if (res.code === 200) {
-        examPaperList.value = res.data || []
-        total.value = res.total || 0
+        examPaperList.value = res.data.items || []
+        total.value = res.data.total || 0
+
+        // Make sure each item has a questionsCount
+        examPaperList.value = examPaperList.value.map((paper) => ({
+          ...paper,
+          questionsCount: paper.questionsCount || 0
+        }))
       } else {
         ElMessage.error(res.message || '获取试卷列表失败')
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('获取试卷列表失败:', error)
       ElMessage.error('获取试卷列表失败')
     } finally {
       loading.value = false
@@ -413,12 +460,13 @@
   }
 
   // Handlers
-  const handleCategoryChange = async () => {
-    selectedSubCategoryId.value = null
+  const handleCategoryChange = () => {
+    selectedSubCategoryId.value = undefined
     subCategoryOptions.value = []
 
     if (selectedCategoryId.value) {
-      subCategoryOptions.value = await fetchSubCategories(selectedCategoryId.value)
+      // 直接从缓存中获取子分类
+      subCategoryOptions.value = getSubCategoriesFromCache(selectedCategoryId.value)
     }
 
     currentPage.value = 1
@@ -430,21 +478,25 @@
     fetchExamPaperList()
   }
 
-  const handleFormCategoryChange = async () => {
+  const handleFormCategoryChange = () => {
     form.value.subCategoryId = undefined
     formSubCategoryOptions.value = []
 
     if (form.value.categoryId) {
-      formSubCategoryOptions.value = await fetchSubCategories(form.value.categoryId)
+      // 直接从缓存中获取子分类
+      formSubCategoryOptions.value = getSubCategoriesFromCache(form.value.categoryId)
     }
   }
 
-  const handleGenerateFormCategoryChange = async () => {
+  const handleGenerateFormCategoryChange = () => {
     generateForm.value.subCategoryId = undefined
     generateFormSubCategoryOptions.value = []
 
     if (generateForm.value.categoryId) {
-      generateFormSubCategoryOptions.value = await fetchSubCategories(generateForm.value.categoryId)
+      // 直接从缓存中获取子分类
+      generateFormSubCategoryOptions.value = getSubCategoriesFromCache(
+        generateForm.value.categoryId
+      )
     }
   }
 
@@ -481,7 +533,7 @@
     dialogVisible.value = true
   }
 
-  const handleEdit = (row: ExamPaperModel) => {
+  const handleEdit = (row: ExamPaper) => {
     dialogType.value = 'edit'
     form.value = {
       id: row.id,
@@ -497,12 +549,12 @@
     dialogVisible.value = true
   }
 
-  const handleView = (row: ExamPaperModel) => {
+  const handleView = (row: ExamPaper) => {
     currentExamPaper.value = row
     viewDialogVisible.value = true
   }
 
-  const handleDelete = async (row: ExamPaperModel) => {
+  const handleDelete = async (row: ExamPaper) => {
     try {
       const res = await ExamPaperService.deleteExamPaper(row.id!)
       if (res.code === 200) {
@@ -511,7 +563,8 @@
       } else {
         ElMessage.error(res.message || '删除失败')
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('删除失败:', error)
       ElMessage.error('删除失败')
     }
   }
@@ -523,15 +576,15 @@
       if (valid) {
         submitLoading.value = true
         try {
-          const service =
-            dialogType.value === 'add'
-              ? ExamPaperService.addExamPaper
-              : ExamPaperService.updateExamPaper
+          let res
 
-          const res =
-            dialogType.value === 'add'
-              ? await service(form.value)
-              : await service(form.value.id!, form.value)
+          if (dialogType.value === 'add') {
+            // Create new exam paper
+            res = await ExamPaperService.addExamPaper(form.value)
+          } else {
+            // Update existing exam paper
+            res = await ExamPaperService.updateExamPaper(form.value.id!, form.value)
+          }
 
           if (res.code === 200) {
             ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
@@ -540,7 +593,8 @@
           } else {
             ElMessage.error(res.message || (dialogType.value === 'add' ? '添加失败' : '更新失败'))
           }
-        } catch (error) {
+        } catch (error: any) {
+          console.error(dialogType.value === 'add' ? '添加失败:' : '更新失败:', error)
           ElMessage.error(dialogType.value === 'add' ? '添加失败' : '更新失败')
         } finally {
           submitLoading.value = false
@@ -549,10 +603,19 @@
     })
   }
 
-  const manageQuestions = (row: ExamPaperModel) => {
-    router.push({
-      path: `/exam-paper/questions/${row.id}`,
-      query: { name: row.name }
+  const viewExamQuestions = (row: ExamPaper | null) => {
+    if (!row?.id) return
+
+    // 关闭当前弹窗(如果打开的话)
+    viewDialogVisible.value = false
+
+    // 跳转到题目管理页面（使用replace而不是push）
+    router.replace({
+      path: `/exam-system/question`,
+      query: {
+        examId: row.id.toString(),
+        examName: row.name
+      }
     })
   }
 
@@ -584,7 +647,8 @@
           } else {
             ElMessage.error(res.message || '试卷生成失败')
           }
-        } catch (error) {
+        } catch (error: any) {
+          console.error('试卷生成失败:', error)
           ElMessage.error('试卷生成失败')
         } finally {
           generatingExamPaper.value = false
@@ -600,6 +664,42 @@
       return new Date(date).toLocaleString()
     }
     return date.toLocaleString()
+  }
+
+  // 添加获取试卷详情的方法
+  const fetchExamPaperDetail = async (examId: number, examName?: string) => {
+    try {
+      const res = await ExamPaperService.getExamPaperById(examId)
+      if (res.code === 200 && res.data) {
+        // 直接打开详情弹窗
+        currentExamPaper.value = res.data
+        viewDialogVisible.value = true
+      } else {
+        ElMessage.error(res.message || '获取试卷详情失败')
+        fetchExamPaperList() // 加载试卷列表
+      }
+    } catch (error: any) {
+      console.error('获取试卷详情失败:', error)
+      ElMessage.error('获取试卷详情失败')
+      fetchExamPaperList() // 加载试卷列表
+    }
+  }
+
+  // 添加返回处理方法
+  const handleReturn = () => {
+    if (returnPath.value) {
+      router.push(returnPath.value)
+    }
+  }
+
+  // 添加用户角色转换函数
+  const getUserRoleText = (role: string) => {
+    const roleMap: Record<string, string> = {
+      JOB_SEEKER: '求职者',
+      INTERVIEWER: '面试官',
+      ADMIN: '管理员'
+    }
+    return roleMap[role] || role
   }
 </script>
 

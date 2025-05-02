@@ -37,22 +37,16 @@ export const asyncRoutes: MenuListType[] = [
         meta: { title: '分类管理', keepAlive: true, icon: '&#xe67b;' }
       },
       {
-        path: '/exam-system/question',
-        name: 'QuestionList',
-        component: () => import('@/views/question/QuestionList.vue'),
-        meta: { title: '题目管理', keepAlive: true, icon: '&#xe64d;' }
-      },
-      {
         path: '/exam-system/exam-paper',
         name: 'ExamPaperList',
         component: () => import('@/views/exam-paper/ExamPaperList.vue'),
         meta: { title: '试卷管理', keepAlive: true, icon: '&#xe705;' }
       },
       {
-        path: '/exam-system/exam-paper/questions/:id',
-        name: 'ExamPaperQuestions',
-        component: () => import('@/views/exam-paper/ExamPaperQuestions.vue'),
-        meta: { title: '试卷题目管理', keepAlive: false, hideInMenu: true, icon: '&#xe672;' }
+        path: '/exam-system/question',
+        name: 'QuestionList',
+        component: () => import('@/views/question/QuestionList.vue'),
+        meta: { title: '题目管理', keepAlive: true, icon: '&#xe672;' }
       }
     ]
   },

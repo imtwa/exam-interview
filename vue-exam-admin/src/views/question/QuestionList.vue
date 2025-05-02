@@ -3,9 +3,23 @@
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
-          <span>题目管理</span>
+          <span>{{ examName ? `${examName} - 题目管理` : '题目管理' }}</span>
+          <div v-if="examId" class="header-actions">
+            <el-button size="small" @click="clearExamFilter">返回全部题目</el-button>
+          </div>
         </div>
       </template>
+
+      <!-- 添加提示信息 -->
+      <el-alert
+        v-if="!examId"
+        title="请通过试卷管理页面查看题目"
+        type="info"
+        description="当前系统只支持通过试卷查看题目，请前往试卷管理页面选择一个试卷进行查看。"
+        show-icon
+        :closable="false"
+        style="margin-bottom: 15px"
+      />
 
       <div class="filter-row">
         <el-select
@@ -59,7 +73,7 @@
           </el-upload>
         </template>
 
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="order" label="序号" width="80" />
         <el-table-column prop="qtype" label="题目类型" width="100">
           <template #default="scope">
             <el-tag :type="getQuestionTypeTag(scope.row.qtype)">
@@ -68,6 +82,23 @@
           </template>
         </el-table-column>
         <el-table-column prop="question" label="题目内容" show-overflow-tooltip />
+        <el-table-column prop="score" label="分值" width="80">
+          <template #default="scope">
+            <span>{{ scope.row.score || 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="examPaperName" label="所属试卷" width="150">
+          <template #default="scope">
+            <el-link
+              v-if="scope.row.examPaperId"
+              type="primary"
+              @click="viewExamPaper(scope.row.examPaperId, scope.row.examPaperName)"
+            >
+              {{ scope.row.examPaperName }}
+            </el-link>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="difficulty" label="难度" width="100">
           <template #default="scope">
             <el-tag :type="getDifficultyTag(scope.row.difficulty)">
@@ -240,14 +271,37 @@
 
 <script setup lang="ts">
   import { ref, onMounted, computed, watch } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
   import { QuestionService } from '@/api/questionService'
-  import { QuestionModel } from '@/api/model/examModels'
+  import {
+    Question,
+    QuestionListParams,
+    QuestionType,
+    DifficultyLevel
+  } from '@/api/model/examModels'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
   import { Delete } from '@element-plus/icons-vue'
 
+  const route = useRoute()
+  const router = useRouter()
+
+  // 获取URL参数
+  const examId = computed(() => {
+    const id = route.query.examId
+    return id ? Number(id) : undefined
+  })
+
+  const examName = computed(() => (route.query.examName as string) || '')
+
+  // 清除试卷筛选
+  const clearExamFilter = () => {
+    ElMessage.info('当前系统只支持通过试卷查看题目，请前往试卷管理页面')
+  }
+
   // Data
-  const questionList = ref<QuestionModel[]>([])
+  const questionList = ref<Question[]>([])
+  const allQuestions = ref<Question[]>([]) // 存储所有题目，用于前端分页
   const total = ref(0)
   const loading = ref(false)
   const currentPage = ref(1)
@@ -255,13 +309,13 @@
   const searchKeyword = ref('')
 
   // Filters
-  const questionType = ref<number | null>(null)
-  const difficulty = ref<number | null>(null)
+  const questionType = ref<QuestionType | undefined>(undefined)
+  const difficulty = ref<DifficultyLevel | undefined>(undefined)
 
   // Form
   const dialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
-  const form = ref<QuestionModel>({
+  const form = ref<Question>({
     qtype: 1,
     question: '',
     answer: '',
@@ -280,7 +334,7 @@
 
   // View Dialog
   const viewDialogVisible = ref(false)
-  const currentQuestion = ref<QuestionModel | null>(null)
+  const currentQuestion = ref<Question | null>(null)
   const currentQuestionDifficulty = ref(1)
   const parsedOptions = ref<Array<{ content: string; isCorrect: boolean }>>([])
 
@@ -294,35 +348,6 @@
     answer: [{ required: true, message: '请输入答案', trigger: 'blur' }],
     ai_analysis: [{ required: true, message: '请输入题目解析', trigger: 'blur' }]
   })
-
-  // Fetch Data
-  onMounted(() => {
-    fetchQuestionList()
-  })
-
-  const fetchQuestionList = async () => {
-    loading.value = true
-    try {
-      const res = await QuestionService.getQuestionList({
-        page: currentPage.value,
-        size: pageSize.value,
-        searchVal: searchKeyword.value,
-        qtype: questionType.value,
-        difficulty: difficulty.value
-      })
-
-      if (res.code === 200) {
-        questionList.value = res.data || []
-        total.value = res.total || 0
-      } else {
-        ElMessage.error(res.message || '获取题目列表失败')
-      }
-    } catch (error) {
-      ElMessage.error('获取题目列表失败')
-    } finally {
-      loading.value = false
-    }
-  }
 
   // Watch form type changes to reset options
   watch(
@@ -343,29 +368,172 @@
     }
   )
 
-  // Handlers
-  const handleFilterChange = () => {
+  // 添加一个存储原始数据的变量
+  const rawQuestions = ref<Question[]>([]) // 存储原始数据，用于前端过滤
+
+  // Fetch Data
+  onMounted(() => {
+    console.log('组件已挂载，获取初始数据')
+    fetchQuestionList()
+  })
+
+  // 监听路由参数变化
+  watch(
+    () => route.query,
+    (newQuery) => {
+      // 当路由参数变化时重新获取数据
+      fetchQuestionList()
+    },
+    { deep: true }
+  )
+
+  const fetchQuestionList = async () => {
+    // 避免重复加载
+    if (loading.value) {
+      return
+    }
+
+    loading.value = true
+
+    try {
+      // 前端分页不需要向后端发送分页参数
+      const params: QuestionListParams = {
+        // 不再传递筛选参数，因为要在前端进行筛选
+      }
+
+      // 如果有examId参数，添加到查询条件
+      if (examId.value) {
+        params.examId = examId.value
+      } else {
+        // 如果没有examId，显示提示信息并返回空数据
+        ElMessage.info('请通过试卷管理页面查看题目')
+        rawQuestions.value = []
+        allQuestions.value = []
+        questionList.value = []
+        total.value = 0
+        loading.value = false
+        return
+      }
+
+      const res = await QuestionService.getQuestionList(params)
+
+      if (res.code === 200) {
+        if (examId.value) {
+          // 如果是获取试卷题目，处理特殊的数据结构
+          if (res.data && res.data.examQuestions) {
+            // 从examQuestions提取题目数据并格式化
+            rawQuestions.value = res.data.examQuestions.map((item: any) => {
+              return {
+                id: item.question.id,
+                qtype: item.question.qtype,
+                question: item.question.question,
+                options: item.question.options,
+                answer: item.question.answer,
+                ai_analysis: item.question.ai_analysis,
+                difficulty: item.question.difficulty,
+                score: item.score,
+                order: item.order, // 已有order字段
+                createdAt: item.question.createdAt,
+                updatedAt: item.question.updatedAt,
+                // 添加试卷信息
+                examPaperId: res.data.id,
+                examPaperName: res.data.name
+              }
+            })
+
+            // 应用筛选并排序
+            applyFilters()
+          } else {
+            rawQuestions.value = []
+            allQuestions.value = []
+            questionList.value = []
+            total.value = 0
+          }
+        } else {
+          // 普通题目列表 - 不应该走到这里
+          rawQuestions.value = []
+          allQuestions.value = []
+          questionList.value = []
+          total.value = 0
+        }
+      } else {
+        ElMessage.error(res.message || '获取题目列表失败')
+      }
+    } catch (error: any) {
+      console.error('获取题目列表失败:', error)
+      ElMessage.error('获取题目列表失败')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 添加筛选方法
+  const applyFilters = () => {
+    // 应用筛选条件
+    allQuestions.value = rawQuestions.value.filter((question) => {
+      // 题目类型筛选
+      if (questionType.value && question.qtype !== questionType.value) {
+        return false
+      }
+
+      // 难度筛选
+      if (difficulty.value && question.difficulty !== difficulty.value) {
+        return false
+      }
+
+      // 关键字搜索
+      if (searchKeyword.value) {
+        const keyword = searchKeyword.value.toLowerCase()
+        return question.question.toLowerCase().includes(keyword)
+      }
+
+      return true
+    })
+
+    // 按照order字段升序排列
+    allQuestions.value.sort((a, b) => {
+      // 考虑可能没有order字段的情况
+      const orderA = a.order || 0
+      const orderB = b.order || 0
+      return orderA - orderB
+    })
+
+    // 更新总数
+    total.value = allQuestions.value.length
+
+    // 重置分页到第一页
     currentPage.value = 1
-    fetchQuestionList()
+
+    // 应用分页
+    applyPagination()
   }
 
-  const handleSearch = (params: { keyword: string; page: number; pageSize: number }) => {
-    searchKeyword.value = params.keyword
-    currentPage.value = params.page
-    pageSize.value = params.pageSize
-    fetchQuestionList()
+  // 修改筛选和搜索的处理方法
+  const handleFilterChange = () => {
+    applyFilters()
   }
 
+  // 修改分页处理方法，不再发送请求，只是应用前端分页
   const handlePageChange = (params: { page: number; pageSize: number }) => {
     currentPage.value = params.page
     pageSize.value = params.pageSize
-    fetchQuestionList()
+    applyPagination()
   }
 
   const handleSizeChange = (params: { page: number; pageSize: number }) => {
     currentPage.value = params.page
     pageSize.value = params.pageSize
-    fetchQuestionList()
+    applyPagination()
+  }
+
+  // 修改搜索处理方法
+  const handleSearch = (params: { keyword: string; page: number; pageSize: number }) => {
+    searchKeyword.value = params.keyword
+    currentPage.value = params.page
+    pageSize.value = params.pageSize
+
+    // 应用筛选条件
+    applyFilters()
   }
 
   const handleAdd = () => {
@@ -386,7 +554,7 @@
     dialogVisible.value = true
   }
 
-  const handleEdit = (row: QuestionModel) => {
+  const handleEdit = (row: Question) => {
     dialogType.value = 'edit'
     form.value = {
       id: row.id,
@@ -400,8 +568,18 @@
     // Parse options if qtype is 1 or 2
     if (row.qtype === 1 || row.qtype === 2) {
       try {
-        const parsedOpts = JSON.parse(row.options || '[]')
-        options.value = parsedOpts
+        const rawOptions = JSON.parse(row.options || '[]')
+        // 处理两种可能的选项格式
+        if (rawOptions.length > 0 && 'Key' in rawOptions[0]) {
+          // 处理 {Key: "A", Value: "选项内容"} 格式
+          options.value = rawOptions.map((opt: any) => ({
+            content: opt.Value,
+            isCorrect: row.answer.includes(opt.Key)
+          }))
+        } else {
+          // 处理普通格式
+          options.value = rawOptions
+        }
       } catch (error) {
         options.value = [
           { content: '', isCorrect: false },
@@ -415,14 +593,25 @@
     dialogVisible.value = true
   }
 
-  const handleView = (row: QuestionModel) => {
+  const handleView = (row: Question) => {
     currentQuestion.value = row
     currentQuestionDifficulty.value = row.difficulty || 1
 
     // Parse options for viewing
     if (row.qtype === 1 || row.qtype === 2) {
       try {
-        parsedOptions.value = JSON.parse(row.options || '[]')
+        const rawOptions = JSON.parse(row.options || '[]')
+        // 处理两种可能的选项格式 - 检查是否是{Key, Value}格式
+        if (rawOptions.length > 0 && 'Key' in rawOptions[0]) {
+          // 处理 {Key: "A", Value: "选项内容"} 格式
+          parsedOptions.value = rawOptions.map((opt: any) => ({
+            content: opt.Value,
+            isCorrect: row.answer.includes(opt.Key)
+          }))
+        } else {
+          // 处理普通格式
+          parsedOptions.value = rawOptions
+        }
       } catch (error) {
         parsedOptions.value = []
       }
@@ -431,7 +620,7 @@
     viewDialogVisible.value = true
   }
 
-  const handleDelete = async (row: QuestionModel) => {
+  const handleDelete = async (row: Question) => {
     try {
       const res = await QuestionService.deleteQuestion(row.id!)
       if (res.code === 200) {
@@ -517,14 +706,20 @@
         return
       }
 
+      // 格式化选项以适配后端API格式
+      const formattedOptions = options.value.map((opt, index) => ({
+        Key: String.fromCharCode(65 + index),
+        Value: opt.content
+      }))
+
       // Convert options to JSON string
-      form.value.options = JSON.stringify(options.value)
+      form.value.options = JSON.stringify(formattedOptions)
 
       // Generate answer string from correct options
       form.value.answer = options.value
         .map((opt, index) => (opt.isCorrect ? String.fromCharCode(65 + index) : null))
         .filter(Boolean)
-        .join(',')
+        .join('')
     }
 
     await formRef.value.validate(async (valid) => {
@@ -606,6 +801,26 @@
       3: 'danger'
     }
     return difficultyMap[difficulty] || ''
+  }
+
+  // 添加查看试卷详情方法
+  const viewExamPaper = (examPaperId: number, examPaperName: string) => {
+    // 使用replace而不是push
+    router.replace({
+      path: `/exam-system/exam-paper`,
+      query: {
+        view: examPaperId.toString(),
+        name: examPaperName,
+        returnPath: '/exam-system/question'
+      }
+    })
+  }
+
+  // 添加前端分页方法
+  const applyPagination = () => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    questionList.value = allQuestions.value.slice(start, end)
   }
 </script>
 

@@ -131,7 +131,7 @@ export class ExamService {
         const questionsCount = exam.examQuestions.length;
         // 从examQuestions中移除question详情以减小数据量
         const { examQuestions, ...examData } = exam;
-        this.logger.log(`移除question详情: ${examQuestions}`);
+        // this.logger.log(`移除question详情: ${examQuestions}`);
         return {
           ...examData,
           questionsCount, // 添加题目总数

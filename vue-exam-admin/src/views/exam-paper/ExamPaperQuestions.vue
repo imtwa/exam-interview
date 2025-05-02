@@ -75,10 +75,10 @@
           @change="handleFilterChange"
           style="width: 140px"
         >
-          <el-option label="单选题" :value="1" />
-          <el-option label="多选题" :value="2" />
-          <el-option label="判断题" :value="3" />
-          <el-option label="填空题" :value="4" />
+          <el-option label="单选题" :value="QuestionType.SINGLE_CHOICE" />
+          <el-option label="多选题" :value="QuestionType.MULTIPLE_CHOICE" />
+          <el-option label="判断题" :value="QuestionType.TRUE_FALSE" />
+          <el-option label="填空题" :value="QuestionType.FILL_BLANK" />
         </el-select>
 
         <el-select
@@ -88,9 +88,9 @@
           @change="handleFilterChange"
           style="width: 140px; margin-left: 10px"
         >
-          <el-option label="简单" :value="1" />
-          <el-option label="中等" :value="2" />
-          <el-option label="困难" :value="3" />
+          <el-option label="简单" :value="DifficultyLevel.EASY" />
+          <el-option label="中等" :value="DifficultyLevel.MEDIUM" />
+          <el-option label="困难" :value="DifficultyLevel.HARD" />
         </el-select>
 
         <el-input
@@ -268,10 +268,10 @@
 <script setup lang="ts">
   import { ref, onMounted, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { ElMessage, FormInstance, FormRules } from 'element-plus'
+  import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
   import { ExamPaperService } from '@/api/examPaperService'
   import { QuestionService } from '@/api/questionService'
-  import { QuestionModel, ExamQuestionModel } from '@/api/model/examModels'
+  import { Question, ExamQuestion, QuestionType, DifficultyLevel } from '@/api/model/examModels'
 
   const route = useRoute()
   const router = useRouter()
@@ -281,19 +281,19 @@
   const examPaperName = computed(() => String(route.query.name || '试卷'))
 
   // Data
-  const examQuestions = ref<ExamQuestionModel[]>([])
+  const examQuestions = ref<ExamQuestion[]>([])
   const loading = ref(false)
 
   // Available questions for adding
-  const availableQuestions = ref<QuestionModel[]>([])
+  const availableQuestions = ref<Question[]>([])
   const availableQuestionsLoading = ref(false)
   const currentPage = ref(1)
   const pageSize = ref(10)
   const total = ref(0)
   const searchKeyword = ref('')
-  const questionType = ref<number | null>(null)
-  const difficulty = ref<number | null>(null)
-  const selectedQuestions = ref<QuestionModel[]>([])
+  const questionType = ref<QuestionType | undefined>(undefined)
+  const difficulty = ref<DifficultyLevel | undefined>(undefined)
+  const selectedQuestions = ref<Question[]>([])
   const addQuestionsDialogVisible = ref(false)
   const addingQuestions = ref(false)
 
@@ -314,13 +314,13 @@
 
   // View question
   const viewQuestionDialogVisible = ref(false)
-  const currentQuestion = ref<QuestionModel | null>(null)
+  const currentQuestion = ref<Question | null>(null)
   const currentQuestionDifficulty = ref(1)
   const parsedOptions = ref<Array<{ content: string; isCorrect: boolean }>>([])
 
   // Delete confirmation
   const deleteDialogVisible = ref(false)
-  const questionToDelete = ref<ExamQuestionModel | null>(null)
+  const questionToDelete = ref<ExamQuestion | null>(null)
   const deleteLoading = ref(false)
 
   // Fetch data
@@ -329,17 +329,21 @@
   })
 
   const fetchExamQuestions = async () => {
-    if (!examPaperId.value) return
-
     loading.value = true
     try {
       const res = await ExamPaperService.getExamQuestions(examPaperId.value)
       if (res.code === 200) {
         examQuestions.value = res.data || []
+
+        // Sort by order
+        examQuestions.value.sort((a, b) => a.order - b.order)
+
+        console.log('Exam questions loaded:', examQuestions.value)
       } else {
         ElMessage.error(res.message || '获取试卷题目失败')
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('获取试卷题目失败:', error)
       ElMessage.error('获取试卷题目失败')
     } finally {
       loading.value = false
@@ -349,21 +353,30 @@
   const fetchAvailableQuestions = async () => {
     availableQuestionsLoading.value = true
     try {
-      const res = await QuestionService.getQuestionList({
+      const params: any = {
         page: currentPage.value,
         size: pageSize.value,
-        searchVal: searchKeyword.value,
-        qtype: questionType.value,
-        difficulty: difficulty.value
-      })
+        searchVal: searchKeyword.value
+      }
+
+      if (questionType.value) {
+        params.qtype = questionType.value
+      }
+
+      if (difficulty.value) {
+        params.difficulty = difficulty.value
+      }
+
+      const res = await QuestionService.getQuestionList(params)
 
       if (res.code === 200) {
-        availableQuestions.value = res.data || []
-        total.value = res.total || 0
+        availableQuestions.value = res.data.items || []
+        total.value = res.data.total || 0
       } else {
         ElMessage.error(res.message || '获取题目列表失败')
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('获取题目列表失败:', error)
       ElMessage.error('获取题目列表失败')
     } finally {
       availableQuestionsLoading.value = false
@@ -379,8 +392,8 @@
     addQuestionsDialogVisible.value = true
     currentPage.value = 1
     pageSize.value = 10
-    questionType.value = null
-    difficulty.value = null
+    questionType.value = undefined
+    difficulty.value = undefined
     searchKeyword.value = ''
     selectedQuestions.value = []
 
@@ -404,7 +417,7 @@
     fetchAvailableQuestions()
   }
 
-  const handleSelectionChange = (selection: QuestionModel[]) => {
+  const handleSelectionChange = (selection: Question[]) => {
     selectedQuestions.value = selection
   }
 
@@ -438,22 +451,27 @@
       } else {
         ElMessage.error(res.message || '题目添加失败')
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('题目添加失败:', error)
       ElMessage.error('题目添加失败')
     } finally {
       addingQuestions.value = false
     }
   }
 
-  const viewQuestion = (question: QuestionModel) => {
+  const viewQuestion = (question: Question) => {
     currentQuestion.value = question
     currentQuestionDifficulty.value = question.difficulty || 1
 
     // Parse options for viewing
-    if (question.qtype === 1 || question.qtype === 2) {
+    if (
+      question.qtype === QuestionType.SINGLE_CHOICE ||
+      question.qtype === QuestionType.MULTIPLE_CHOICE
+    ) {
       try {
         parsedOptions.value = JSON.parse(question.options || '[]')
-      } catch (error) {
+      } catch (error: any) {
+        console.error('解析选项失败:', error)
         parsedOptions.value = []
       }
     }
@@ -461,7 +479,7 @@
     viewQuestionDialogVisible.value = true
   }
 
-  const editExamQuestion = (examQuestion: ExamQuestionModel) => {
+  const editExamQuestion = (examQuestion: ExamQuestion) => {
     editForm.value = {
       examId: examPaperId.value,
       questionId: examQuestion.questionId,
@@ -495,7 +513,8 @@
           } else {
             ElMessage.error(res.message || '更新失败')
           }
-        } catch (error) {
+        } catch (error: any) {
+          console.error('更新失败:', error)
           ElMessage.error('更新失败')
         } finally {
           editLoading.value = false
@@ -504,7 +523,7 @@
     })
   }
 
-  const confirmRemoveQuestion = (examQuestion: ExamQuestionModel) => {
+  const confirmRemoveQuestion = (examQuestion: ExamQuestion) => {
     questionToDelete.value = examQuestion
     deleteDialogVisible.value = true
   }
@@ -526,7 +545,8 @@
       } else {
         ElMessage.error(res.message || '题目移除失败')
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('题目移除失败:', error)
       ElMessage.error('题目移除失败')
     } finally {
       deleteLoading.value = false
@@ -534,44 +554,48 @@
   }
 
   // Utils
-  const getQuestionTypeText = (type: number | undefined) => {
+  const getQuestionTypeText = (type: QuestionType | undefined) => {
     if (!type) return '-'
     const typeMap: Record<number, string> = {
-      1: '单选题',
-      2: '多选题',
-      3: '判断题',
-      4: '填空题'
+      [QuestionType.SINGLE_CHOICE]: '单选题',
+      [QuestionType.MULTIPLE_CHOICE]: '多选题',
+      [QuestionType.TRUE_FALSE]: '判断题',
+      [QuestionType.FILL_BLANK]: '填空题'
     }
     return typeMap[type] || '-'
   }
 
-  const getQuestionTypeTag = (type: number | undefined) => {
+  const getQuestionTypeTag = (
+    type: QuestionType | undefined
+  ): 'success' | 'warning' | 'info' | 'primary' | 'danger' | '' => {
     if (!type) return ''
-    const typeMap: Record<number, string> = {
-      1: 'success',
-      2: 'warning',
-      3: 'info',
-      4: 'danger'
+    const typeMap: Record<number, 'success' | 'warning' | 'info' | 'primary' | 'danger'> = {
+      [QuestionType.SINGLE_CHOICE]: 'success',
+      [QuestionType.MULTIPLE_CHOICE]: 'warning',
+      [QuestionType.TRUE_FALSE]: 'info',
+      [QuestionType.FILL_BLANK]: 'danger'
     }
     return typeMap[type] || ''
   }
 
-  const getDifficultyText = (difficulty: number | undefined) => {
+  const getDifficultyText = (difficulty: DifficultyLevel | undefined) => {
     if (!difficulty) return '-'
     const difficultyMap: Record<number, string> = {
-      1: '简单',
-      2: '中等',
-      3: '困难'
+      [DifficultyLevel.EASY]: '简单',
+      [DifficultyLevel.MEDIUM]: '中等',
+      [DifficultyLevel.HARD]: '困难'
     }
     return difficultyMap[difficulty] || '-'
   }
 
-  const getDifficultyTag = (difficulty: number | undefined) => {
+  const getDifficultyTag = (
+    difficulty: DifficultyLevel | undefined
+  ): 'success' | 'warning' | 'info' | 'primary' | 'danger' | '' => {
     if (!difficulty) return ''
-    const difficultyMap: Record<number, string> = {
-      1: 'success',
-      2: 'warning',
-      3: 'danger'
+    const difficultyMap: Record<number, 'success' | 'warning' | 'info' | 'primary' | 'danger'> = {
+      [DifficultyLevel.EASY]: 'success',
+      [DifficultyLevel.MEDIUM]: 'warning',
+      [DifficultyLevel.HARD]: 'danger'
     }
     return difficultyMap[difficulty] || ''
   }

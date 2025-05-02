@@ -10,11 +10,32 @@ export class QuestionService extends ApiService {
 
   /**
    * 获取题目列表
-   * @param params 查询参数
+   * @param params 查询参数，可包含分页、关键词、题目类型、难度等级等
    * @returns Promise 对象
    */
   static async getQuestionList(params: QuestionListParams): Promise<any> {
-    return this.getPage('/list', params)
+    // 如果包含examId参数，使用专门的API路径获取试卷题目
+    if (params.examId) {
+      // 从参数中提取examId并删除，避免URL参数重复
+      const examId = params.examId
+      const newParams = { ...params }
+      delete newParams.examId
+
+      // 使用/exam/{id}接口获取试卷题目
+      return ApiService.get(`/exam/${examId}`, newParams)
+    }
+
+    // 题目列表使用模拟数据
+    return new Promise((resolve) => {
+      resolve({
+        code: 200,
+        message: '获取题目列表成功',
+        data: {
+          items: [],
+          total: 0
+        }
+      })
+    })
   }
 
   /**
@@ -126,5 +147,23 @@ export class QuestionService extends ApiService {
       default:
         return '未知难度'
     }
+  }
+
+  /**
+   * 使用AI生成题目解析
+   * @param question 题目内容
+   * @returns Promise 对象
+   */
+  static async generateAnalysis(question: string): Promise<any> {
+    return this.post('/generate-analysis', { question })
+  }
+
+  /**
+   * 添加题目
+   * @param data 题目数据
+   * @returns Promise 对象
+   */
+  static async addQuestion(data: Partial<Question>): Promise<any> {
+    return this.createQuestion(data)
   }
 }

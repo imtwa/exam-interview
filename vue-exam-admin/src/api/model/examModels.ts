@@ -62,6 +62,10 @@ export interface Question {
   createdAt?: string
   updatedAt?: string
   deletedAt?: string | null
+  order?: number
+  score?: number
+  examPaperId?: number
+  examPaperName?: string
 }
 
 /**
@@ -76,6 +80,7 @@ export interface ExamPaper {
   userId: number
   isPublic: boolean
   favoriteCount?: number
+  questionsCount?: number
   createdAt?: string
   updatedAt?: string
   deletedAt?: string | null
@@ -117,20 +122,28 @@ export interface SubCategoryListParams extends Partial<Paging> {
 /**
  * 题目查询参数
  */
-export interface QuestionListParams extends Partial<Paging> {
+export interface QuestionListParams {
+  page?: number
+  size?: number
   keyword?: string
   qtype?: QuestionType
   difficulty?: DifficultyLevel
   categoryId?: number
   subCategoryId?: number
+  examId?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
 }
 
 /**
  * 试卷查询参数
  */
-export interface ExamPaperListParams extends Partial<Paging> {
+export interface ExamPaperListParams {
+  page?: number
+  size?: number
   keyword?: string
   categoryId?: number
   subCategoryId?: number
   isPublic?: boolean
+  industryId?: number
 }

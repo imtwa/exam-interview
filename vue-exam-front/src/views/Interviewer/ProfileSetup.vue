@@ -632,13 +632,13 @@ const prepareSubmitData = () => {
     // console.log('选择的公司ID:', profileSetupForm.existingCompanyId);
   } else {
     profileSetupForm.useExistingCompany = false
-    profileSetupForm.company = { 
+    profileSetupForm.company = {
       ...companyForm,
       // 确保使用行业ID
       industryId: companyForm.industryId
     }
     // 删除不需要的字段
-    delete profileSetupForm.company.industry;
+    delete profileSetupForm.company.industry
   }
 }
 
@@ -749,10 +749,10 @@ const fetchIndustries = async () => {
 }
 
 // 获取行业名称
-const getIndustryName = (id) => {
-  if (!id || !industryOptions.value) return '';
-  const industry = industryOptions.value.find(item => item.id === id);
-  return industry ? industry.name : '';
+const getIndustryName = id => {
+  if (!id || !industryOptions.value) return ''
+  const industry = industryOptions.value.find(item => item.id === id)
+  return industry ? industry.name : ''
 }
 
 onMounted(() => {
