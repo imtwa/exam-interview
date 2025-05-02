@@ -58,7 +58,14 @@
                 class="navbar__link"
                 :class="{ 'navbar__link--active': route.path.includes('/candidate') }"
               >
-                候选人
+                候选人管理
+              </router-link>
+              <router-link
+                to="/interview-schedule"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path.includes('/interview') }"
+              >
+                面试安排
               </router-link>
               <router-link
                 to="/exam-management"
@@ -66,6 +73,13 @@
                 :class="{ 'navbar__link--active': route.path.includes('/exam-management') }"
               >
                 考试管理
+              </router-link>
+              <router-link
+                to="/private-exams"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path.includes('/private-exams') }"
+              >
+                专属试卷
               </router-link>
             </template>
           </div>
@@ -101,35 +115,16 @@
 
                     <!-- 求职者菜单项 -->
                     <template v-if="isJobSeeker">
-                      <el-dropdown-item @click="router.push('/my-exams')"
-                        >我的考试</el-dropdown-item
-                      >
-                      <el-dropdown-item @click="router.push('/favorites')"
-                        >我的收藏</el-dropdown-item
-                      >
+                      <el-dropdown-item @click="router.push('/my-exams')">我的考试</el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
                       <el-dropdown-item @click="router.push('/resume')">我的简历</el-dropdown-item>
-                      <el-dropdown-item @click="router.push('/applications')"
-                        >应聘进度</el-dropdown-item
-                      >
+                      <el-dropdown-item @click="router.push('/applications')">应聘进度</el-dropdown-item>
                     </template>
 
-                    <!-- 面试官菜单项 -->
+                    <!-- 面试官菜单项 - 只保留个人中心相关的选项，移除导航栏已有的选项 -->
                     <template v-else>
-                      <el-dropdown-item @click="router.push('/job-management')"
-                        >岗位管理</el-dropdown-item
-                      >
-                      <el-dropdown-item @click="router.push('/candidate-management')"
-                        >候选人管理</el-dropdown-item
-                      >
-                      <el-dropdown-item @click="router.push('/exam-management')"
-                        >考试管理</el-dropdown-item
-                      >
-                      <el-dropdown-item @click="router.push('/private-exams')"
-                        >专属试卷管理</el-dropdown-item
-                      >
-                      <el-dropdown-item @click="router.push('/interview-schedule')"
-                        >面试安排</el-dropdown-item
-                      >
+                      <el-dropdown-item @click="router.push('/company-profile')">公司信息</el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/account-settings')">账号设置</el-dropdown-item>
                     </template>
 
                     <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
@@ -204,7 +199,14 @@
             class="navbar__mobile-link"
             :class="{ 'navbar__mobile-link--active': route.path.includes('/candidate') }"
           >
-            候选人
+            候选人管理
+          </router-link>
+          <router-link
+            to="/interview-schedule"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/interview') }"
+          >
+            面试安排
           </router-link>
           <router-link
             to="/exam-management"
@@ -285,6 +287,7 @@ const navItems = computed(() => {
       baseItems.push(
         { index: '/job-management', name: '岗位管理' },
         { index: '/candidate-management', name: '候选人管理' },
+        { index: '/interview-schedule', name: '面试安排' },
         { index: '/exam-management', name: '考试管理' },
         { index: '/private-exams', name: '专属试卷管理' }
       )

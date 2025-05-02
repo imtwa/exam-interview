@@ -67,7 +67,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message, Lock, Key } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getCaptcha, login, checkProfileStatus } from '@/api/auth'
+import { getCaptcha, login } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -158,11 +158,12 @@ const handleLogin = () => {
           localStorage.removeItem('rememberEmail')
         }
 
-        // 检查用户个人信息完善状态
+        // 检查用户个人信息完善状态 - 使用优化后的单次调用函数
         try {
-          const data = await checkProfileStatus()
+          const data = await userStore.checkUserProfile()
           const { profileCompleted } = data
-          // 如果未完善信息且有重定向路径，则跳转
+          
+          // 如果未完善信息，则跳转到对应的设置页面
           if (!profileCompleted) {
             ElMessage.info('请先完善您的个人资料')
             if (userStore.isInterviewer) {
@@ -171,16 +172,16 @@ const handleLogin = () => {
               router.push('job-seeker/profile-setup')
             }
           } else {
-            // 信息完善 跳转到首页
+            // 信息已完善，直接跳转到首页
             router.push('/')
           }
         } catch (error) {
-          // console.error('检查个人信息状态失败:', error)
+          console.error('检查个人信息状态失败:', error)
           // 检查失败，跳转到首页
           router.push('/')
         }
       } catch (error) {
-        // console.error('登录失败:', error)
+        console.error('登录失败:', error)
         // 登录失败时刷新验证码
         refreshCaptcha()
       } finally {

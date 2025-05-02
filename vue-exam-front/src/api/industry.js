@@ -14,13 +14,15 @@ export function createIndustryCategory(data) {
 }
 
 /**
- * 获取行业一级分类列表
+ * 获取行业分类列表（包含一级分类及其下的二级分类）
+ * @param {Object} params 查询参数，如 {page: 1, pageSize: 10}
  * @returns {Promise}
  */
-export function getIndustryCategoryList() {
+export function getIndustryCategories(params) {
   return request({
     url: '/industry/category',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 
@@ -77,13 +79,14 @@ export function createIndustrySubcategory(data) {
 
 /**
  * 获取行业二级分类列表
- * @param {string|number} categoryId 一级分类ID
+ * @param {Object} params 查询参数
  * @returns {Promise}
  */
-export function getIndustrySubcategoryList(categoryId) {
+export function getIndustrySubCategories(params) {
   return request({
-    url: `/industry/category/${categoryId}/subcategories`,
-    method: 'get'
+    url: '/industry/subcategory',
+    method: 'get',
+    params
   })
 }
 
@@ -126,24 +129,11 @@ export function deleteIndustrySubcategory(id) {
 }
 
 /**
- * 获取行业分类列表
- * @param {Object} params 查询参数
+ * 根据一级分类ID获取其下的二级分类
+ * @param {number} categoryId 一级分类ID
  * @returns {Promise}
  */
-export function getIndustryCategories(params) {
-  return request({
-    url: '/industry/category',
-    method: 'get',
-    params
-  })
-}
-
-/**
- * 获取行业二级分类列表
- * @param {number} categoryId 一级行业ID
- * @returns {Promise}
- */
-export function getIndustrySubCategories(categoryId) {
+export function getSubCategoriesByCategoryId(categoryId) {
   return request({
     url: `/industry/category/${categoryId}/subcategories`,
     method: 'get'

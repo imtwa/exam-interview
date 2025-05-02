@@ -37,10 +37,10 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="部门">
-            <el-select v-model="queryParams.department" placeholder="选择部门" clearable>
+          <el-form-item label="学历要求">
+            <el-select v-model="queryParams.education" placeholder="选择学历要求" clearable>
               <el-option
-                v-for="item in departmentOptions"
+                v-for="item in educationOptions"
                 :key="item.value"
                 :label="item.label"
                 :value="item.value"
@@ -127,10 +127,10 @@
                       <el-dropdown-item @click="viewJobDetail(row.id)">查看详情</el-dropdown-item>
                       <el-dropdown-item @click="copyJob(row.id)">复制职位</el-dropdown-item>
                       <el-dropdown-item
-                        :disabled="row.status === 'inactive'"
+                        :disabled="row.status === 'FILLED'"
                         @click="toggleJobStatus(row.id, row.status)"
                       >
-                        {{ row.status === 'active' ? '暂停招聘' : '重新开放' }}
+                        {{ row.status === 'ACTIVE' ? '暂停招聘' : '重新开放' }}
                       </el-dropdown-item>
                       <el-dropdown-item divided class="text-danger" @click="deleteJob(row.id)">
                         删除职位
@@ -165,277 +165,335 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
+import { getJobs, createJob, updateJob, deleteJob, getHotCities } from '@/api/job'
+import { getIndustrySubCategories } from '@/api/industry'
+import { formatDate } from '@/utils/formatDate'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const jobs = ref([])
 const total = ref(0)
+const subCategories = ref([])
+const hotCities = ref([])
 
 // 查询参数
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
   status: '',
-  department: '',
+  education: '',
   keyword: ''
 })
 
 // 状态选项
 const statusOptions = [
-  { label: '招聘中', value: 'active' },
-  { label: '已暂停', value: 'inactive' },
-  { label: '已结束', value: 'closed' }
+  { label: '招聘中', value: 'ACTIVE' },
+  { label: '已招满', value: 'FILLED' },
+  { label: '已过期', value: 'EXPIRED' }
 ]
 
-// 部门选项
-const departmentOptions = [
-  { label: '技术部', value: 'tech' },
-  { label: '产品部', value: 'product' },
-  { label: '市场部', value: 'marketing' },
-  { label: '销售部', value: 'sales' },
-  { label: '人力资源部', value: 'hr' },
-  { label: '财务部', value: 'finance' },
-  { label: '运营部', value: 'operations' }
+// 学历要求选项
+const educationOptions = [
+  { label: '高中', value: 'HIGH_SCHOOL' },
+  { label: '大专', value: 'ASSOCIATE' },
+  { label: '本科', value: 'BACHELOR' },
+  { label: '硕士', value: 'MASTER' },
+  { label: '博士', value: 'DOCTORATE' },
+  { label: '其他', value: 'OTHER' }
 ]
 
 // 获取职位列表
 const fetchJobs = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    // 这里需要实现从API获取职位列表的功能
-    // const response = await getCompanyJobs(queryParams)
-    // jobs.value = response.items || []
-    // total.value = response.total || 0
-
-    // 模拟数据，实际项目中应替换为API调用
-    setTimeout(() => {
-      jobs.value = [
-        {
-          id: 1,
-          title: '前端开发工程师',
-          department: '技术部',
-          location: '深圳',
-          applications: 12,
-          interviews: 5,
-          publishedAt: '2023-07-15T08:30:00',
-          status: 'active'
-        },
-        {
-          id: 2,
-          title: '产品经理',
-          department: '产品部',
-          location: '北京',
-          applications: 8,
-          interviews: 3,
-          publishedAt: '2023-07-20T14:20:00',
-          status: 'active'
-        },
-        {
-          id: 3,
-          title: 'UI设计师',
-          department: '产品部',
-          location: '深圳',
-          applications: 18,
-          interviews: 7,
-          publishedAt: '2023-08-01T09:15:00',
-          status: 'active'
-        },
-        {
-          id: 4,
-          title: '后端开发工程师',
-          department: '技术部',
-          location: '上海',
-          applications: 10,
-          interviews: 4,
-          publishedAt: '2023-08-05T11:30:00',
-          status: 'inactive'
-        },
-        {
-          id: 5,
-          title: '市场专员',
-          department: '市场部',
-          location: '广州',
-          applications: 6,
-          interviews: 2,
-          publishedAt: '2023-08-10T10:00:00',
-          status: 'closed'
-        }
-      ]
-      total.value = 5
-      loading.value = false
-    }, 500)
+    const response = await getJobs(queryParams);
+    jobs.value = response.list;
+    total.value = response.total;
   } catch (error) {
-    console.error('获取职位列表失败:', error)
-    ElMessage.error('获取职位列表失败，请稍后再试')
-    loading.value = false
+    console.error('获取职位列表失败:', error);
+    ElMessage.error('获取职位列表失败');
+  } finally {
+    loading.value = false;
   }
-}
+};
 
-// 分页相关方法
-const handleSizeChange = newSize => {
-  queryParams.pageSize = newSize
-  fetchJobs()
-}
-
-const handleCurrentChange = newPage => {
-  queryParams.page = newPage
-  fetchJobs()
-}
+// 获取行业分类和热门城市
+const fetchOptions = async () => {
+  try {
+    const categoryRes = await getIndustrySubCategories();
+    subCategories.value = categoryRes.list;
+    
+    const citiesRes = await getHotCities();
+    hotCities.value = citiesRes.list;
+  } catch (error) {
+    console.error('获取选项数据失败:', error);
+  }
+};
 
 // 重置筛选条件
 const resetFilters = () => {
   queryParams.status = ''
-  queryParams.department = ''
+  queryParams.education = ''
   queryParams.keyword = ''
+  queryParams.page = 1
   fetchJobs()
 }
 
-// 创建新职位
+// 处理分页变化
+const handleSizeChange = (size) => {
+  queryParams.pageSize = size
+  fetchJobs()
+}
+
+const handleCurrentChange = (page) => {
+  queryParams.page = page
+  fetchJobs()
+}
+
+// 新增职位对话框
+const jobFormVisible = ref(false)
+const jobFormLoading = ref(false)
+const jobForm = ref({
+  title: '',
+  companyId: userStore.userInfo?.interviewer?.companyId || 0,
+  subCategoryId: '',
+  description: '',
+  requirements: '',
+  city: '',
+  address: '',
+  salaryMin: 0,
+  salaryMax: 0,
+  experienceReq: 0,
+  educationReq: '',
+  isRemote: false,
+  status: 'ACTIVE'
+})
+const formType = ref('create') // create 或 edit
+const editingJobId = ref(null)
+
+// 表单验证规则
+const jobFormRules = {
+  title: [
+    { required: true, message: '请输入职位名称', trigger: 'blur' },
+    { max: 50, message: '职位名称不能超过50个字符', trigger: 'blur' }
+  ],
+  subCategoryId: [{ required: true, message: '请选择行业分类', trigger: 'change' }],
+  description: [{ required: true, message: '请输入职位描述', trigger: 'blur' }],
+  requirements: [{ required: true, message: '请输入职位要求', trigger: 'blur' }],
+  city: [{ required: true, message: '请输入工作城市', trigger: 'blur' }],
+  salaryMin: [
+    { required: true, message: '请输入薪资下限', trigger: 'blur' },
+    { type: 'number', message: '薪资必须为数字', trigger: 'blur' }
+  ],
+  salaryMax: [
+    { required: true, message: '请输入薪资上限', trigger: 'blur' },
+    { type: 'number', message: '薪资必须为数字', trigger: 'blur' }
+  ]
+}
+
+// 打开新增职位表单
 const createJob = () => {
-  router.push('/interviewer/job/create')
+  formType.value = 'create'
+  jobForm.value = {
+    title: '',
+    companyId: userStore.userInfo?.interviewer?.companyId || 0,
+    subCategoryId: '',
+    description: '',
+    requirements: '',
+    city: '',
+    address: '',
+    salaryMin: 0,
+    salaryMax: 0,
+    experienceReq: 0,
+    educationReq: '',
+    isRemote: false,
+    status: 'ACTIVE'
+  }
+  jobFormVisible.value = true
 }
 
-// 编辑职位
-const editJob = jobId => {
-  router.push(`/interviewer/job/edit/${jobId}`)
-}
-
-// 查看职位详情
-const viewJobDetail = jobId => {
-  router.push(`/job/${jobId}`)
-}
-
-// 复制职位
-const copyJob = async jobId => {
+// 打开编辑职位表单
+const editJob = async (jobId) => {
   try {
-    await ElMessageBox.confirm('确定要复制这个职位吗？将创建一个相同内容的新职位', '复制职位', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'info'
-    })
-
-    // 这里需要实现复制职位的API调用
-    // const response = await copyJobApi(jobId)
-    // const newJobId = response.id
-
-    // 模拟API调用成功
-    ElMessage.success('已成功复制职位')
-
-    // 刷新列表
-    fetchJobs()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('复制职位失败:', error)
-      ElMessage.error('操作失败，请稍后再试')
+    // 获取职位详情
+    const jobDetail = jobs.value.find(job => job.id === jobId)
+    if (!jobDetail) {
+      ElMessage.error('未找到职位信息')
+      return
     }
+    
+    formType.value = 'edit'
+    editingJobId.value = jobId
+    jobForm.value = {
+      title: jobDetail.title,
+      companyId: jobDetail.companyId,
+      subCategoryId: jobDetail.subCategoryId,
+      description: jobDetail.description,
+      requirements: jobDetail.requirements,
+      city: jobDetail.city,
+      address: jobDetail.address || '',
+      salaryMin: jobDetail.salaryMin,
+      salaryMax: jobDetail.salaryMax,
+      experienceReq: jobDetail.experienceReq || 0,
+      educationReq: jobDetail.educationReq || '',
+      isRemote: jobDetail.isRemote || false,
+      status: jobDetail.status
+    }
+    jobFormVisible.value = true
+  } catch (error) {
+    console.error('获取职位详情失败:', error)
+    ElMessage.error('获取职位详情失败')
   }
 }
 
-// 切换职位状态
-const toggleJobStatus = async (jobId, currentStatus) => {
-  const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
-  const actionText = newStatus === 'active' ? '重新开放' : '暂停'
+// 提交职位表单
+const submitJob = async () => {
+  jobFormRef.value.validate(async (valid) => {
+    if (valid) {
+      submitLoading.value = true;
+      
+      try {
+        let response;
+        if (isEdit.value) {
+          response = await updateJob(editingJobId.value, jobForm);
+          ElMessage.success('更新职位成功');
+        } else {
+          response = await createJob(jobForm);
+          ElMessage.success('创建职位成功');
+        }
+        
+        dialogVisible.value = false;
+        await fetchJobs();
+      } catch (error) {
+        console.error(isEdit.value ? '更新职位失败:' : '创建职位失败:', error);
+        ElMessage.error(isEdit.value ? '更新职位失败' : '创建职位失败');
+      } finally {
+        submitLoading.value = false;
+      }
+    }
+  });
+};
 
+// 复制职位
+const copyJob = async (jobId) => {
   try {
-    await ElMessageBox.confirm(`确定要${actionText}这个职位的招聘吗？`, `${actionText}招聘`, {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-
-    // 这里需要实现更新职位状态的API调用
-    // await updateJobStatusApi(jobId, newStatus)
-
-    // 模拟API调用成功
-    ElMessage.success(`已${actionText}该职位的招聘`)
-
-    // 更新本地状态
-    const index = jobs.value.findIndex(job => job.id === jobId)
-    if (index !== -1) {
-      jobs.value[index].status = newStatus
+    // 获取职位详情
+    const jobDetail = jobs.value.find(job => job.id === jobId)
+    if (!jobDetail) {
+      ElMessage.error('未找到职位信息')
+      return
     }
+    
+    formType.value = 'create'
+    jobForm.value = {
+      title: `${jobDetail.title} - 副本`,
+      companyId: jobDetail.companyId,
+      subCategoryId: jobDetail.subCategoryId,
+      description: jobDetail.description,
+      requirements: jobDetail.requirements,
+      city: jobDetail.city,
+      address: jobDetail.address || '',
+      salaryMin: jobDetail.salaryMin,
+      salaryMax: jobDetail.salaryMax,
+      experienceReq: jobDetail.experienceReq || 0,
+      educationReq: jobDetail.educationReq || '',
+      isRemote: jobDetail.isRemote || false,
+      status: 'ACTIVE' // 默认为招聘中
+    }
+    jobFormVisible.value = true
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('更新职位状态失败:', error)
-      ElMessage.error('操作失败，请稍后再试')
-    }
+      console.error('复制职位失败:', error)
+    ElMessage.error('复制职位失败')
   }
 }
 
 // 删除职位
-const deleteJob = async jobId => {
+const deleteJob = async (jobId) => {
   try {
-    await ElMessageBox.confirm('确定要删除这个职位吗？此操作不可恢复', '删除职位', {
-      confirmButtonText: '确定',
+    await ElMessageBox.confirm('确认删除该职位？删除后将无法恢复。', '警告', {
+      confirmButtonText: '确认',
       cancelButtonText: '取消',
-      type: 'danger'
-    })
-
-    // 这里需要实现删除职位的API调用
-    // await deleteJobApi(jobId)
-
-    // 模拟API调用成功
-    ElMessage.success('已成功删除职位')
-
-    // 更新列表
-    fetchJobs()
+      type: 'warning'
+    });
+    
+    await deleteJob(jobId);
+    ElMessage.success('删除职位成功');
+    await fetchJobs();
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('删除职位失败:', error)
-      ElMessage.error('操作失败，请稍后再试')
+      console.error('删除职位失败:', error);
+      ElMessage.error('删除职位失败');
     }
   }
+};
+
+// 更改职位状态
+const toggleJobStatus = async (jobId, currentStatus) => {
+  const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  try {
+    await updateJob(jobId, { status: newStatus });
+    ElMessage.success(`职位状态已更新为${newStatus === 'ACTIVE' ? '招聘中' : '已关闭'}`);
+    await fetchJobs();
+  } catch (error) {
+    console.error('更新职位状态失败:', error);
+    ElMessage.error('更新职位状态失败');
+  }
+};
+
+// 查看职位详情
+const viewJobDetail = (jobId) => {
+  router.push(`/job-management/detail/${jobId}`)
 }
 
 // 查看应聘者
-const viewApplications = jobId => {
-  router.push(`/interviewer/job/${jobId}/applications`)
+const viewApplications = (jobId) => {
+  router.push(`/candidate-management?jobId=${jobId}`)
 }
 
-// 查看面试
-const viewInterviews = jobId => {
-  router.push(`/interviewer/job/${jobId}/interviews`)
+// 查看面试安排
+const viewInterviews = (jobId) => {
+  router.push(`/interview-schedule?jobId=${jobId}`)
 }
 
-// 获取状态标签
-const getStatusLabel = status => {
-  const statusMap = {
-    active: '招聘中',
-    inactive: '已暂停',
-    closed: '已结束'
+// 获取状态显示类型
+const getStatusType = (status) => {
+  switch (status) {
+    case 'ACTIVE':
+      return 'success'
+    case 'FILLED':
+      return 'warning'
+    case 'EXPIRED':
+      return 'info'
+    default:
+      return ''
   }
-  return statusMap[status] || '未知状态'
 }
 
-// 获取状态类型（用于标签颜色）
-const getStatusType = status => {
-  const typeMap = {
-    active: 'success',
-    inactive: 'info',
-    closed: 'danger'
+// 获取状态显示文本
+const getStatusLabel = (status) => {
+  switch (status) {
+    case 'ACTIVE':
+      return '招聘中'
+    case 'FILLED':
+      return '已招满'
+    case 'EXPIRED':
+      return '已过期'
+    default:
+      return '未知'
   }
-  return typeMap[status] || 'info'
 }
 
-// 格式化日期
-const formatDate = dateString => {
-  if (!dateString) return ''
-
-  try {
-    const date = new Date(dateString)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-
-    return `${year}-${month}-${day}`
-  } catch (error) {
-    console.error('日期格式化错误:', error)
-    return dateString
-  }
+// 获取教育要求文本
+const getEducationLabel = (education) => {
+  const found = educationOptions.find(option => option.value === education)
+  return found ? found.label : '不限'
 }
 
 onMounted(() => {
   fetchJobs()
+  fetchOptions()
 })
 </script>
 
@@ -530,3 +588,4 @@ onMounted(() => {
   color: #f56c6c;
 }
 </style>
+

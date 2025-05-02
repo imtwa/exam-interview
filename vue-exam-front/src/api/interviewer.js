@@ -1,8 +1,8 @@
 import request from '@/utils/request'
 
 /**
- * 获取当前用户的面试官信息
- * @returns {Promise}
+ * 获取面试官个人资料
+ * @returns {Promise} 返回面试官资料
  */
 export function getInterviewerProfile() {
   return request({
@@ -12,25 +12,65 @@ export function getInterviewerProfile() {
 }
 
 /**
- * 创建或更新面试官信息（旧接口，需要传递companyId作为查询参数）
- * @param {Object} data 面试官信息
- * @param {number} companyId 公司ID
+ * 更新面试官个人资料
+ * @param {Object} data 面试官资料
  * @returns {Promise}
  */
-export function createOrUpdateInterviewer(data, companyId) {
+export function updateInterviewerProfile(data) {
   return request({
-    url: `/interviewer/profile?companyId=${companyId}`,
+    url: '/interviewer/profile',
     method: 'post',
     data
   })
 }
 
 /**
- * 创建或更新面试官信息（新接口，支持同时创建公司）
- * @param {Object} data 包含面试官信息和公司信息的对象
+ * 面试官获取收到的职位申请列表
+ * @param {Object} params 查询参数
+ * @returns {Promise} 返回申请列表
+ */
+export function getInterviewerApplications(params) {
+  return request({
+    url: '/interviewer/applications',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 更新职位申请状态
+ * @param {number} applicationId 申请ID
+ * @param {Object} data 状态更新数据
+ * @returns {Promise} 返回更新结果
+ */
+export function updateApplicationStatus(applicationId, data) {
+  return request({
+    url: `/interviewer/applications/${applicationId}/status`,
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 安排面试
+ * @param {number} applicationId 申请ID
+ * @param {Object} data 面试安排数据
+ * @returns {Promise} 返回面试安排结果
+ */
+export function scheduleInterview(applicationId, data) {
+  return request({
+    url: `/interviewer/applications/${applicationId}/schedule`,
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 面试官设置个人资料和公司信息
+ * @param {Object} data 设置数据
  * @returns {Promise}
  */
-export function updateInterviewerProfile(data) {
+export function setupInterviewerProfile(data) {
   return request({
     url: '/interviewer/profile/setup',
     method: 'post',
@@ -46,44 +86,5 @@ export function getInterviewerJobs() {
   return request({
     url: '/interviewer/jobs',
     method: 'get'
-  })
-}
-
-/**
- * 获取面试官收到的职位申请列表
- * @returns {Promise}
- */
-export function getInterviewerApplications() {
-  return request({
-    url: '/interviewer/applications',
-    method: 'get'
-  })
-}
-
-/**
- * 更新职位申请状态
- * @param {string|number} id 申请ID
- * @param {Object} data 状态信息
- * @returns {Promise}
- */
-export function updateApplicationStatus(id, data) {
-  return request({
-    url: `/interviewer/applications/${id}/status`,
-    method: 'put',
-    data
-  })
-}
-
-/**
- * 安排面试
- * @param {string|number} id 申请ID
- * @param {Object} data 面试信息
- * @returns {Promise}
- */
-export function arrangeInterview(id, data) {
-  return request({
-    url: `/interviewer/applications/${id}/interview`,
-    method: 'post',
-    data
   })
 }

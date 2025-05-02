@@ -194,7 +194,7 @@ export class JobService {
         throw new BadRequestException('薪资下限不能大于薪资上限');
       }
 
-      // 更新职位
+      // 更新职位（多字段更新）
       const job = await this.prisma.jobPosting.update({
         where: { id },
         data: {

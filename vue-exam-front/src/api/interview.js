@@ -14,7 +14,7 @@ export function createInterview(data) {
 }
 
 /**
- * 分页获取面试列表
+ * 获取面试列表
  * @param {Object} params 查询参数
  * @returns {Promise}
  */
@@ -27,7 +27,7 @@ export function getInterviewList(params) {
 }
 
 /**
- * 根据ID获取面试信息
+ * 获取面试详情
  * @param {string|number} id 面试ID
  * @returns {Promise}
  */

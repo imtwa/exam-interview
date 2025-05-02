@@ -309,7 +309,7 @@ model JobPosting {
   address         String? /// 详细地址
   salaryMin       Int /// 薪资下限
   salaryMax       Int /// 薪资上限
-  experienceReq   Int? /// 经验要求(年)
+  experienceReq   ExperienceLevel? /// 经验要求：在校生/应届生/1年以内/1-3年/3-5年/5-10年/10年以上
   educationReq    Degree? /// 学历要求：高中/大专/本科/硕士/博士/其他
   isRemote        Boolean   @default(false) /// 是否支持远程
   status          JobStatus @default(ACTIVE) /// 职位状态：招聘中/已招满/已过期/草稿

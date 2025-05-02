@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { Degree } from '../../../../prisma/generated/client';
+import { Degree, ExperienceLevel } from '../../../../prisma/generated/client';
 
 export class CreateJobPostingDto {
   @ApiProperty({ description: '职位标题', example: '前端开发工程师' })
@@ -79,12 +79,15 @@ export class CreateJobPostingDto {
   @Min(0, { message: '薪资上限不能小于0' })
   salaryMax: number;
 
-  @ApiProperty({ description: '经验要求(年)', required: false, example: 3 })
+  @ApiProperty({ 
+    description: '经验要求', 
+    required: false, 
+    enum: ExperienceLevel,
+    example: ExperienceLevel.THREE_TO_FIVE
+  })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: '经验要求必须是整数' })
-  @Min(0, { message: '经验要求不能小于0' })
-  experienceReq?: number;
+  @IsEnum(ExperienceLevel, { message: '经验要求值不合法' })
+  experienceReq?: ExperienceLevel;
 
   @ApiProperty({
     description: '学历要求',

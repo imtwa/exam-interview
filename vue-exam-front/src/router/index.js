@@ -93,9 +93,54 @@ const routes = [
       },
       // 面试官相关路由
       {
-        path: 'interviewer/jobs',
-        name: 'InterviewerJobs',
-        component: () => import('../views/User/Jobs.vue')
+        path: '/job-management',
+        name: 'JobManagement',
+        component: () => import('../views/Interviewer/Jobs/index.vue'),
+        meta: {
+          title: '岗位管理',
+          requireAuth: true,
+          roles: ['INTERVIEWER']
+        }
+      },
+      {
+        path: '/job-management/detail/:id',
+        name: 'JobDetail',
+        component: () => import('../views/Interviewer/Jobs/Detail.vue'),
+        meta: {
+          title: '岗位详情',
+          requireAuth: true,
+          roles: ['INTERVIEWER']
+        }
+      },
+      {
+        path: '/candidate-management',
+        name: 'CandidateManagement',
+        component: () => import('../views/Interviewer/Candidates/index.vue'),
+        meta: {
+          title: '候选人管理',
+          requireAuth: true,
+          roles: ['INTERVIEWER']
+        }
+      },
+      {
+        path: '/interview-schedule',
+        name: 'InterviewSchedule',
+        component: () => import('../views/Interviewer/InterviewSchedule/index.vue'),
+        meta: {
+          title: '面试安排',
+          requireAuth: true,
+          roles: ['INTERVIEWER']
+        }
+      },
+      {
+        path: '/exam-management',
+        name: 'ExamManagement',
+        component: () => import('../views/Interviewer/ExamManagement/index.vue'),
+        meta: {
+          title: '考试管理',
+          requireAuth: true,
+          roles: ['INTERVIEWER']
+        }
       },
       {
         path: '/private-exams',

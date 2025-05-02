@@ -6,5 +6,5 @@ import axios from 'axios'
  */
 export function getRegionData() {
   // 从本地city.json文件获取数据
-  return axios.get('/data/city.json')
+  return axios.get('/data/city.json').then(response => response.data)
 }

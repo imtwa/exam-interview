@@ -406,7 +406,7 @@
         params.examId = examId.value
       } else {
         // 如果没有examId，显示提示信息并返回空数据
-        ElMessage.info('请通过试卷管理页面查看题目')
+        // ElMessage.info('请通过试卷管理页面查看题目')
         rawQuestions.value = []
         allQuestions.value = []
         questionList.value = []

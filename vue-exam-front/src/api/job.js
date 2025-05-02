@@ -65,17 +65,6 @@ export function deleteJob(id) {
 }
 
 /**
- * 获取热门城市列表
- * @returns {Promise}
- */
-export function getHotCities() {
-  return request({
-    url: '/job/hot-cities',
-    method: 'get'
-  })
-}
-
-/**
  * 获取面试官发布的职位列表
  * @returns {Promise}
  */
@@ -202,5 +191,30 @@ export function getInterviewerProfile() {
   return request({
     url: '/interviewer/profile',
     method: 'get'
+  })
+}
+
+/**
+ * 获取职位详情
+ * @param {number} id 职位ID
+ * @returns {Promise}
+ */
+export function getJobById(id) {
+  return request({
+    url: `/job/${id}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 获取面试官发布的职位
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getJobsByInterviewer(params) {
+  return request({
+    url: '/job/interviewer/jobs',
+    method: 'get',
+    params
   })
 }

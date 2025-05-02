@@ -14,7 +14,7 @@ export function createCompany(data) {
 }
 
 /**
- * 分页获取公司列表
+ * 获取分页公司列表
  * @param {Object} params 查询参数
  * @returns {Promise}
  */
@@ -27,7 +27,7 @@ export function getCompanyList(params) {
 }
 
 /**
- * 根据ID获取公司信息
+ * 获取公司详情
  * @param {string|number} id 公司ID
  * @returns {Promise}
  */
