@@ -55,19 +55,19 @@
           </div>
         </div>
         <!-- 通知 -->
-        <div class="btn-box notice-btn" @click="visibleNotice">
+        <!-- <div class="btn-box notice-btn" @click="visibleNotice">
           <div class="btn notice-button">
             <i class="iconfont-sys notice-btn">&#xe6c2;</i>
             <span class="count notice-btn"></span>
           </div>
-        </div>
+        </div> -->
         <!-- 聊天 -->
-        <div class="btn-box chat-btn" @click="openChat">
+        <!-- <div class="btn-box chat-btn" @click="openChat">
           <div class="btn chat-button">
             <i class="iconfont-sys">&#xe89a;</i>
             <span class="dot"></span>
           </div>
-        </div>
+        </div> -->
         <!-- 语言 -->
         <div class="btn-box" v-if="showLanguage">
           <el-dropdown @command="changeLanguage" popper-class="langDropDownStyle">

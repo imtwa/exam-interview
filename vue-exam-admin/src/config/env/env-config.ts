@@ -10,7 +10,7 @@ export const envConfig = {
     process.env.NODE_ENV === 'development'
       ? {
           ...createBaseConfig().systemInfo,
-          name: 'Art Design Pro'
+          name: '云面官admin'
         }
       : createBaseConfig().systemInfo
   // 可以在这里添加其他动态配置
