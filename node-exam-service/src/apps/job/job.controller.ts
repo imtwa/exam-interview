@@ -78,7 +78,7 @@ export class JobController {
   })
   @ApiQuery({
     name: 'city',
-    description: '城市',
+    description: '城市（支持模糊查询）',
     required: false,
     type: String,
   })
@@ -105,6 +105,18 @@ export class JobController {
     description: '二级分类ID',
     required: false,
     type: Number,
+  })
+  @ApiQuery({
+    name: 'experienceReq',
+    description: '工作经验要求',
+    required: false,
+    enum: ['STUDENT', 'FRESH_GRADUATE', 'LESS_THAN_ONE', 'ONE_TO_THREE', 'THREE_TO_FIVE', 'FIVE_TO_TEN', 'MORE_THAN_TEN'],
+  })
+  @ApiQuery({
+    name: 'educationReq',
+    description: '学历要求',
+    required: false,
+    enum: ['HIGH_SCHOOL', 'ASSOCIATE', 'BACHELOR', 'MASTER', 'DOCTORATE', 'OTHER'],
   })
   @ApiResponse({ status: 200, description: '返回招聘信息列表及分页信息' })
   @Get()
@@ -175,6 +187,44 @@ export class JobController {
     return success(result);
   }
 
+  @ApiOperation({ summary: '获取公司发布的职位列表' })
+  @ApiParam({ name: 'companyId', description: '公司ID', type: Number })
+  @ApiQuery({
+    name: 'page',
+    description: '当前页码',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'keyword',
+    description: '关键词搜索',
+    required: false,
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: '返回职位列表及分页信息' })
+  @Get('company/:companyId')
+  async getCompanyJobs(
+    @Param('companyId') companyId: string,
+    @Query() query: QueryJobDto,
+  ) {
+    this.logger.log(`获取公司ID:${companyId}的职位列表`);
+    
+    // 合并查询参数，强制添加公司ID筛选
+    const jobQuery = {
+      ...query,
+      companyId: +companyId,
+    };
+    
+    const { jobs, total } = await this.jobService.findAll(jobQuery);
+    return pagination(jobs, total, query.page, query.pageSize);
+  }
+
   @ApiOperation({ summary: '获取面试官发布的职位列表' })
   @ApiQuery({
     name: 'page',
@@ -210,6 +260,65 @@ export class JobController {
       total,
       parseInt(page as string),
       parseInt(pageSize as string),
+    );
+  }
+
+  @ApiOperation({ summary: '获取面试官发布的职位列表(带筛选)' })
+  @ApiQuery({
+    name: 'page',
+    description: '当前页码',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'keyword',
+    description: '关键词搜索',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'status',
+    description: '职位状态',
+    required: false,
+    enum: ['ACTIVE', 'FILLED', 'EXPIRED'],
+  })
+  @ApiResponse({ status: 200, description: '返回职位列表及分页信息' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 403, description: '用户不是面试官' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Get('interviewer/jobs/search')
+  async searchInterviewerJobs(@Request() req, @Query() query) {
+    const userId = req.user.userId;
+    this.logger.log(`搜索面试官ID:${userId}发布的职位列表`);
+    
+    // 获取面试官信息
+    const interviewer = await this.jobService.getInterviewerByUserId(userId);
+    
+    // 构建筛选条件并转换相关参数
+    const searchParams = {
+      page: query.page ? parseInt(query.page) : 1,
+      pageSize: query.pageSize ? parseInt(query.pageSize) : 10,
+      keyword: query.keyword,
+      status: query.status,
+    };
+    
+    const { jobs, total } = await this.jobService.getInterviewerJobsWithFilter(
+      interviewer.id,
+      searchParams
+    );
+
+    return pagination(
+      jobs,
+      total,
+      searchParams.page,
+      searchParams.pageSize
     );
   }
 }

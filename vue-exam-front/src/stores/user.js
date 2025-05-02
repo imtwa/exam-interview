@@ -60,6 +60,11 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem(PROFILE_STATUS_KEY, status)
   }
 
+  // 设置求职者信息
+  function setJobSeekerInfo(info) {
+    localStorage.setItem('exam_jobseeker_info', JSON.stringify(info))
+  }
+
   // 清除Token
   function clearToken() {
     token.value = ''
@@ -154,6 +159,33 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 专门用于获取面试官详细资料的函数
+  async function fetchInterviewerProfile() {
+    try {
+      // 仅当用户是面试官角色时获取面试官资料
+      if (!isInterviewer.value) {
+        return Promise.resolve(null)
+      }
+      
+      // 使用checkProfile API获取面试官详细信息
+      const response = await checkProfile()
+      
+      // 如果获取成功，更新面试官信息
+      if (response.profileCompleted && response.profileData) {
+        setInterviewerInfo(response.profileData)
+        setProfileStatus(true)
+      } else {
+        setProfileStatus(false)
+      }
+      
+      return Promise.resolve(response)
+    } catch (error) {
+      console.error('获取面试官资料失败:', error)
+      setProfileStatus(false)
+      return Promise.reject(error)
+    }
+  }
+
   // 退出登录
   function logout() {
     // 调用后端登出接口（如果需要）
@@ -213,11 +245,13 @@ export const useUserStore = defineStore('user', () => {
     setToken,
     setUserInfo,
     setInterviewerInfo,
+    setJobSeekerInfo,
     clearToken,
     clearUserInfo,
     userLogin,
     getInfo,
     checkUserProfile,
+    fetchInterviewerProfile,
     logout,
     generateAvatar
   }

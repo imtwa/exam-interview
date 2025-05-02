@@ -382,6 +382,7 @@ import { getRegionData } from '@/api/region'
 import NumberSteps from '@/components/NumberSteps.vue'
 import { Search, Loading, InfoFilled } from '@element-plus/icons-vue'
 import { getIndustryCategories } from '@/api/industry'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const activeStep = ref(0)
@@ -646,9 +647,21 @@ const prepareSubmitData = () => {
 const submitProfile = async () => {
   try {
     loading.value = true
-    const response = await updateInterviewerProfile(profileSetupForm)
+    const result = await updateInterviewerProfile(profileSetupForm)
+
+    // 处理可能存在的嵌套结构
+    const response = result.data || result
 
     if (response) {
+      console.log('面试官资料设置成功，返回数据:', response)
+      
+      // 在资料设置成功后直接更新存储
+      // 保存面试官信息到Pinia store
+      const userStore = useUserStore()
+      userStore.setInterviewerInfo(response.interviewer || response)
+      // 标记用户资料已完善
+      userStore.setProfileStatus(true)
+      
       ElMessage.success('个人资料设置成功')
       // 跳转到主页或仪表板
       router.push('/profile')

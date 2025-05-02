@@ -165,8 +165,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
-import { getJobs, createJob, updateJob, deleteJob, getHotCities } from '@/api/job'
+import { getJobs, createJob, updateJob, deleteJob } from '@/api/job'
 import { getIndustrySubCategories } from '@/api/industry'
+import { getRegionData } from '@/api/region'
 import { formatDate } from '@/utils/formatDate'
 import { useUserStore } from '@/stores/user'
 
@@ -225,7 +226,7 @@ const fetchOptions = async () => {
     const categoryRes = await getIndustrySubCategories();
     subCategories.value = categoryRes.list;
     
-    const citiesRes = await getHotCities();
+    const citiesRes = await getRegionData();
     hotCities.value = citiesRes.list;
   } catch (error) {
     console.error('获取选项数据失败:', error);

@@ -158,26 +158,37 @@ const handleLogin = () => {
           localStorage.removeItem('rememberEmail')
         }
 
-        // 检查用户个人信息完善状态 - 使用优化后的单次调用函数
+        // 登录成功后，获取用户详细信息
+        await userStore.getInfo()
+
+        // 检查用户个人信息完善状态
         try {
-          const data = await userStore.checkUserProfile()
-          const { profileCompleted } = data
+          let profileResult;
           
-          // 如果未完善信息，则跳转到对应的设置页面
-          if (!profileCompleted) {
+          // 根据角色调用不同的资料获取方法
+          if (userStore.isInterviewer) {
+            // 直接获取面试官详细资料
+            profileResult = await userStore.fetchInterviewerProfile();
+          } else {
+            // 使用通用的资料检查方法
+            profileResult = await userStore.checkUserProfile();
+          }
+          
+          // 根据资料完善状态决定跳转
+          if (!profileResult || !profileResult.profileCompleted) {
             ElMessage.info('请先完善您的个人资料')
             if (userStore.isInterviewer) {
               router.push('/interviewer/profile-setup')
             } else if (userStore.isJobSeeker) {
-              router.push('job-seeker/profile-setup')
+              router.push('/job-seeker/profile-setup')
             }
           } else {
-            // 信息已完善，直接跳转到首页
+            // 已完善资料，跳转到首页
             router.push('/')
           }
         } catch (error) {
-          console.error('检查个人信息状态失败:', error)
-          // 检查失败，跳转到首页
+          console.error('检查个人资料失败:', error)
+          // 检查失败也让用户继续使用，跳转到首页
           router.push('/')
         }
       } catch (error) {

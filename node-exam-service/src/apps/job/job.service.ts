@@ -369,11 +369,21 @@ export class JobService {
         salaryMax,
         categoryId,
         subCategoryId,
+        experienceReq,
+        educationReq,
         sortField = JobSortField.CREATED_AT,
         sortOrder = 'desc',
       } = query;
 
-      const skip = (page - 1) * pageSize;
+      this.logger.log(`查询参数: page=${page}, pageSize=${pageSize}, keyword=${keyword}, city=${city}, salaryMin=${salaryMin}, salaryMax=${salaryMax}, experienceReq=${experienceReq}, educationReq=${educationReq}`);
+
+      // 确保数值参数为数字类型
+      const pageNum = typeof page === 'string' ? parseInt(page) : page;
+      const pageSizeNum = typeof pageSize === 'string' ? parseInt(pageSize) : pageSize;
+      const salaryMinNum = salaryMin && typeof salaryMin === 'string' ? parseInt(salaryMin) : salaryMin;
+      const salaryMaxNum = salaryMax && typeof salaryMax === 'string' ? parseInt(salaryMax) : salaryMax;
+      
+      const skip = (pageNum - 1) * pageSizeNum;
 
       // 构建查询条件
       const where: any = {
@@ -393,33 +403,43 @@ export class JobService {
 
       // 公司筛选
       if (companyId) {
-        where.companyId = companyId;
+        where.companyId = parseInt(companyId as any);
       }
 
       // 城市筛选
       if (city) {
-        where.city = city;
+        where.city = { contains: city }; // 使用模糊查询而不是完全匹配
       }
 
       // 薪资范围筛选
-      if (salaryMin) {
-        where.salaryMax = { gte: salaryMin }; // 最高薪资不小于最低要求
+      if (salaryMinNum) {
+        where.salaryMax = { gte: salaryMinNum }; // 最高薪资不小于最低要求
       }
 
-      if (salaryMax) {
-        where.salaryMin = { lte: salaryMax }; // 最低薪资不大于最高要求
+      if (salaryMaxNum) {
+        where.salaryMin = { lte: salaryMaxNum }; // 最低薪资不大于最高要求
+      }
+
+      // 工作经验筛选
+      if (experienceReq) {
+        where.experienceReq = experienceReq;
+      }
+
+      // 学历要求筛选
+      if (educationReq) {
+        where.educationReq = educationReq;
       }
 
       // 一级分类筛选
       if (categoryId) {
         where.subCategory = {
-          categoryId,
+          categoryId: typeof categoryId === 'string' ? parseInt(categoryId) : categoryId,
         };
       }
 
       // 二级分类筛选
       if (subCategoryId) {
-        where.subCategoryId = subCategoryId;
+        where.subCategoryId = typeof subCategoryId === 'string' ? parseInt(subCategoryId) : subCategoryId;
       }
 
       // 构建排序条件
@@ -438,7 +458,7 @@ export class JobService {
         this.prisma.jobPosting.findMany({
           where,
           skip,
-          take: pageSize,
+          take: pageSizeNum,
           orderBy,
           include: {
             company: {
@@ -476,6 +496,8 @@ export class JobService {
         };
       });
 
+      this.logger.log(`查询到 ${total} 条记录，返回 ${jobs.length} 条数据`);
+      
       return { jobs: jobList, total };
     } catch (error) {
       this.logger.error(`获取招聘信息列表失败: ${error.message}`, error);
@@ -586,6 +608,133 @@ export class JobService {
         `获取面试官发布的职位列表失败: ${error.message}`,
         error,
       );
+      throw error;
+    }
+  }
+
+  /**
+   * 根据用户ID获取面试官信息
+   * @param userId 用户ID
+   * @returns 面试官信息
+   */
+  async getInterviewerByUserId(userId: number) {
+    const interviewer = await this.prisma.interviewer.findUnique({
+      where: { userId, deletedAt: null },
+    });
+
+    if (!interviewer) {
+      throw new ForbiddenException('用户不是面试官');
+    }
+
+    return interviewer;
+  }
+
+  /**
+   * 获取面试官发布的职位列表(带筛选条件)
+   * @param interviewerId 面试官ID
+   * @param query 查询参数
+   * @returns 职位列表及总数
+   */
+  async getInterviewerJobsWithFilter(
+    interviewerId: number,
+    query: {
+      page?: number;
+      pageSize?: number;
+      keyword?: string;
+      status?: string;
+      sortField?: string;
+      sortOrder?: 'asc' | 'desc';
+    }
+  ) {
+    try {
+      const {
+        page = 1,
+        pageSize = 10,
+        keyword,
+        status,
+        sortField = 'createdAt',
+        sortOrder = 'desc',
+      } = query;
+
+      const skip = (page - 1) * pageSize;
+
+      // 构建查询条件
+      const where: any = {
+        interviewerId,
+        deletedAt: null,
+      };
+
+      // 状态筛选
+      if (status) {
+        where.status = status;
+      }
+
+      // 关键词搜索
+      if (keyword) {
+        where.OR = [
+          { title: { contains: keyword } },
+          { description: { contains: keyword } },
+          { requirements: { contains: keyword } },
+        ];
+      }
+
+      // 构建排序条件
+      let orderBy: any;
+      if (sortField === 'salary') {
+        orderBy = {
+          salaryMax: sortOrder,
+        };
+      } else {
+        orderBy = {
+          createdAt: sortOrder,
+        };
+      }
+
+      const [jobs, total] = await Promise.all([
+        this.prisma.jobPosting.findMany({
+          where,
+          skip,
+          take: pageSize,
+          orderBy,
+          include: {
+            company: {
+              select: {
+                name: true,
+                size: true,
+                fundingStage: true,
+              },
+            },
+            subCategory: {
+              select: {
+                name: true,
+                category: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            _count: {
+              select: {
+                applications: true,
+              },
+            },
+          },
+        }),
+        this.prisma.jobPosting.count({ where }),
+      ]);
+
+      // 处理结果
+      const jobList = jobs.map((job) => {
+        return {
+          ...job,
+          applicationsCount: job._count?.applications || 0,
+        };
+      });
+
+      return { jobs: jobList, total };
+    } catch (error) {
+      this.logger.error(`获取面试官职位列表失败: ${error.message}`, error);
       throw error;
     }
   }

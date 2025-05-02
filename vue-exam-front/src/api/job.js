@@ -14,8 +14,19 @@ export function createJob(data) {
 }
 
 /**
- * 获取分页招聘信息列表
+ * 获取分页招聘信息列表(支持更多筛选条件)
  * @param {Object} params 查询参数
+ * @example
+ * {
+ *   page: 1,                // 页码
+ *   pageSize: 10,           // 每页条数
+ *   keyword: "前端",        // 关键词
+ *   city: "北京",           // 城市（支持模糊查询）
+ *   salaryMin: 5000,        // 薪资下限
+ *   salaryMax: 10000,       // 薪资上限
+ *   experienceReq: "STUDENT", // 工作经验要求
+ *   educationReq: "BACHELOR"  // 学历要求
+ * }
  * @returns {Promise}
  */
 export function getJobList(params) {
@@ -66,12 +77,34 @@ export function deleteJob(id) {
 
 /**
  * 获取面试官发布的职位列表
+ * @param {Object} params 查询参数
  * @returns {Promise}
  */
-export function getInterviewerJobs() {
+export function getInterviewerJobs(params = {}) {
   return request({
     url: '/job/interviewer/jobs',
-    method: 'get'
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取面试官发布的职位列表(带筛选)
+ * @param {Object} params 查询参数
+ * @example
+ * {
+ *   page: 1,             // 页码
+ *   pageSize: 10,        // 每页条数
+ *   keyword: "开发",     // 关键词
+ *   status: "ACTIVE"     // 职位状态: "ACTIVE"(招聘中),"FILLED"(已招满),"EXPIRED"(已过期)
+ * }
+ * @returns {Promise}
+ */
+export function searchInterviewerJobs(params = {}) {
+  return request({
+    url: '/job/interviewer/jobs/search',
+    method: 'get',
+    params
   })
 }
 
@@ -214,6 +247,32 @@ export function getJobById(id) {
 export function getJobsByInterviewer(params) {
   return request({
     url: '/job/interviewer/jobs',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 投递职位申请
+ * @param {number} jobId 职位ID
+ * @returns {Promise<any>}
+ */
+export function applyJob(jobId) {
+  return request({
+    url: `/application/submit/${jobId}`,
+    method: 'post'
+  })
+}
+
+/**
+ * 获取公司的所有职位
+ * @param {number} companyId 公司ID
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getCompanyJobs(companyId, params = {}) {
+  return request({
+    url: `/job/company/${companyId}`,
     method: 'get',
     params
   })

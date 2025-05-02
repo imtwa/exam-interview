@@ -160,7 +160,7 @@ export class JobSeekerService {
     userId: number,
     profileDto: UpdateJobseekerProfileDto,
   ) {
-    this.logger.log(`同步更新求职者全部资料: ${userId}`);
+    this.logger.log(`同步更新求职者全部资料: ${userId}，数据: ${JSON.stringify(profileDto)}`);
 
     // 检查用户是否存在
     const user = await this.prisma.frontUser.findUnique({
@@ -243,7 +243,14 @@ export class JobSeekerService {
         }
 
         // 4. 处理教育经历
-        if (profileDto.education) {
+        if (
+          profileDto.education &&
+          (
+            profileDto.education.school ||
+            profileDto.education.degree ||
+            profileDto.education.major
+          )
+        ) {
           if (jobSeeker.education && jobSeeker.education.length > 0) {
             // 更新第一条教育经历
             await prisma.education.update({
@@ -272,7 +279,10 @@ export class JobSeekerService {
         }
 
         // 5. 处理工作经历
-        if (profileDto.experience) {
+        if (
+          profileDto.experience &&
+          (profileDto.experience.company || profileDto.experience.position)
+        ) {
           if (jobSeeker.workExperience && jobSeeker.workExperience.length > 0) {
             // 更新第一条工作经历
             await prisma.workExperience.update({
@@ -541,6 +551,12 @@ export class JobSeekerService {
     userId: number,
     createWorkExperienceDto: CreateWorkExperienceDto,
   ) {
+    // 验证数据完整性
+    if (!createWorkExperienceDto.company && !createWorkExperienceDto.position) {
+      this.logger.warn(`添加工作经验失败: 公司或职位不能同时为空`);
+      throw new BadRequestException('公司名称或职位至少需要填写一项');
+    }
+
     // 获取求职者ID
     const jobSeeker = await this.getOrCreateJobSeeker(userId);
 
@@ -556,7 +572,7 @@ export class JobSeekerService {
       return workExperience;
     } catch (error) {
       this.logger.error(`添加工作经验失败: ${error.message}`, error.stack);
-      throw new BadRequestException('添加工作经验失败');
+      throw new BadRequestException(`添加工作经验失败: ${error.message}`);
     }
   }
 

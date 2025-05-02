@@ -842,10 +842,20 @@ onMounted(async () => {
   // 确保获取面试官ID和公司ID
   if (!userStore.companyId || !userStore.interviewerId) {
     try {
-      await userStore.checkUserProfile()
+      await userStore.fetchInterviewerProfile()
+      console.log('获取到面试官信息:', {
+        companyId: userStore.companyId,
+        interviewerId: userStore.interviewerId
+      })
     } catch (error) {
+      console.error('获取面试官信息失败:', error)
       ElMessage.error('获取面试官信息失败，请刷新页面重试')
     }
+  } else {
+    console.log('已有面试官信息:', {
+      companyId: userStore.companyId,
+      interviewerId: userStore.interviewerId
+    })
   }
   
   await fetchJobs()

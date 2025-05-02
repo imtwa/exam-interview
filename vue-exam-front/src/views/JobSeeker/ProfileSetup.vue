@@ -71,7 +71,7 @@
           <!-- 第二步：教育经历 -->
           <div v-if="activeStep === 1" class="step-content">
             <h2 class="step-content-title">教育经历</h2>
-            <p class="step-content-desc">请填写您的最高学历信息</p>
+            <p class="step-content-desc">请填写您的最高学历信息（可选）</p>
 
             <el-form
               ref="educationFormRef"
@@ -87,10 +87,11 @@
                   style="width: 100%"
                 >
                   <el-option label="高中" value="HIGH_SCHOOL" />
-                  <el-option label="大专" value="COLLEGE" />
+                  <el-option label="大专" value="ASSOCIATE" />
                   <el-option label="本科" value="BACHELOR" />
                   <el-option label="硕士" value="MASTER" />
-                  <el-option label="博士" value="PHD" />
+                  <el-option label="博士" value="DOCTORATE" />
+                  <el-option label="其他" value="OTHER" />
                 </el-select>
               </el-form-item>
 
@@ -135,7 +136,7 @@
           <!-- 第三步：工作经验 -->
           <div v-if="activeStep === 2" class="step-content">
             <h2 class="step-content-title">工作经验</h2>
-            <p class="step-content-desc">请填写您的工作经验（如无可跳过）</p>
+            <p class="step-content-desc">请填写您的工作经验（可选）</p>
 
             <el-form
               ref="experienceFormRef"
@@ -186,6 +187,7 @@
 
               <div class="form-actions">
                 <el-button @click="prevStep">上一步</el-button>
+                <el-button type="info" @click="skipCurrentStep">跳过</el-button>
                 <el-button type="primary" @click="nextStep('experienceFormRef')">下一步</el-button>
               </div>
             </el-form>
@@ -388,11 +390,13 @@ import { ElMessage } from 'element-plus'
 import NumberSteps from '@/components/NumberSteps.vue'
 import { getRegionData } from '@/api/region'
 import { syncJobseekerProfile } from '@/api/jobseeker'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const activeStep = ref(0)
 const loading = ref(false)
 const regionData = ref([])
+const userStore = useUserStore()
 
 // 地址选择相关
 const selectedRegion = ref([])
@@ -416,10 +420,11 @@ const genderMap = {
 // 学历映射
 const degreeMap = {
   HIGH_SCHOOL: '高中',
-  COLLEGE: '大专',
+  ASSOCIATE: '大专',
   BACHELOR: '本科',
   MASTER: '硕士',
-  PHD: '博士'
+  DOCTORATE: '博士',
+  OTHER: '其他'
 }
 
 // 表单和表单引用
@@ -559,22 +564,46 @@ const submitProfile = async () => {
   try {
     loading.value = true
 
-    // 这里应该调用API保存求职者信息
-    const response = await syncJobseekerProfile({
+    // 准备提交数据，处理可能为空的字段
+    const submitData = {
       basic: basicForm,
-      education: educationForm,
-      experience: experienceForm,
       jobIntention: jobIntentionForm
-    })
+    }
 
-    console.log(response)
+    // 检查教育信息是否已填写
+    if (educationForm.degree && educationForm.school) {
+      submitData.education = educationForm
+    } else {
+      // 如果未填写教育信息，发送空对象
+      submitData.education = {}
+    }
 
-    ElMessage.success('个人资料设置成功')
-    // 跳转到首页或仪表板
-    router.push('/')
+    // 检查工作经验是否已填写
+    if (experienceForm.company && experienceForm.position) {
+      submitData.experience = experienceForm
+    } else {
+      // 如果未填写工作经验，发送对象
+      submitData.experience = {}
+    }
+    
+    // 调用API保存求职者信息
+    const response = await syncJobseekerProfile(submitData)
+
+    if (response) {
+      ElMessage.success('个人资料设置成功')
+      // 跳转到首页或仪表板
+      router.push('/')
+    } else {
+      ElMessage.error('设置失败，请重试')
+    }
   } catch (error) {
     console.error('提交个人资料失败:', error)
-    ElMessage.error('设置失败，请重试')
+    // 显示具体错误信息，帮助用户理解问题
+    if (error.response && error.response.data && error.response.data.message) {
+      ElMessage.error(`设置失败: ${error.response.data.message}`)
+    } else {
+      ElMessage.error('设置失败，请重试')
+    }
   } finally {
     loading.value = false
   }
@@ -615,6 +644,12 @@ const formatDate = date => {
   const day = String(date.getDate()).padStart(2, '0')
 
   return `${year}-${month}-${day}`
+}
+
+// 跳过当前步骤
+const skipCurrentStep = () => {
+  // 直接进入下一步，不做表单验证
+  activeStep.value++
 }
 
 onMounted(() => {

@@ -29,6 +29,11 @@ const routes = [
         component: () => import('../views/Exam/ExamDetail.vue')
       },
       {
+        path: 'job/:id',
+        name: 'RecruitmentJobDetail',
+        component: () => import('../views/Recruitment/JobDetail.vue')
+      },
+      {
         path: 'practice-exam/:id',
         name: 'PracticeExam',
         component: () => import('../views/Exam/PracticeExam.vue')
@@ -104,10 +109,10 @@ const routes = [
       },
       {
         path: '/job-management/detail/:id',
-        name: 'JobDetail',
+        name: 'JobManagementDetail',
         component: () => import('../views/Interviewer/Jobs/Detail.vue'),
         meta: {
-          title: '岗位详情',
+          title: '岗位管理详情',
           requireAuth: true,
           roles: ['INTERVIEWER']
         }

@@ -1,6 +1,7 @@
 import { IsOptional, IsInt, Min, IsString, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { ExperienceLevel, Degree } from '../../../../prisma/generated/client';
 
 enum JobSortField {
   CREATED_AT = 'createdAt',
@@ -70,6 +71,26 @@ export class QueryJobDto {
   @IsInt({ message: '二级分类ID必须是整数' })
   @Min(1, { message: '二级分类ID必须大于0' })
   subCategoryId?: number;
+
+  @ApiProperty({ 
+    description: '工作经验要求', 
+    required: false,
+    enum: ExperienceLevel,
+    example: 'STUDENT' 
+  })
+  @IsOptional()
+  @IsEnum(ExperienceLevel, { message: '工作经验必须是有效的枚举值' })
+  experienceReq?: ExperienceLevel;
+
+  @ApiProperty({ 
+    description: '学历要求', 
+    required: false,
+    enum: Degree,
+    example: 'BACHELOR' 
+  })
+  @IsOptional()
+  @IsEnum(Degree, { message: '学历要求必须是有效的枚举值' })
+  educationReq?: Degree;
 
   @ApiProperty({
     description: '排序字段',

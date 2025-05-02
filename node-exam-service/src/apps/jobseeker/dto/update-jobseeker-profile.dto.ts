@@ -9,6 +9,7 @@ import {
   ValidateNested,
   IsObject,
   Min,
+  IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Degree, Gender } from '../../../../prisma/generated/client';
@@ -70,86 +71,99 @@ export class BasicInfoDto {
 
 // 教育经历DTO
 export class EducationDto {
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: '学校名称',
+    required: false,
+    example: '北京大学',
+  })
+  school: string;
+
+  @IsOptional()
+  @IsEnum(Degree)
   @ApiProperty({
     description: '学历',
+    required: false,
     enum: Degree,
     example: Degree.BACHELOR,
   })
-  @IsEnum(Degree)
   degree: Degree;
 
-  @ApiProperty({
-    description: '学校名称',
-    example: '北京大学',
-  })
+  @IsOptional()
   @IsString()
-  school: string;
-
   @ApiProperty({
     description: '专业',
+    required: false,
     example: '计算机科学',
   })
-  @IsString()
   major: string;
 
+  @IsOptional()
+  @IsDateString()
   @ApiProperty({
     description: '开始日期',
+    required: false,
     example: '2016-09-01',
   })
-  @IsDate()
-  @Type(() => Date)
-  startDate: Date;
+  startDate: string;
 
+  @IsOptional()
+  @IsDateString()
   @ApiProperty({
     description: '结束日期',
-    example: '2020-07-01',
+    required: false,
+    example: '2020-06-30',
   })
-  @IsDate()
-  @Type(() => Date)
-  @IsOptional()
-  endDate?: Date;
+  endDate: string;
 }
 
 // 工作经验DTO
 export class ExperienceDto {
+  @IsOptional()
+  @IsString()
   @ApiProperty({
     description: '公司名称',
-    example: '某科技公司',
+    required: false,
+    example: '字节跳动',
   })
-  @IsString()
   company: string;
 
-  @ApiProperty({
-    description: '职位',
-    example: '前端开发工程师',
-  })
+  @IsOptional()
   @IsString()
+  @ApiProperty({
+    description: '职位名称',
+    required: false,
+    example: '前端工程师',
+  })
   position: string;
 
+  @IsOptional()
+  @IsDateString()
   @ApiProperty({
     description: '开始日期',
-    example: '2020-08-01',
+    required: false,
+    example: '2020-01-01',
   })
-  @IsDate()
-  @Type(() => Date)
-  startDate: Date;
+  startDate: string;
 
+  @IsOptional()
+  @IsDateString()
   @ApiProperty({
     description: '结束日期',
-    example: '2022-09-01',
+    required: false,
+    example: '2022-01-01',
   })
-  @IsDate()
-  @Type(() => Date)
-  @IsOptional()
-  endDate?: Date;
+  endDate: string;
 
+  @IsOptional()
+  @IsString()
   @ApiProperty({
     description: '工作描述',
-    example: '负责公司前端项目开发与维护',
+    required: false,
+    example: '负责公司前端项目的开发和维护',
   })
-  @IsString()
-  @IsOptional()
-  description?: string;
+  description: string;
 }
 
 // 求职意向DTO
