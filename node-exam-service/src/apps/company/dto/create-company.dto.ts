@@ -46,13 +46,13 @@ export class CreateCompanyDto {
   size?: CompanySize;
 
   @ApiProperty({
-    description: '所属行业',
-    example: '互联网',
+    description: '行业ID',
+    example: 1,
     required: false,
   })
-  @IsString({ message: '所属行业必须是字符串' })
+  @IsInt({ message: '行业ID必须是整数' })
   @IsOptional()
-  industry?: string;
+  industryId?: number;
 
   @ApiProperty({
     description: '成立年份',

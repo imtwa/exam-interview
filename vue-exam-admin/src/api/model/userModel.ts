@@ -189,6 +189,7 @@ export interface Company {
   address?: string
   fundingStage?: FundingStage
   size?: CompanySize
+  industryId?: number
   industry?: string
   foundedYear?: number
   verificationStatus: VerificationStatus
@@ -197,6 +198,7 @@ export interface Company {
   deletedAt?: string | null
   interviewers?: Interviewer[]
   jobPostings?: JobPosting[]
+  website?: string
 }
 
 /**
@@ -268,10 +270,12 @@ export interface Industry {
   id?: number
   name: string
   parentId?: number | null
+  description?: string
   children?: Industry[]
   createdAt?: string
   updatedAt?: string
   deletedAt?: string | null
+  subCategories?: any[]
 }
 
 /**
@@ -305,8 +309,9 @@ export interface InterviewerListParams extends Partial<Paging> {
  */
 export interface CompanyListParams extends Partial<Paging> {
   keyword?: string
-  industry?: string
+  industryId?: number
   verificationStatus?: VerificationStatus
+  fundingStage?: string
 }
 
 /**

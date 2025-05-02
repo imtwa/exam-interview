@@ -124,3 +124,28 @@ export function deleteIndustrySubcategory(id) {
     method: 'post'
   })
 }
+
+/**
+ * 获取行业分类列表
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getIndustryCategories(params) {
+  return request({
+    url: '/industry/category',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取行业二级分类列表
+ * @param {number} categoryId 一级行业ID
+ * @returns {Promise}
+ */
+export function getIndustrySubCategories(categoryId) {
+  return request({
+    url: `/industry/category/${categoryId}/subcategories`,
+    method: 'get'
+  })
+}

@@ -147,7 +147,13 @@ export class IndustryService {
           include: {
             subCategories: {
               where: { deletedAt: null },
-              select: { id: true, name: true },
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                createdAt: true,
+                updatedAt: true,
+              },
             },
           },
         }),

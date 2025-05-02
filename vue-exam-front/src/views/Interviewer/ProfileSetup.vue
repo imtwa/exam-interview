@@ -64,7 +64,7 @@
                       <div class="company-option">
                         <span class="company-name">{{ company.name }}</span>
                         <span v-if="company.industry" class="company-industry">{{
-                          company.industry
+                          company.industry.name
                         }}</span>
                       </div>
                     </el-option>
@@ -130,8 +130,21 @@
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12">
-                    <el-form-item label="所属行业" prop="industry">
-                      <el-input v-model="companyForm.industry" placeholder="请输入所属行业" />
+                    <el-form-item label="所属行业" prop="industryId">
+                      <el-select
+                        v-model="companyForm.industryId"
+                        placeholder="请选择所属行业"
+                        style="width: 100%"
+                      >
+                        <el-option
+                          v-for="option in industryOptions"
+                          :key="option.id"
+                          :label="option.name"
+                          :value="option.id"
+                        >
+                          {{ option.name }}
+                        </el-option>
+                      </el-select>
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -268,7 +281,7 @@
                           v-if="getSelectedCompany() && getSelectedCompany().industry"
                         >
                           <span class="label">所属行业:</span>
-                          <span class="value">{{ getSelectedCompany().industry }}</span>
+                          <span class="value">{{ getSelectedCompany().industry.name }}</span>
                         </div>
                         <div
                           class="confirm-item"
@@ -315,9 +328,9 @@
                           <span class="label">公司名称:</span>
                           <span class="value highlight">{{ companyForm.name }}</span>
                         </div>
-                        <div class="confirm-item" v-if="companyForm.industry">
+                        <div class="confirm-item" v-if="companyForm.industryId">
                           <span class="label">所属行业:</span>
-                          <span class="value">{{ companyForm.industry }}</span>
+                          <span class="value">{{ getIndustryName(companyForm.industryId) }}</span>
                         </div>
                         <div class="confirm-item" v-if="companyForm.address">
                           <span class="label">公司地址:</span>
@@ -368,6 +381,7 @@ import { getCompanyList } from '@/api/company'
 import { getRegionData } from '@/api/region'
 import NumberSteps from '@/components/NumberSteps.vue'
 import { Search, Loading, InfoFilled } from '@element-plus/icons-vue'
+import { getIndustryCategories } from '@/api/industry'
 
 const router = useRouter()
 const activeStep = ref(0)
@@ -487,7 +501,7 @@ const companyForm = reactive({
   regionNames: [],
   fundingStage: '',
   size: '',
-  industry: '',
+  industryId: null,
   foundedYear: null
 })
 
@@ -618,7 +632,13 @@ const prepareSubmitData = () => {
     // console.log('选择的公司ID:', profileSetupForm.existingCompanyId);
   } else {
     profileSetupForm.useExistingCompany = false
-    profileSetupForm.company = { ...companyForm }
+    profileSetupForm.company = { 
+      ...companyForm,
+      // 确保使用行业ID
+      industryId: companyForm.industryId
+    }
+    // 删除不需要的字段
+    delete profileSetupForm.company.industry;
   }
 }
 
@@ -710,8 +730,34 @@ const searchCompany = async query => {
   }, 300)
 }
 
+// 添加行业数据
+const industryOptions = ref([])
+const fetchIndustries = async () => {
+  try {
+    const response = await getIndustryCategories()
+    if (response && response.list) {
+      industryOptions.value = response.list.map(category => ({
+        id: category.id,
+        name: category.name,
+        subCategories: category.subCategories || []
+      }))
+    }
+  } catch (error) {
+    console.error('获取行业数据失败:', error)
+    ElMessage.warning('行业数据加载失败，请刷新页面重试')
+  }
+}
+
+// 获取行业名称
+const getIndustryName = (id) => {
+  if (!id || !industryOptions.value) return '';
+  const industry = industryOptions.value.find(item => item.id === id);
+  return industry ? industry.name : '';
+}
+
 onMounted(() => {
   fetchRegionData()
+  fetchIndustries() // 加载行业数据
 
   // 初始化时加载一些默认公司
   setTimeout(() => {

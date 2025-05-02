@@ -228,7 +228,7 @@ model Company {
   address         String? /// 公司地址
   fundingStage    FundingStage? /// 融资阶段：未融资/天使轮/A轮/B轮/C轮/D轮及以上/已上市/不需要融资
   size            CompanySize? /// 公司规模：0-20人/20-99人/100-499人/500-999人/1000-9999人/10000+人
-  industry        String? /// 所属行业
+  industryId      Int? /// 所属行业ID
   foundedYear     Int? /// 成立年份
   verificationStatus VerificationStatus @default(PENDING) /// 验证状态：待验证/已验证/已拒绝
   createdAt       DateTime  @default(now()) /// 创建时间
@@ -236,6 +236,7 @@ model Company {
   deletedAt       DateTime? /// 删除时间，用于软删除
   
   // 关联表
+  industry        IndustryCategory? @relation(fields: [industryId], references: [id]) /// 所属行业，多对一关系
   interviewers    Interviewer[] /// 公司的HR/面试官，一对多关系
   jobPostings     JobPosting[] /// 公司发布的职位，一对多关系
 
@@ -273,6 +274,7 @@ model IndustryCategory {
   
   // 关联表
   subCategories   IndustrySubCategory[] /// 二级分类，一对多关系
+  companies       Company[] /// 该行业下的公司，一对多关系
 
   @@map("exam_recruitment_industry_categories")
 }

@@ -78,7 +78,7 @@ export class CompanyService {
       page = 1,
       pageSize = 10,
       name,
-      industry,
+      industryId,
       verificationStatus,
     } = query;
     const skip = (page - 1) * pageSize;
@@ -88,8 +88,8 @@ export class CompanyService {
     if (name) {
       where.name = { contains: name };
     }
-    if (industry) {
-      where.industry = { contains: industry };
+    if (industryId) {
+      where.industryId = parseInt(industryId.toString(), 10);
     }
     if (verificationStatus) {
       where.verificationStatus = verificationStatus;
@@ -102,6 +102,9 @@ export class CompanyService {
           skip,
           take: pageSize,
           orderBy: { createdAt: 'desc' },
+          include: {
+            industry: true, // 包含行业信息
+          },
         }),
         this.prisma.company.count({ where }),
       ]);
@@ -125,6 +128,9 @@ export class CompanyService {
     try {
       const company = await this.prisma.company.findFirst({
         where: { id, deletedAt: null },
+        include: {
+          industry: true, // 包含行业信息
+        },
       });
 
       if (!company) {

@@ -50,6 +50,11 @@
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
+        <el-table-column prop="industry" label="所属行业">
+          <template #default="{ row }">
+            {{ row.industry ? row.industry.name : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="280">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">查看</el-button>
@@ -110,12 +115,12 @@
         </el-form-item>
         <el-form-item label="公司规模" prop="size">
           <el-select v-model="formData.size" placeholder="请选择公司规模">
-            <el-option label="少于50人" value="LESS_THAN_50" />
-            <el-option label="50-200人" value="BETWEEN_50_200" />
-            <el-option label="200-500人" value="BETWEEN_200_500" />
-            <el-option label="500-1000人" value="BETWEEN_500_1000" />
-            <el-option label="1000-5000人" value="BETWEEN_1000_5000" />
-            <el-option label="5000人以上" value="MORE_THAN_5000" />
+            <el-option
+              v-for="(label, value) in companySizeMap"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="融资阶段" prop="fundingStage">
@@ -134,19 +139,20 @@
         <el-form-item label="公司网站" prop="website">
           <el-input v-model="formData.website" placeholder="请输入公司网站" />
         </el-form-item>
-        <el-form-item label="所属行业" prop="industryIds">
-          <el-cascader
-            v-model="formData.industryIds"
-            :options="industryOptions"
-            :props="{
-              checkStrictly: false,
-              label: 'name',
-              value: 'id',
-              children: 'children'
-            }"
+        <el-form-item label="所属行业" prop="industryId">
+          <el-select
+            v-model="formData.industryId"
             placeholder="请选择行业"
             clearable
-          />
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in industryOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="认证状态" prop="verificationStatus">
           <el-select v-model="formData.verificationStatus" placeholder="请选择认证状态">
@@ -218,6 +224,7 @@
   import { CompanyService } from '@/api/companyService'
   import { IndustryService } from '@/api/industryService'
   import type { Industry } from '@/api/model/userModel'
+  import { VerificationStatus, FundingStage, CompanySize } from '@/api/model/userModel'
 
   // 定义一个新的Company接口，与后端返回的数据结构一致
   interface Company {
@@ -227,7 +234,12 @@
     address: string
     fundingStage: string
     size: string
-    industry: string
+    industryId?: number
+    industry?: {
+      id: number
+      name: string
+      description?: string
+    }
     foundedYear?: number
     verificationStatus: string
     createdAt?: string
@@ -253,37 +265,24 @@
 
   // 公司规模映射
   const companySizeMap: Record<string, string> = {
-    LESS_THAN_50: '少于50人',
-    BETWEEN_50_200: '50-200人',
-    BETWEEN_200_500: '200-500人',
-    BETWEEN_500_1000: '500-1000人',
-    BETWEEN_1000_5000: '1000-5000人',
-    MORE_THAN_5000: '5000人以上',
-    TINY: '少于50人',
-    SMALL: '50-200人',
-    MEDIUM: '200-500人',
-    LARGE: '500-1000人',
-    XLARGE: '1000-5000人',
-    XXLARGE: '5000人以上'
+    TINY: '0-20人',
+    SMALL: '20-99人',
+    MEDIUM: '100-499人',
+    LARGE: '500-999人',
+    XLARGE: '1000-9999人',
+    XXLARGE: '10000人以上'
   }
 
   // 融资阶段映射
   const fundingStageMap: Record<string, string> = {
-    SEED: '种子轮',
+    UNFUNDED: '未融资',
     ANGEL: '天使轮',
-    PRE_A: '天使+轮',
-    A: 'A轮',
-    A_PLUS: 'A+轮',
-    B: 'B轮',
-    B_PLUS: 'B+轮',
-    C: 'C轮',
-    C_PLUS: 'C+轮',
-    D: 'D轮及以上',
+    SERIES_A: 'A轮',
+    SERIES_B: 'B轮',
+    SERIES_C: 'C轮',
+    SERIES_D: 'D轮及以上',
     IPO: '已上市',
-    ACQUIRED: '已被收购',
-    STRATEGIC: '战略融资',
-    SELF_FUNDED: '自筹资金',
-    UNDISCLOSED: '未透露'
+    SELF_FUNDED: '不需要融资'
   }
 
   // 认证状态映射
@@ -304,11 +303,11 @@
     id: undefined as number | undefined,
     name: '',
     description: '',
-    size: 'LESS_THAN_50',
-    fundingStage: 'SEED',
+    size: 'TINY',
+    fundingStage: 'UNFUNDED',
     address: '',
     website: '',
-    industryIds: [] as number[],
+    industryId: undefined as number | undefined,
     verificationStatus: 'PENDING'
   })
 
@@ -321,13 +320,25 @@
     description: [{ required: true, message: '请输入公司描述', trigger: 'blur' }],
     size: [{ required: true, message: '请选择公司规模', trigger: 'change' }],
     fundingStage: [{ required: true, message: '请选择融资阶段', trigger: 'change' }],
-    industryIds: [{ required: true, message: '请选择所属行业', trigger: 'change' }],
+    industryId: [{ required: true, message: '请选择所属行业', trigger: 'change' }],
     verificationStatus: [{ required: true, message: '请选择认证状态', trigger: 'change' }]
   })
 
   // 查看详情相关
   const viewDialogVisible = ref(false)
-  const viewData = reactive<Company>({
+  const viewData = reactive<{
+    id: number
+    name: string
+    description: string
+    size: string
+    fundingStage: string
+    address: string
+    industry: string
+    verificationStatus: string
+    createdAt?: string
+    updatedAt?: string
+    website?: string
+  }>({
     id: 0,
     name: '',
     description: '',
@@ -347,8 +358,8 @@
         page: page.value,
         size: size.value,
         keyword: searchForm.keyword || undefined,
-        fundingStage: searchForm.fundingStage,
-        verificationStatus: searchForm.verificationStatus
+        fundingStage: searchForm.fundingStage as FundingStage | undefined,
+        verificationStatus: searchForm.verificationStatus as VerificationStatus | undefined
       }
       const res = await CompanyService.getCompanyList(params)
       if (res.code === 200) {
@@ -368,12 +379,23 @@
   // 加载行业数据
   const fetchIndustries = async () => {
     try {
-      const res = await IndustryService.getIndustryTree()
-      if (res.code === 200) {
-        industryOptions.value = res.data || []
+      loading.value = true
+      const res = await IndustryService.getIndustryCategoryList({ page: 1, pageSize: 100 })
+      if (res.code === 200 && res.data.list) {
+        industryOptions.value = res.data.list.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          value: item.id,
+          label: item.name
+        }))
+      } else {
+        ElMessage.warning('行业数据加载失败')
       }
     } catch (error) {
       console.error('获取行业数据错误:', error)
+      ElMessage.warning('行业数据加载失败')
+    } finally {
+      loading.value = false
     }
   }
 
@@ -426,23 +448,29 @@
     dialogVisible.value = true
   }
 
-  const handleEdit = (row: Company) => {
+  const handleEdit = async (row: Company) => {
     dialogType.value = 'edit'
     resetForm()
+    
+    // 先加载行业数据
+    await fetchIndustries()
+    
     formData.id = row.id
     formData.name = row.name
     formData.description = row.description || ''
-    formData.size = row.size || 'LESS_THAN_50'
-    formData.fundingStage = row.fundingStage || 'SEED'
+    formData.size = row.size || 'TINY'
+    formData.fundingStage = row.fundingStage || 'UNFUNDED'
     formData.address = row.address || ''
     formData.website = row.website || ''
     formData.verificationStatus = row.verificationStatus || 'PENDING'
 
     // 设置行业ID
-    if (row.industryIds && row.industryIds.length) {
-      formData.industryIds = row.industryIds.filter((id) => id !== undefined) as number[]
+    if (row.industryId) {
+      formData.industryId = row.industryId
+    } else if (row.industry && typeof row.industry === 'object' && 'id' in row.industry) {
+      formData.industryId = row.industry.id
     } else {
-      formData.industryIds = []
+      formData.industryId = undefined
     }
 
     dialogVisible.value = true
@@ -456,7 +484,7 @@
     viewData.size = row.size || ''
     viewData.fundingStage = row.fundingStage || ''
     viewData.address = row.address || ''
-    viewData.industry = row.industry || ''
+    viewData.industry = row.industry && typeof row.industry === 'object' ? row.industry.name : ''
     viewData.verificationStatus = row.verificationStatus
     viewData.createdAt = row.createdAt
     viewData.updatedAt = row.updatedAt
@@ -488,7 +516,7 @@
       .catch(() => {})
   }
 
-  const handleVerify = async (row: Company, status: string) => {
+  const handleVerify = async (row: Company, status: 'VERIFIED' | 'REJECTED') => {
     try {
       const res = await CompanyService.verifyCompany(row.id, status)
       if (res.code === 200) {
@@ -507,11 +535,11 @@
     formData.id = undefined
     formData.name = ''
     formData.description = ''
-    formData.size = 'LESS_THAN_50'
-    formData.fundingStage = 'SEED'
+    formData.size = 'TINY'
+    formData.fundingStage = 'UNFUNDED'
     formData.address = ''
     formData.website = ''
-    formData.industryIds = []
+    formData.industryId = undefined
     formData.verificationStatus = 'PENDING'
     if (formRef.value) {
       formRef.value.resetFields()
@@ -527,12 +555,12 @@
           const data = {
             name: formData.name,
             description: formData.description,
-            size: formData.size,
-            fundingStage: formData.fundingStage,
+            size: formData.size as CompanySize,
+            fundingStage: formData.fundingStage as FundingStage,
             address: formData.address,
             website: formData.website,
-            industryIds: formData.industryIds,
-            verificationStatus: formData.verificationStatus
+            industryId: formData.industryId,
+            verificationStatus: formData.verificationStatus as VerificationStatus
           }
 
           if (dialogType.value === 'add') {

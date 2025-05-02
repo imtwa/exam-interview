@@ -33,13 +33,13 @@ export class QueryCompanyDto {
   name?: string;
 
   @ApiProperty({
-    description: '所属行业',
-    example: '互联网',
+    description: '所属行业ID',
+    example: 1,
     required: false,
   })
   @IsOptional()
-  @IsString({ message: '所属行业必须是字符串' })
-  industry?: string;
+  @IsInt({ message: '所属行业ID必须是整数' })
+  industryId?: number;
 
   @ApiProperty({
     description: '验证状态',
