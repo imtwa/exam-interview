@@ -35,17 +35,22 @@
       <div class="filter-container">
         <el-form :inline="true" class="filter-form">
           <el-form-item label="职位">
-            <el-select v-model="queryParams.jobId" placeholder="选择职位" clearable @change="fetchInterviews">
-              <el-option
-                v-for="job in jobs"
-                :key="job.id"
-                :label="job.title"
-                :value="job.id"
-              />
+            <el-select
+              v-model="queryParams.jobId"
+              placeholder="选择职位"
+              clearable
+              @change="fetchInterviews"
+            >
+              <el-option v-for="job in jobs" :key="job.id" :label="job.title" :value="job.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="状态">
-            <el-select v-model="queryParams.status" placeholder="选择状态" clearable @change="fetchInterviews">
+            <el-select
+              v-model="queryParams.status"
+              placeholder="选择状态"
+              clearable
+              @change="fetchInterviews"
+            >
               <el-option
                 v-for="item in statusOptions"
                 :key="item.value"
@@ -83,7 +88,9 @@
         <el-calendar v-model="currentDate">
           <template #dateCell="{ data }">
             <div class="calendar-cell">
-              <p :class="{ 'is-today': isToday(data) }">{{ data.day.split('-').slice(2).join('') }}</p>
+              <p :class="{ 'is-today': isToday(data) }">
+                {{ data.day.split('-').slice(2).join('') }}
+              </p>
               <div class="interview-items">
                 <div
                   v-for="(interview, index) in getInterviewsByDate(data)"
@@ -115,7 +122,9 @@
           <el-table :data="interviews" style="width: 100%" stripe>
             <el-table-column prop="candidateName" label="候选人" min-width="100">
               <template #default="{ row }">
-                <span class="candidate-name" @click="viewCandidateDetail(row.candidateId)">{{ row.candidateName }}</span>
+                <span class="candidate-name" @click="viewCandidateDetail(row.candidateId)">{{
+                  row.candidateName
+                }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="jobTitle" label="应聘职位" min-width="150">
@@ -161,8 +170,12 @@
                     <el-dropdown-menu>
                       <el-dropdown-item @click="editInterview(row.id)">编辑面试</el-dropdown-item>
                       <el-dropdown-item @click="sendReminder(row.id)">发送提醒</el-dropdown-item>
-                      <el-dropdown-item @click="updateStatus(row.id, 'COMPLETED')">标记完成</el-dropdown-item>
-                      <el-dropdown-item @click="updateStatus(row.id, 'CANCELED')">取消面试</el-dropdown-item>
+                      <el-dropdown-item @click="updateStatus(row.id, 'COMPLETED')"
+                        >标记完成</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="updateStatus(row.id, 'CANCELED')"
+                        >取消面试</el-dropdown-item
+                      >
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -237,7 +250,7 @@ const dateShortcuts = [
 ]
 
 // 获取URL中的jobId
-const jobId = computed(() => route.query.jobId ? parseInt(route.query.jobId) : null)
+const jobId = computed(() => (route.query.jobId ? parseInt(route.query.jobId) : null))
 
 // 查询参数
 const queryParams = reactive({
@@ -259,7 +272,7 @@ const statusOptions = [
 ]
 
 // 获取状态显示类型
-const getStatusType = (status) => {
+const getStatusType = status => {
   switch (status) {
     case 'PENDING':
       return 'info'
@@ -277,19 +290,19 @@ const getStatusType = (status) => {
 }
 
 // 获取状态显示文本
-const getStatusLabel = (status) => {
+const getStatusLabel = status => {
   const found = statusOptions.find(option => option.value === status)
   return found ? found.label : '未知'
 }
 
 // 格式化日期
-const formatDate = (dateStr) => {
+const formatDate = dateStr => {
   if (!dateStr) return '-'
   return formatDateUtil(dateStr, 'YYYY-MM-DD')
 }
 
 // 格式化时间
-const formatTime = (dateStr) => {
+const formatTime = dateStr => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
@@ -304,14 +317,14 @@ const getDuration = (start, end) => {
 }
 
 // 检查是否是今天
-const isToday = (date) => {
+const isToday = date => {
   const today = new Date()
   const cellDate = new Date(date.day)
   return today.toDateString() === cellDate.toDateString()
 }
 
 // 获取指定日期的面试
-const getInterviewsByDate = (date) => {
+const getInterviewsByDate = date => {
   const cellDate = new Date(date.day).toISOString().split('T')[0]
   return interviews.value.filter(interview => {
     const interviewDate = new Date(interview.startTime).toISOString().split('T')[0]
@@ -320,7 +333,7 @@ const getInterviewsByDate = (date) => {
 }
 
 // 获取面试项的样式类
-const getInterviewClass = (interview) => {
+const getInterviewClass = interview => {
   return {
     'interview-item--pending': interview.status === 'PENDING',
     'interview-item--confirmed': interview.status === 'CONFIRMED',
@@ -331,12 +344,12 @@ const getInterviewClass = (interview) => {
 }
 
 // 切换视图模式
-const switchView = (mode) => {
+const switchView = mode => {
   viewMode.value = mode
 }
 
 // 处理日期变化
-const handleDateChange = (value) => {
+const handleDateChange = value => {
   if (value) {
     queryParams.startDate = value[0]
     queryParams.endDate = value[1]
@@ -348,9 +361,9 @@ const handleDateChange = (value) => {
 
 // 获取面试列表
 const fetchInterviews = async (page = currentPage.value) => {
-  loading.value = true;
-  currentPage.value = page;
-  
+  loading.value = true
+  currentPage.value = page
+
   try {
     const response = await getInterviews({
       page: currentPage.value,
@@ -359,27 +372,27 @@ const fetchInterviews = async (page = currentPage.value) => {
       endDate: filterForm.dateRange ? filterForm.dateRange[1] : null,
       jobId: filterForm.jobId,
       status: filterForm.status
-    });
-    
-    interviews.value = response.list;
-    total.value = response.total;
+    })
+
+    interviews.value = response.list
+    total.value = response.total
   } catch (error) {
-    console.error('获取面试列表失败:', error);
-    ElMessage.error('获取面试列表失败');
+    console.error('获取面试列表失败:', error)
+    ElMessage.error('获取面试列表失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 获取职位列表
 const fetchJobs = async () => {
   try {
-    const response = await getJobs();
-    jobs.value = response.list;
+    const response = await getJobs()
+    jobs.value = response.list
   } catch (error) {
-    console.error('获取职位列表失败:', error);
+    console.error('获取职位列表失败:', error)
   }
-};
+}
 
 // 重置筛选条件
 const resetFilters = () => {
@@ -388,22 +401,22 @@ const resetFilters = () => {
   queryParams.endDate = ''
   queryParams.page = 1
   dateRange.value = []
-  
+
   // 如果是从职位详情页进入，保留jobId筛选
   if (!jobId.value) {
     queryParams.jobId = null
   }
-  
+
   fetchInterviews()
 }
 
 // 处理分页变化
-const handleSizeChange = (size) => {
+const handleSizeChange = size => {
   queryParams.pageSize = size
   fetchInterviews()
 }
 
-const handleCurrentChange = (page) => {
+const handleCurrentChange = page => {
   queryParams.page = page
   fetchInterviews()
 }
@@ -411,51 +424,51 @@ const handleCurrentChange = (page) => {
 // 创建面试
 const createInterview = async () => {
   try {
-    const response = await addInterview(interviewForm);
-    ElMessage.success('面试创建成功');
-    dialogVisible.value = false;
-    await fetchInterviews();
+    const response = await addInterview(interviewForm)
+    ElMessage.success('面试创建成功')
+    dialogVisible.value = false
+    await fetchInterviews()
   } catch (error) {
-    console.error('创建面试失败:', error);
-    ElMessage.error('创建面试失败');
+    console.error('创建面试失败:', error)
+    ElMessage.error('创建面试失败')
   }
-};
+}
 
 // 查看面试详情
-const viewInterviewDetail = (id) => {
+const viewInterviewDetail = id => {
   router.push(`/interview-schedule/detail/${id}`)
 }
 
 // 编辑面试
-const editInterview = (id) => {
+const editInterview = id => {
   router.push(`/interview-schedule/edit/${id}`)
 }
 
 // 查看候选人详情
-const viewCandidateDetail = (id) => {
+const viewCandidateDetail = id => {
   router.push(`/candidate-management/detail/${id}`)
 }
 
 // 发送提醒
-const sendReminder = async (id) => {
+const sendReminder = async id => {
   try {
     await ElMessageBox.confirm('确定要向面试者发送提醒邮件吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
-    });
-    
-    const response = await sendInterviewReminder(id);
-    
-    ElMessage.success('提醒邮件已发送');
-    fetchInterviews();
+    })
+
+    const response = await sendInterviewReminder(id)
+
+    ElMessage.success('提醒邮件已发送')
+    fetchInterviews()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('发送提醒失败:', error);
-      ElMessage.error('发送提醒失败');
+      console.error('发送提醒失败:', error)
+      ElMessage.error('发送提醒失败')
     }
   }
-};
+}
 
 // 更新面试状态
 const updateStatus = async (interview, newStatus) => {
@@ -463,21 +476,21 @@ const updateStatus = async (interview, newStatus) => {
     const response = await updateInterview({
       id: interview.id,
       status: newStatus
-    });
-    ElMessage.success('面试状态更新成功');
-    await fetchInterviews();
+    })
+    ElMessage.success('面试状态更新成功')
+    await fetchInterviews()
   } catch (error) {
-    console.error('更新面试状态失败:', error);
-    ElMessage.error('更新面试状态失败');
+    console.error('更新面试状态失败:', error)
+    ElMessage.error('更新面试状态失败')
   }
-};
+}
 
 onMounted(() => {
   // 如果有URL参数，更新查询条件
   if (jobId.value) {
     queryParams.jobId = jobId.value
   }
-  
+
   fetchJobs()
   fetchInterviews()
 })
@@ -653,4 +666,4 @@ onMounted(() => {
     }
   }
 }
-</style> 
+</style>

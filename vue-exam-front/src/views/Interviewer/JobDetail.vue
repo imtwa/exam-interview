@@ -47,11 +47,15 @@
               </div>
               <div class="meta-item">
                 <span class="label">工作地点：</span>
-                <span class="value">{{ job.city }}{{ job.address ? ' - ' + job.address : '' }}</span>
+                <span class="value"
+                  >{{ job.city }}{{ job.address ? ' - ' + job.address : '' }}</span
+                >
               </div>
               <div class="meta-item">
                 <span class="label">工作经验：</span>
-                <span class="value">{{ job.experienceReq ? `${job.experienceReq}年` : '不限' }}</span>
+                <span class="value">{{
+                  job.experienceReq ? `${job.experienceReq}年` : '不限'
+                }}</span>
               </div>
               <div class="meta-item">
                 <span class="label">学历要求：</span>
@@ -115,7 +119,13 @@
               </el-col>
               <el-col :span="8">
                 <div class="stat-card conversion">
-                  <div class="stat-value">{{ job.applications?.length ? Math.round((interviewsCount / job.applications.length) * 100) : 0 }}%</div>
+                  <div class="stat-value">
+                    {{
+                      job.applications?.length
+                        ? Math.round((interviewsCount / job.applications.length) * 100)
+                        : 0
+                    }}%
+                  </div>
                   <div class="stat-label">面试转化率</div>
                 </div>
               </el-col>
@@ -148,7 +158,7 @@ const job = ref({})
 // 计算面试数量
 const interviewsCount = computed(() => {
   if (!job.value.applications) return 0
-  
+
   // 统计有面试安排的申请数量
   return job.value.applications.filter(app => app.interviews && app.interviews.length > 0).length
 })
@@ -160,7 +170,7 @@ const fetchJobDetail = async () => {
     ElMessage.error('缺少职位ID参数')
     return
   }
-  
+
   loading.value = true
   try {
     const response = await getJobById(jobId)
@@ -181,7 +191,7 @@ const formatSalary = (min, max) => {
 }
 
 // 获取状态类型
-const getStatusType = (status) => {
+const getStatusType = status => {
   switch (status) {
     case 'ACTIVE':
       return 'success'
@@ -195,7 +205,7 @@ const getStatusType = (status) => {
 }
 
 // 获取状态文本
-const getStatusLabel = (status) => {
+const getStatusLabel = status => {
   switch (status) {
     case 'ACTIVE':
       return '招聘中'
@@ -209,9 +219,9 @@ const getStatusLabel = (status) => {
 }
 
 // 获取教育要求文本
-const getEducationLabel = (education) => {
+const getEducationLabel = education => {
   if (!education) return '不限'
-  
+
   const educationMap = {
     HIGH_SCHOOL: '高中',
     ASSOCIATE: '大专',
@@ -220,7 +230,7 @@ const getEducationLabel = (education) => {
     DOCTORATE: '博士',
     OTHER: '其他'
   }
-  
+
   return educationMap[education] || '不限'
 }
 
@@ -330,7 +340,8 @@ onMounted(() => {
   padding-bottom: 10px;
 }
 
-.description, .requirements {
+.description,
+.requirements {
   white-space: pre-line;
   line-height: 1.6;
 }
@@ -373,4 +384,4 @@ onMounted(() => {
   margin-top: 40px;
   padding: 40px 0;
 }
-</style> 
+</style>

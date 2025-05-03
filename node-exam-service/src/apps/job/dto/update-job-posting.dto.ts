@@ -5,11 +5,11 @@ import { JobStatus } from '../../../../prisma/generated/client';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateJobPostingDto extends PartialType(CreateJobPostingDto) {
-  @ApiProperty({ 
-    description: '职位状态', 
-    required: false, 
+  @ApiProperty({
+    description: '职位状态',
+    required: false,
     enum: JobStatus,
-    example: JobStatus.ACTIVE
+    example: JobStatus.ACTIVE,
   })
   @IsOptional()
   @IsEnum(JobStatus, { message: '职位状态值不合法' })

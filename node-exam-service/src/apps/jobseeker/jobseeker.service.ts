@@ -122,6 +122,10 @@ export class JobSeekerService {
             ...profileDto,
             gender: profileDto.gender as Gender,
           },
+          include: {
+            education: true,
+            workExperience: true,
+          },
         });
       } else {
         // 更新求职者资料
@@ -130,6 +134,10 @@ export class JobSeekerService {
           data: {
             ...profileDto,
             gender: profileDto.gender as Gender,
+          },
+          include: {
+            education: true,
+            workExperience: true,
           },
         });
       }
@@ -160,7 +168,9 @@ export class JobSeekerService {
     userId: number,
     profileDto: UpdateJobseekerProfileDto,
   ) {
-    this.logger.log(`同步更新求职者全部资料: ${userId}，数据: ${JSON.stringify(profileDto)}`);
+    this.logger.log(
+      `同步更新求职者全部资料: ${userId}，数据: ${JSON.stringify(profileDto)}`,
+    );
 
     // 检查用户是否存在
     const user = await this.prisma.frontUser.findUnique({
@@ -184,72 +194,57 @@ export class JobSeekerService {
           },
         });
 
-        // 如果求职者不存在，创建一个
+        // 如果求职者不存在，则创建新记录
         if (!jobSeeker) {
+          // 基本信息处理
           jobSeeker = await prisma.jobSeeker.create({
-            data: { userId },
+            data: {
+              userId,
+              gender: profileDto.basic?.gender,
+              birthday: profileDto.basic?.birthday,
+              address: profileDto.basic?.address,
+              expectedPosition: profileDto.jobIntention?.jobTitle,
+              expectedWorkCity: profileDto.jobIntention?.cityName,
+              currentSalary: profileDto.jobIntention?.currentSalary,
+              expectedSalary: profileDto.jobIntention?.salaryMax,
+              // 添加简历URL和原始文件名
+              resumeUrl: profileDto.resumeUrl,
+              resumeFileName: profileDto.resumeFileName,
+            },
             include: {
               education: true,
               workExperience: true,
             },
           });
-
-          // 确保用户角色为求职者
-          if (user.role !== UserRole.JOB_SEEKER) {
-            await prisma.frontUser.update({
-              where: { id: userId },
-              data: { role: UserRole.JOB_SEEKER },
-            });
-          }
-        }
-
-        // 2. 更新基本信息
-        if (profileDto.basic) {
-          const { gender, birthday, address } = profileDto.basic;
-          await prisma.jobSeeker.update({
-            where: { id: jobSeeker.id },
+        } else {
+          // 否则更新现有记录
+          jobSeeker = await prisma.jobSeeker.update({
+            where: { userId },
             data: {
-              gender,
-              birthday,
-              address,
+              gender: profileDto.basic?.gender,
+              birthday: profileDto.basic?.birthday,
+              address: profileDto.basic?.address,
+              expectedPosition: profileDto.jobIntention?.jobTitle,
+              expectedWorkCity: profileDto.jobIntention?.cityName,
+              currentSalary: profileDto.jobIntention?.currentSalary,
+              expectedSalary: profileDto.jobIntention?.salaryMax,
+              // 添加简历URL和原始文件名 - 如果有则更新，没有则保持原值
+              ...(profileDto.resumeUrl ? { resumeUrl: profileDto.resumeUrl } : {}),
+              ...(profileDto.resumeFileName ? { resumeFileName: profileDto.resumeFileName } : {}),
+            },
+            include: {
+              education: true,
+              workExperience: true,
             },
           });
         }
 
-        // 3. 处理求职意向
-        if (profileDto.jobIntention) {
-          const { jobTitle, currentSalary, salaryMax, cityName, cityCode } =
-            profileDto.jobIntention;
-
-          // 构造城市名称（如果提供了城市代码和名称）
-          let expectedWorkCity = cityName;
-          if (
-            cityCode &&
-            cityCode.length > 0 &&
-            profileDto.jobIntention.cityName
-          ) {
-            expectedWorkCity = profileDto.jobIntention.cityName;
-          }
-
-          await prisma.jobSeeker.update({
-            where: { id: jobSeeker.id },
-            data: {
-              expectedPosition: jobTitle,
-              currentSalary,
-              expectedSalary: salaryMax, // 暂时用最高薪资作为期望薪资
-              expectedWorkCity,
-            },
-          });
-        }
-
-        // 4. 处理教育经历
+        // 2. 处理教育经历
         if (
           profileDto.education &&
-          (
-            profileDto.education.school ||
+          (profileDto.education.school ||
             profileDto.education.degree ||
-            profileDto.education.major
-          )
+            profileDto.education.major)
         ) {
           if (jobSeeker.education && jobSeeker.education.length > 0) {
             // 更新第一条教育经历
@@ -278,7 +273,7 @@ export class JobSeekerService {
           }
         }
 
-        // 5. 处理工作经历
+        // 3. 处理工作经历
         if (
           profileDto.experience &&
           (profileDto.experience.company || profileDto.experience.position)
@@ -310,7 +305,7 @@ export class JobSeekerService {
           }
         }
 
-        // 6. 返回更新后的完整资料
+        // 4. 返回更新后的完整资料
         const updatedJobSeeker = await prisma.jobSeeker.findUnique({
           where: { id: jobSeeker.id },
           include: {
@@ -328,8 +323,8 @@ export class JobSeekerService {
         };
       });
     } catch (error) {
-      this.logger.error(`更新求职者资料失败: ${error.message}`, error.stack);
-      throw new BadRequestException(`更新求职者资料失败: ${error.message}`);
+      this.logger.error(`同步更新求职者资料失败: ${error.message}`, error);
+      throw error;
     }
   }
 

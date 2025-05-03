@@ -115,16 +115,26 @@
 
                     <!-- 求职者菜单项 -->
                     <template v-if="isJobSeeker">
-                      <el-dropdown-item @click="router.push('/my-exams')">我的考试</el-dropdown-item>
-                      <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/my-exams')"
+                        >我的考试</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/favorites')"
+                        >我的收藏</el-dropdown-item
+                      >
                       <el-dropdown-item @click="router.push('/resume')">我的简历</el-dropdown-item>
-                      <el-dropdown-item @click="router.push('/applications')">应聘进度</el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/applications')"
+                        >应聘进度</el-dropdown-item
+                      >
                     </template>
 
                     <!-- 面试官菜单项 - 只保留个人中心相关的选项，移除导航栏已有的选项 -->
                     <template v-else>
-                      <el-dropdown-item @click="router.push('/company-profile')">公司信息</el-dropdown-item>
-                      <el-dropdown-item @click="router.push('/account-settings')">账号设置</el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/company-profile')"
+                        >公司信息</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/account-settings')"
+                        >账号设置</el-dropdown-item
+                      >
                     </template>
 
                     <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>

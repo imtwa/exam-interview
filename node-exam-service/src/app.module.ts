@@ -14,6 +14,7 @@ import { InterviewerModule } from './apps/interviewer/interviewer.module';
 import { JobSeekerModule } from './apps/jobseeker/jobseeker.module';
 import { JobModule } from './apps/job/job.module';
 import { IndustryModule } from './apps/industry/industry.module';
+import { UploadModule } from './apps/upload/upload.module';
 @Module({
   imports: [
     UserModule,
@@ -32,6 +33,7 @@ import { IndustryModule } from './apps/industry/industry.module';
     JobSeekerModule,
     JobModule,
     IndustryModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],

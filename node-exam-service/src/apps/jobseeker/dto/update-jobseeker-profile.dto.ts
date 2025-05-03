@@ -262,4 +262,22 @@ export class UpdateJobseekerProfileDto {
   @Type(() => JobIntentionDto)
   @IsOptional()
   jobIntention?: JobIntentionDto;
+
+  @ApiProperty({
+    description: '简历文件相对路径',
+    example: 'uploads/resumes/resume.pdf',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  resumeUrl?: string;
+
+  @ApiProperty({
+    description: '简历原始文件名',
+    example: '个人简历-张三.pdf',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  resumeFileName?: string;
 }

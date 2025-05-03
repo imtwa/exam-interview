@@ -51,6 +51,27 @@ export class JobController {
     return success(result, '创建成功');
   }
 
+  @ApiOperation({ summary: '申请职位' })
+  @ApiParam({ name: 'jobId', description: '职位ID', type: Number })
+  @ApiResponse({ status: 200, description: '申请成功' })
+  @ApiResponse({ status: 400, description: '参数错误' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '职位不存在' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post(':jobId/apply')
+  async applyForJob(
+    @Param('jobId') jobId: string,
+    @Request() req,
+  ) {
+    this.logger.log(`申请职位: ${jobId}`);
+    const result = await this.jobService.applyForJob(
+      +jobId,
+      req.user.userId
+    );
+    return success(result, '申请成功');
+  }
+
   @ApiOperation({ summary: '获取分页招聘信息列表' })
   @ApiQuery({
     name: 'page',
@@ -110,13 +131,28 @@ export class JobController {
     name: 'experienceReq',
     description: '工作经验要求',
     required: false,
-    enum: ['STUDENT', 'FRESH_GRADUATE', 'LESS_THAN_ONE', 'ONE_TO_THREE', 'THREE_TO_FIVE', 'FIVE_TO_TEN', 'MORE_THAN_TEN'],
+    enum: [
+      'STUDENT',
+      'FRESH_GRADUATE',
+      'LESS_THAN_ONE',
+      'ONE_TO_THREE',
+      'THREE_TO_FIVE',
+      'FIVE_TO_TEN',
+      'MORE_THAN_TEN',
+    ],
   })
   @ApiQuery({
     name: 'educationReq',
     description: '学历要求',
     required: false,
-    enum: ['HIGH_SCHOOL', 'ASSOCIATE', 'BACHELOR', 'MASTER', 'DOCTORATE', 'OTHER'],
+    enum: [
+      'HIGH_SCHOOL',
+      'ASSOCIATE',
+      'BACHELOR',
+      'MASTER',
+      'DOCTORATE',
+      'OTHER',
+    ],
   })
   @ApiResponse({ status: 200, description: '返回招聘信息列表及分页信息' })
   @Get()
@@ -214,13 +250,13 @@ export class JobController {
     @Query() query: QueryJobDto,
   ) {
     this.logger.log(`获取公司ID:${companyId}的职位列表`);
-    
+
     // 合并查询参数，强制添加公司ID筛选
     const jobQuery = {
       ...query,
       companyId: +companyId,
     };
-    
+
     const { jobs, total } = await this.jobService.findAll(jobQuery);
     return pagination(jobs, total, query.page, query.pageSize);
   }
@@ -297,10 +333,10 @@ export class JobController {
   async searchInterviewerJobs(@Request() req, @Query() query) {
     const userId = req.user.userId;
     this.logger.log(`搜索面试官ID:${userId}发布的职位列表`);
-    
+
     // 获取面试官信息
     const interviewer = await this.jobService.getInterviewerByUserId(userId);
-    
+
     // 构建筛选条件并转换相关参数
     const searchParams = {
       page: query.page ? parseInt(query.page) : 1,
@@ -308,17 +344,12 @@ export class JobController {
       keyword: query.keyword,
       status: query.status,
     };
-    
+
     const { jobs, total } = await this.jobService.getInterviewerJobsWithFilter(
       interviewer.id,
-      searchParams
+      searchParams,
     );
 
-    return pagination(
-      jobs,
-      total,
-      searchParams.page,
-      searchParams.pageSize
-    );
+    return pagination(jobs, total, searchParams.page, searchParams.pageSize);
   }
 }

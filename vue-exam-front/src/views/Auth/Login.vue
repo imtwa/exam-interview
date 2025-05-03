@@ -163,17 +163,17 @@ const handleLogin = () => {
 
         // 检查用户个人信息完善状态
         try {
-          let profileResult;
-          
+          let profileResult
+
           // 根据角色调用不同的资料获取方法
           if (userStore.isInterviewer) {
             // 直接获取面试官详细资料
-            profileResult = await userStore.fetchInterviewerProfile();
+            profileResult = await userStore.fetchInterviewerProfile()
           } else {
             // 使用通用的资料检查方法
-            profileResult = await userStore.checkUserProfile();
+            profileResult = await userStore.checkUserProfile()
           }
-          
+
           // 根据资料完善状态决定跳转
           if (!profileResult || !profileResult.profileCompleted) {
             ElMessage.info('请先完善您的个人资料')

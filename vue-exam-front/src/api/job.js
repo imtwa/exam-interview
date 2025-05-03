@@ -121,21 +121,14 @@ export function checkUserProfile() {
 }
 
 /**
- * 申请职位
+ * 申请职位（一键投递）
  * @param {number} jobId 职位ID
- * @param {Object} data 申请数据
- * @example
- * {
- *   coverLetter: '我对贵公司的职位非常感兴趣...',
- *   resumeUrl: 'https://example.com/resume.pdf'
- * }
  * @returns {Promise} 返回申请结果
  */
-export function applyForJob(jobId, data) {
+export function applyForJob(jobId) {
   return request({
     url: `/job/${jobId}/apply`,
-    method: 'post',
-    data
+    method: 'post'
   })
 }
 

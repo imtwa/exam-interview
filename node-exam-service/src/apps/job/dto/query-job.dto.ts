@@ -72,21 +72,21 @@ export class QueryJobDto {
   @Min(1, { message: '二级分类ID必须大于0' })
   subCategoryId?: number;
 
-  @ApiProperty({ 
-    description: '工作经验要求', 
+  @ApiProperty({
+    description: '工作经验要求',
     required: false,
     enum: ExperienceLevel,
-    example: 'STUDENT' 
+    example: 'STUDENT',
   })
   @IsOptional()
   @IsEnum(ExperienceLevel, { message: '工作经验必须是有效的枚举值' })
   experienceReq?: ExperienceLevel;
 
-  @ApiProperty({ 
-    description: '学历要求', 
+  @ApiProperty({
+    description: '学历要求',
     required: false,
     enum: Degree,
-    example: 'BACHELOR' 
+    example: 'BACHELOR',
   })
   @IsOptional()
   @IsEnum(Degree, { message: '学历要求必须是有效的枚举值' })

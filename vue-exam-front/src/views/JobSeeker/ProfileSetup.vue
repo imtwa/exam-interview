@@ -206,54 +206,86 @@
               class="setup-form"
             >
               <el-form-item label="期望职位" prop="jobTitle">
-                <el-input v-model="jobIntentionForm.jobTitle" placeholder="请输入期望职位" />
+                <el-input v-model="jobIntentionForm.jobTitle" placeholder="例如：前端工程师" />
               </el-form-item>
 
-              <el-form-item label="期望城市" prop="city">
-                <el-cascader
-                  v-model="jobIntentionForm.cityCode"
-                  :options="regionData"
-                  :props="{ ...regionProps, checkStrictly: true }"
-                  placeholder="请选择期望工作城市"
-                  style="width: 100%"
-                />
+              <el-form-item label="期望城市" prop="cityCode">
+                <div class="address-select-container">
+                  <el-cascader
+                    v-model="jobIntentionForm.cityCode"
+                    :options="regionData"
+                    :props="regionProps"
+                    placeholder="请选择省/市"
+                    @change="handleCityChange"
+                    style="width: 100%"
+                  />
+                </div>
               </el-form-item>
 
-              <el-form-item label="当前薪资" prop="currentSalary">
-                <el-input-number
-                  v-model="jobIntentionForm.currentSalary"
-                  :min="0"
-                  :step="1000"
-                  controls-position="right"
-                  style="width: 25%"
-                />
+              <el-form-item label="上传简历 (PDF格式)" prop="resume">
+                <el-upload
+                  class="resume-uploader"
+                  :action="''"
+                  :auto-upload="false"
+                  :on-change="handleResumeChange"
+                  :on-remove="handleResumeRemove"
+                  :limit="1"
+                  :file-list="resumeFileList"
+                  accept=".pdf"
+                >
+                  <el-button type="primary">选择文件</el-button>
+                  <template #tip>
+                    <div class="el-upload__tip">请上传PDF格式的简历文件，大小不超过3MB</div>
+                  </template>
+                </el-upload>
+                
+                <!-- 显示已上传的简历链接 -->
+                <div v-if="resumeUrl" class="resume-preview">
+                  <div class="resume-info">
+                    <i class="el-icon-document-checked"></i>
+                    <span class="resume-name">已上传简历: {{ resumeFileName }}</span>
+                  </div>
+                  <el-button type="text" size="small" @click="previewResume">
+                    预览简历
+                  </el-button>
+                </div>
               </el-form-item>
 
-              <el-form-item label="期望薪资" prop="salary">
-                <el-row :gutter="20">
-                  <el-col :xs="24" :sm="11">
+              <el-row :gutter="20">
+                <el-col :xs="24" :sm="12">
+                  <el-form-item label="当前薪资 (元/月)" prop="currentSalary">
                     <el-input-number
-                      v-model="jobIntentionForm.salaryMin"
+                      v-model="jobIntentionForm.currentSalary"
                       :min="0"
                       :step="1000"
-                      controls-position="right"
                       style="width: 100%"
                     />
-                  </el-col>
-                  <el-col :xs="24" :sm="2" style="text-align: center">
-                    <span>至</span>
-                  </el-col>
-                  <el-col :xs="24" :sm="11">
-                    <el-input-number
-                      v-model="jobIntentionForm.salaryMax"
-                      :min="0"
-                      :step="1000"
-                      controls-position="right"
-                      style="width: 100%"
-                    />
-                  </el-col>
-                </el-row>
-              </el-form-item>
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="24" :sm="12">
+                  <el-form-item label="期望薪资 (元/月)" prop="salaryRange">
+                    <el-row :gutter="10">
+                      <el-col :span="11">
+                        <el-input-number
+                          v-model="jobIntentionForm.salaryMin"
+                          :min="0"
+                          :step="1000"
+                          style="width: 100%"
+                        />
+                      </el-col>
+                      <el-col :span="2" class="text-center">-</el-col>
+                      <el-col :span="11">
+                        <el-input-number
+                          v-model="jobIntentionForm.salaryMax"
+                          :min="0"
+                          :step="1000"
+                          style="width: 100%"
+                        />
+                      </el-col>
+                    </el-row>
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
               <div class="form-actions">
                 <el-button @click="prevStep">上一步</el-button>
@@ -364,6 +396,15 @@
                           {{ jobIntentionForm.salaryMin }} - {{ jobIntentionForm.salaryMax }}
                         </span>
                       </div>
+                      <div class="confirm-item" v-if="resumeFileName">
+                        <span class="label">简历:</span>
+                        <span class="value highlight">
+                          {{ resumeFileName }}
+                          <el-button type="text" size="small" @click="previewResume" style="margin-left: 10px;">
+                            预览
+                          </el-button>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </el-col>
@@ -390,6 +431,7 @@ import { ElMessage } from 'element-plus'
 import NumberSteps from '@/components/NumberSteps.vue'
 import { getRegionData } from '@/api/region'
 import { syncJobseekerProfile } from '@/api/jobseeker'
+import { uploadResume } from '@/api/upload'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -559,22 +601,103 @@ const nextStep = async formName => {
   }
 }
 
-// 提交个人资料
+// 添加简历相关状态
+const resumeFileList = ref([])
+const resumeUrl = ref('')
+const resumePath = ref('')
+const resumeFileName = ref('')
+const uploadingResume = ref(false)
+
+// 处理简历文件变更
+const handleResumeChange = (file, fileList) => {
+  resumeFileList.value = fileList.slice(-1)
+}
+
+// 处理简历文件移除
+const handleResumeRemove = () => {
+  resumeFileList.value = []
+  resumeUrl.value = ''
+  resumePath.value = ''
+  resumeFileName.value = ''
+}
+
+// 预览简历
+const previewResume = () => {
+  if (resumeUrl.value) {
+    window.open(resumeUrl.value, '_blank')
+  }
+}
+
+// 上传简历文件
+const uploadResumeFile = async () => {
+  if (!resumeFileList.value.length) {
+    return null // 没有选择文件，返回null
+  }
+
+  try {
+    uploadingResume.value = true
+    const file = resumeFileList.value[0].raw
+    const res = await uploadResume(file)
+
+    if (res) {
+      // 保存简历信息
+      resumeUrl.value = res.url
+      resumePath.value = res.resumePath
+      resumeFileName.value = res.filename
+      return {
+        path: res.resumePath,
+        fileName: res.filename
+      }
+    }
+    return null
+  } catch (error) {
+    console.error('简历上传失败:', error)
+    ElMessage.error('简历上传失败，请重试')
+    return null
+  } finally {
+    uploadingResume.value = false
+  }
+}
+
+// 修改提交个人资料逻辑
 const submitProfile = async () => {
   try {
     loading.value = true
 
-    // 准备提交数据，处理可能为空的字段
+    // 先上传简历（如果有）
+    let resumeData = null
+    if (resumeFileList.value.length > 0) {
+      resumeData = await uploadResumeFile()
+      if (!resumeData && resumeFileList.value.length > 0) {
+        // 有文件但上传失败
+        ElMessage.warning('简历上传失败，请重试')
+        loading.value = false
+        return
+      }
+    } else if (resumePath.value && resumeFileName.value) {
+      // 已有上传的简历，直接使用
+      resumeData = {
+        path: resumePath.value,
+        fileName: resumeFileName.value
+      }
+    }
+
+    // 准备提交的数据
     const submitData = {
       basic: basicForm,
-      jobIntention: jobIntentionForm
+      jobIntention: jobIntentionForm,
+
+      // 添加简历信息（如果有上传成功）
+      ...(resumeData ? { 
+        resumeUrl: resumeData.path,
+        resumeFileName: resumeData.fileName
+      } : {})
     }
 
     // 检查教育信息是否已填写
     if (educationForm.degree && educationForm.school) {
       submitData.education = educationForm
     } else {
-      // 如果未填写教育信息，发送空对象
       submitData.education = {}
     }
 
@@ -582,10 +705,9 @@ const submitProfile = async () => {
     if (experienceForm.company && experienceForm.position) {
       submitData.experience = experienceForm
     } else {
-      // 如果未填写工作经验，发送对象
       submitData.experience = {}
     }
-    
+
     // 调用API保存求职者信息
     const response = await syncJobseekerProfile(submitData)
 
@@ -598,12 +720,7 @@ const submitProfile = async () => {
     }
   } catch (error) {
     console.error('提交个人资料失败:', error)
-    // 显示具体错误信息，帮助用户理解问题
-    if (error.response && error.response.data && error.response.data.message) {
-      ElMessage.error(`设置失败: ${error.response.data.message}`)
-    } else {
-      ElMessage.error('设置失败，请重试')
-    }
+    ElMessage.error('设置失败，请重试')
   } finally {
     loading.value = false
   }
@@ -650,6 +767,27 @@ const formatDate = date => {
 const skipCurrentStep = () => {
   // 直接进入下一步，不做表单验证
   activeStep.value++
+}
+
+// 处理城市选择变化
+const handleCityChange = value => {
+  if (value && value.length > 0) {
+    const selectedLabels = []
+    let currentOptions = regionData.value
+
+    value.forEach(code => {
+      const selected = currentOptions.find(item => item.code === code)
+      if (selected) {
+        selectedLabels.push(selected.name)
+        currentOptions = selected.children || []
+      }
+    })
+
+    // 设置城市名称
+    jobIntentionForm.cityName = selectedLabels.join(' ')
+  } else {
+    jobIntentionForm.cityName = ''
+  }
 }
 
 onMounted(() => {
@@ -824,6 +962,63 @@ onMounted(() => {
 
   .confirm-item .label {
     width: 80px;
+  }
+}
+
+.resume-uploader {
+  width: 100%;
+
+  :deep(.el-upload) {
+    width: 100%;
+
+    .el-button {
+      margin-bottom: 10px;
+    }
+  }
+
+  :deep(.el-upload-list) {
+    width: 100%;
+
+    .el-upload-list__item {
+      transition: all 0.3s;
+
+      &:hover {
+        background-color: #f5f7fa;
+      }
+    }
+  }
+}
+
+.text-center {
+  text-align: center;
+  line-height: 32px;
+}
+
+.resume-preview {
+  margin-top: 15px;
+  padding: 10px 15px;
+  border-radius: 4px;
+  background-color: #f0f9ff;
+  border: 1px solid #d9ecff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.resume-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  i {
+    color: #409eff;
+    font-size: 18px;
+  }
+  
+  .resume-name {
+    color: #409eff;
+    font-weight: 500;
+    word-break: break-all;
   }
 }
 </style>

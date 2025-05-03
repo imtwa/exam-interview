@@ -79,11 +79,11 @@ export class CreateJobPostingDto {
   @Min(0, { message: '薪资上限不能小于0' })
   salaryMax: number;
 
-  @ApiProperty({ 
-    description: '经验要求', 
-    required: false, 
+  @ApiProperty({
+    description: '经验要求',
+    required: false,
     enum: ExperienceLevel,
-    example: ExperienceLevel.THREE_TO_FIVE
+    example: ExperienceLevel.THREE_TO_FIVE,
   })
   @IsOptional()
   @IsEnum(ExperienceLevel, { message: '经验要求值不合法' })

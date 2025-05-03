@@ -177,6 +177,8 @@ model JobSeeker {
   expectedSalary    Float? /// 期望薪资
   expectedPosition  String? /// 期望职位
   expectedWorkCity  String? /// 期望工作城市
+  resumeUrl         String? /// 简历文件相对路径
+  resumeFileName    String? /// 简历原始文件名称
   workExperience    WorkExperience[] /// 工作经历，一对多关系
   education         Education[] /// 教育经历，一对多关系
   applications      JobApplication[] /// 职位申请记录，一对多关系
@@ -355,10 +357,7 @@ model JobApplication {
   status         InterviewStatus @default(RESUME_SCREENING) /// 申请状态：简历筛选/笔试/一面/二面/HR面试/已安排/Offer/拒绝
   appliedAt      DateTime        @default(now()) /// 申请时间
   updatedAt      DateTime        @updatedAt /// 更新时间
-  resumeUrl      String? /// 简历文件URL
-  coverLetterUrl String? /// 求职信URL
-  notes          String? /// 申请备注
-  
+
   // 关联表
   interviews     Interview[]     /// 该申请的面试安排，一对多关系
   

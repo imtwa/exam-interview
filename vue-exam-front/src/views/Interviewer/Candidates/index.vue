@@ -17,12 +17,7 @@
       <el-form :inline="true" :model="filterForm">
         <el-form-item label="应聘职位">
           <el-select v-model="filterForm.jobId" placeholder="全部职位" clearable>
-            <el-option
-              v-for="job in jobs"
-              :key="job.id"
-              :label="job.title"
-              :value="job.id"
-            />
+            <el-option v-for="job in jobs" :key="job.id" :label="job.title" :value="job.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="候选人状态">
@@ -36,11 +31,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="关键词">
-          <el-input
-            v-model="filterForm.keyword"
-            placeholder="姓名/手机/邮箱"
-            clearable
-          />
+          <el-input v-model="filterForm.keyword" placeholder="姓名/手机/邮箱" clearable />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchCandidates(1)">搜索</el-button>
@@ -97,9 +88,7 @@
             </template>
           </el-table-column>
           <el-table-column label="工作经验" min-width="100">
-            <template slot-scope="{ row }">
-              {{ row.experience }}年
-            </template>
+            <template slot-scope="{ row }"> {{ row.experience }}年 </template>
           </el-table-column>
           <el-table-column label="应聘日期" min-width="120" sortable>
             <template slot-scope="{ row }">
@@ -108,10 +97,7 @@
           </el-table-column>
           <el-table-column prop="status" label="状态" min-width="120">
             <template slot-scope="{ row }">
-              <el-tag
-                :type="getStatusType(row.status)"
-                effect="light"
-              >
+              <el-tag :type="getStatusType(row.status)" effect="light">
                 {{ getStatusText(row.status) }}
               </el-tag>
             </template>
@@ -119,7 +105,12 @@
           <el-table-column label="操作" width="240" fixed="right">
             <template slot-scope="{ row }">
               <el-button size="mini" @click="viewResume(row)">查看简历</el-button>
-              <el-dropdown size="mini" split-button type="primary" @command="handleCommand($event, row)">
+              <el-dropdown
+                size="mini"
+                split-button
+                type="primary"
+                @command="handleCommand($event, row)"
+              >
                 管理
                 <el-dropdown-menu slot="dropdown">
                   <el-dropdown-item command="schedule">安排面试</el-dropdown-item>
@@ -151,79 +142,79 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, watch } from 'vue';
-import { ElMessage } from 'element-plus';
-import { getCandidates, getJobs } from '@/api/candidate';
-import { formatDate } from '@/utils/date';
+import { ref, reactive, onMounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getCandidates, getJobs } from '@/api/candidate'
+import { formatDate } from '@/utils/date'
 
 export default {
   name: 'CandidatesManager',
   setup() {
-    const loading = ref(true);
-    const candidates = ref([]);
-    const jobs = ref([]);
-    const total = ref(0);
-    const currentPage = ref(1);
-    const pageSize = ref(10);
+    const loading = ref(true)
+    const candidates = ref([])
+    const jobs = ref([])
+    const total = ref(0)
+    const currentPage = ref(1)
+    const pageSize = ref(10)
 
     const filterForm = reactive({
       jobId: '',
       status: '',
       keyword: ''
-    });
+    })
 
     // 获取候选人列表
     const fetchCandidates = async (page = currentPage.value) => {
-      loading.value = true;
-      currentPage.value = page;
-      
+      loading.value = true
+      currentPage.value = page
+
       try {
         const response = await getCandidates({
           page: currentPage.value,
           size: pageSize.value,
           ...filterForm
-        });
-        
-        candidates.value = response.list;
-        total.value = response.total;
+        })
+
+        candidates.value = response.list
+        total.value = response.total
       } catch (error) {
-        console.error('获取候选人列表失败:', error);
-        ElMessage.error('获取候选人列表失败');
+        console.error('获取候选人列表失败:', error)
+        ElMessage.error('获取候选人列表失败')
       } finally {
-        loading.value = false;
+        loading.value = false
       }
-    };
+    }
 
     // 获取职位列表
     const fetchJobs = async () => {
       try {
-        const response = await getJobs({ size: 100 });
-        jobs.value = response.list;
+        const response = await getJobs({ size: 100 })
+        jobs.value = response.list
       } catch (error) {
-        console.error('获取职位列表失败:', error);
+        console.error('获取职位列表失败:', error)
       }
-    };
+    }
 
     // 重置筛选条件
     const resetFilters = () => {
       Object.keys(filterForm).forEach(key => {
-        filterForm[key] = '';
-      });
-      fetchCandidates(1);
-    };
+        filterForm[key] = ''
+      })
+      fetchCandidates(1)
+    }
 
     // 分页操作
-    const handlePageChange = (page) => {
-      fetchCandidates(page);
-    };
+    const handlePageChange = page => {
+      fetchCandidates(page)
+    }
 
-    const handleSizeChange = (size) => {
-      pageSize.value = size;
-      fetchCandidates(1);
-    };
+    const handleSizeChange = size => {
+      pageSize.value = size
+      fetchCandidates(1)
+    }
 
     // 状态处理
-    const getStatusText = (status) => {
+    const getStatusText = status => {
       const statusMap = {
         applied: '已申请',
         screening: '简历筛选',
@@ -231,11 +222,11 @@ export default {
         offered: 'Offer发放',
         hired: '已入职',
         rejected: '已拒绝'
-      };
-      return statusMap[status] || status;
-    };
+      }
+      return statusMap[status] || status
+    }
 
-    const getStatusType = (status) => {
+    const getStatusType = status => {
       const typeMap = {
         applied: 'info',
         screening: 'warning',
@@ -243,51 +234,51 @@ export default {
         offered: 'success',
         hired: 'success',
         rejected: 'danger'
-      };
-      return typeMap[status] || 'info';
-    };
+      }
+      return typeMap[status] || 'info'
+    }
 
     // 操作函数
-    const viewResume = (candidate) => {
-      ElMessage.success(`查看${candidate.name}的简历`);
+    const viewResume = candidate => {
+      ElMessage.success(`查看${candidate.name}的简历`)
       // 实现查看简历的逻辑
-    };
+    }
 
     const handleCommand = (command, candidate) => {
       switch (command) {
         case 'schedule':
-          ElMessage.success(`为${candidate.name}安排面试`);
-          break;
+          ElMessage.success(`为${candidate.name}安排面试`)
+          break
         case 'offer':
-          ElMessage.success(`向${candidate.name}发送Offer`);
-          break;
+          ElMessage.success(`向${candidate.name}发送Offer`)
+          break
         case 'hire':
-          ElMessage.success(`录用${candidate.name}`);
-          break;
+          ElMessage.success(`录用${candidate.name}`)
+          break
         case 'reject':
-          ElMessage.success(`拒绝${candidate.name}`);
-          break;
+          ElMessage.success(`拒绝${candidate.name}`)
+          break
       }
-    };
+    }
 
     const exportCandidates = () => {
-      ElMessage.success('导出候选人数据');
-    };
+      ElMessage.success('导出候选人数据')
+    }
 
     const importCandidates = () => {
-      ElMessage.success('导入候选人数据');
-    };
+      ElMessage.success('导入候选人数据')
+    }
 
     // 初始化
     onMounted(() => {
-      fetchJobs();
-      fetchCandidates();
-    });
+      fetchJobs()
+      fetchCandidates()
+    })
 
     // 监听筛选条件变化
     watch([() => filterForm.jobId, () => filterForm.status], () => {
-      fetchCandidates(1);
-    });
+      fetchCandidates(1)
+    })
 
     return {
       loading,
@@ -308,9 +299,9 @@ export default {
       handleCommand,
       exportCandidates,
       importCandidates
-    };
+    }
   }
-};
+}
 </script>
 
 <style scoped>
@@ -387,4 +378,4 @@ export default {
   color: #666;
   font-size: 13px;
 }
-</style> 
+</style>

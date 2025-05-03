@@ -6,19 +6,19 @@
         <el-icon><ArrowLeft /></el-icon>
         返回职位列表
       </el-button>
-      
+
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
         <el-breadcrumb-item :to="{ path: '/recruitment' }">招聘信息</el-breadcrumb-item>
         <el-breadcrumb-item>职位详情</el-breadcrumb-item>
       </el-breadcrumb>
     </div>
-    
+
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-container">
       <el-skeleton animated :rows="15" :loading="loading" />
     </div>
-    
+
     <!-- 职位详情内容 -->
     <template v-else-if="job.id">
       <div class="job-header">
@@ -26,21 +26,17 @@
           <h1 class="job-title">{{ job.title }}</h1>
           <div class="company-info">
             <span class="company-name">{{ job.company?.name }}</span>
-            <el-tag 
-              v-if="job.status" 
-              :type="getStatusType(job.status)" 
-              class="status-tag"
-            >
+            <el-tag v-if="job.status" :type="getStatusType(job.status)" class="status-tag">
               {{ getStatusLabel(job.status) }}
             </el-tag>
           </div>
         </div>
         <div class="job-header-right">
           <div class="salary">{{ formatSalary(job.salaryMin, job.salaryMax) }}</div>
-          <el-button 
-            type="primary" 
-            size="large" 
-            class="apply-button" 
+          <el-button
+            type="primary"
+            size="large"
+            class="apply-button"
             @click="applyJobDirectly"
             :disabled="job.status !== 'ACTIVE' || applying"
             :loading="applying"
@@ -49,7 +45,7 @@
           </el-button>
         </div>
       </div>
-      
+
       <div class="job-content">
         <div class="job-main">
           <el-card class="job-card">
@@ -58,7 +54,7 @@
                 <h3>职位信息</h3>
               </div>
             </template>
-            
+
             <div class="job-meta">
               <div class="meta-row">
                 <div class="meta-item">
@@ -67,10 +63,12 @@
                   </div>
                   <div class="meta-content">
                     <div class="meta-label">工作地点</div>
-                    <div class="meta-value">{{ job.city }}{{ job.address ? ' - ' + job.address : '' }}</div>
+                    <div class="meta-value">
+                      {{ job.city }}{{ job.address ? ' - ' + job.address : '' }}
+                    </div>
                   </div>
                 </div>
-                
+
                 <div class="meta-item">
                   <div class="meta-icon">
                     <el-icon><Collection /></el-icon>
@@ -81,7 +79,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <div class="meta-row">
                 <div class="meta-item">
                   <div class="meta-icon">
@@ -92,18 +90,21 @@
                     <div class="meta-value">{{ formatExperience(job.experienceReq) }}</div>
                   </div>
                 </div>
-                
+
                 <div class="meta-item">
                   <div class="meta-icon">
                     <el-icon><OfficeBuilding /></el-icon>
                   </div>
                   <div class="meta-content">
                     <div class="meta-label">行业分类</div>
-                    <div class="meta-value">{{ job.subCategory?.category?.name || '-' }} / {{ job.subCategory?.name || '-' }}</div>
+                    <div class="meta-value">
+                      {{ job.subCategory?.category?.name || '-' }} /
+                      {{ job.subCategory?.name || '-' }}
+                    </div>
                   </div>
                 </div>
               </div>
-              
+
               <div class="meta-row">
                 <div class="meta-item">
                   <div class="meta-icon">
@@ -114,7 +115,7 @@
                     <div class="meta-value">{{ formatDate(job.createdAt) }}</div>
                   </div>
                 </div>
-                
+
                 <div class="meta-item">
                   <div class="meta-icon">
                     <el-icon><VideoPlay /></el-icon>
@@ -126,27 +127,27 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="job-description">
               <div class="description-section">
                 <h3 class="section-title">职位描述</h3>
                 <div class="section-content" v-html="formattedDescription"></div>
               </div>
-              
+
               <div class="description-section">
                 <h3 class="section-title">职位要求</h3>
                 <div class="section-content" v-html="formattedRequirements"></div>
               </div>
             </div>
           </el-card>
-          
+
           <el-card class="job-card">
             <template #header>
               <div class="card-header">
                 <h3>工作地点</h3>
               </div>
             </template>
-            
+
             <div class="location-info">
               <div class="location-address">
                 <el-icon><Location /></el-icon>
@@ -156,7 +157,7 @@
             </div>
           </el-card>
         </div>
-        
+
         <div class="job-sidebar">
           <el-card class="company-card">
             <template #header>
@@ -164,57 +165,62 @@
                 <h3>公司信息</h3>
               </div>
             </template>
-            
+
             <div class="company-content">
               <h4 class="company-name">{{ job.company?.name }}</h4>
-              
+
               <div class="company-meta">
                 <div class="company-meta-item">
                   <span class="label">融资阶段：</span>
                   <span class="value">{{ formatFundingStage(job.company?.fundingStage) }}</span>
                 </div>
-                
+
                 <div class="company-meta-item">
                   <span class="label">公司规模：</span>
                   <span class="value">{{ formatCompanySize(job.company?.size) }}</span>
                 </div>
-                
+
                 <div class="company-meta-item">
                   <span class="label">行业分类：</span>
                   <span class="value">{{ job.subCategory?.category?.name || '-' }}</span>
                 </div>
               </div>
-              
+
               <div class="company-description" v-if="job.company?.description">
                 {{ job.company.description }}
               </div>
             </div>
           </el-card>
-          
+
           <el-card class="related-jobs-card">
             <template #header>
               <div class="card-header">
                 <h3>相似职位</h3>
               </div>
             </template>
-            
+
             <div class="related-jobs-list" v-if="relatedJobs.length">
-              <div v-for="(item, index) in relatedJobs" :key="index" class="related-job-item" @click="viewJob(item.id)">
+              <div
+                v-for="(item, index) in relatedJobs"
+                :key="index"
+                class="related-job-item"
+                @click="viewJob(item.id)"
+              >
                 <div class="related-job-info">
                   <div class="related-job-title">{{ item.title }}</div>
                   <div class="related-job-company">{{ item.company?.name }}</div>
                 </div>
-                <div class="related-job-salary">{{ formatSalary(item.salaryMin, item.salaryMax) }}</div>
+                <div class="related-job-salary">
+                  {{ formatSalary(item.salaryMin, item.salaryMax) }}
+                </div>
               </div>
             </div>
-            <div v-else class="no-related-jobs">
-              暂无相似职位
-            </div>
+            <div v-else class="no-related-jobs">暂无相似职位</div>
           </el-card>
         </div>
       </div>
     </template>
-    
+
     <!-- 无数据状态 -->
     <div v-else class="empty-container">
       <el-empty description="职位不存在或已下线" />
@@ -227,7 +233,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Location, Collection, Timer, OfficeBuilding, Calendar, VideoPlay } from '@element-plus/icons-vue'
+import {
+  ArrowLeft,
+  Location,
+  Collection,
+  Timer,
+  OfficeBuilding,
+  Calendar,
+  VideoPlay
+} from '@element-plus/icons-vue'
 import { getJob, getJobList, applyJob as apiApplyJob } from '@/api/job'
 import { useUserStore } from '@/stores/user'
 
@@ -247,13 +261,13 @@ const fetchJobDetail = async () => {
     loading.value = false
     return
   }
-  
+
   console.log('获取职位详情，ID:', jobId)
-  
+
   try {
     const result = await getJob(jobId)
     console.log('API 返回结果:', result)
-    
+
     if (result && result.id) {
       job.value = result
       fetchRelatedJobs(result.subCategoryId, result.id)
@@ -272,20 +286,18 @@ const fetchJobDetail = async () => {
 // 获取相关职位
 const fetchRelatedJobs = async (subCategoryId, currentJobId) => {
   if (!subCategoryId) return
-  
+
   try {
     const params = {
       subCategoryId,
       page: 1,
       pageSize: 5
     }
-    
+
     const result = await getJobList(params)
     if (result && result.list) {
       // 过滤掉当前职位
-      relatedJobs.value = result.list
-        .filter(item => item.id !== currentJobId)
-        .slice(0, 4) // 最多显示4个相关职位
+      relatedJobs.value = result.list.filter(item => item.id !== currentJobId).slice(0, 4) // 最多显示4个相关职位
     }
   } catch (error) {
     console.error('获取相关职位失败:', error)
@@ -313,81 +325,81 @@ const formatSalary = (min, max) => {
 }
 
 // 格式化日期
-const formatDate = (dateStr) => {
+const formatDate = dateStr => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 // 格式化工作经验
-const formatExperience = (exp) => {
+const formatExperience = exp => {
   if (!exp) return '经验不限'
-  
+
   const experienceMap = {
-    'STUDENT': '在校生',
-    'FRESH_GRADUATE': '应届生',
-    'LESS_THAN_ONE': '1年以内',
-    'ONE_TO_THREE': '1-3年',
-    'THREE_TO_FIVE': '3-5年',
-    'FIVE_TO_TEN': '5-10年',
-    'MORE_THAN_TEN': '10年以上'
+    STUDENT: '在校生',
+    FRESH_GRADUATE: '应届生',
+    LESS_THAN_ONE: '1年以内',
+    ONE_TO_THREE: '1-3年',
+    THREE_TO_FIVE: '3-5年',
+    FIVE_TO_TEN: '5-10年',
+    MORE_THAN_TEN: '10年以上'
   }
-  
+
   return experienceMap[exp] || '经验不限'
 }
 
 // 格式化学历要求
-const formatEducation = (edu) => {
+const formatEducation = edu => {
   if (!edu) return '学历不限'
-  
+
   const educationMap = {
-    'HIGH_SCHOOL': '高中学历',
-    'ASSOCIATE': '大专学历',
-    'BACHELOR': '本科学历',
-    'MASTER': '硕士学历',
-    'DOCTORATE': '博士学历',
-    'OTHER': '其他学历'
+    HIGH_SCHOOL: '高中学历',
+    ASSOCIATE: '大专学历',
+    BACHELOR: '本科学历',
+    MASTER: '硕士学历',
+    DOCTORATE: '博士学历',
+    OTHER: '其他学历'
   }
-  
+
   return educationMap[edu] || '学历不限'
 }
 
 // 格式化融资阶段
-const formatFundingStage = (stage) => {
+const formatFundingStage = stage => {
   if (!stage) return '未知'
-  
+
   const stageMap = {
-    'UNFUNDED': '未融资',
-    'ANGEL': '天使轮',
-    'SERIES_A': 'A轮',
-    'SERIES_B': 'B轮',
-    'SERIES_C': 'C轮',
-    'SERIES_D': 'D轮及以上',
-    'IPO': '已上市',
-    'SELF_FUNDED': '不需要融资'
+    UNFUNDED: '未融资',
+    ANGEL: '天使轮',
+    SERIES_A: 'A轮',
+    SERIES_B: 'B轮',
+    SERIES_C: 'C轮',
+    SERIES_D: 'D轮及以上',
+    IPO: '已上市',
+    SELF_FUNDED: '不需要融资'
   }
-  
+
   return stageMap[stage] || '未知'
 }
 
 // 格式化公司规模
-const formatCompanySize = (size) => {
+const formatCompanySize = size => {
   if (!size) return '未知'
-  
+
   const sizeMap = {
-    'TINY': '0-20人',
-    'SMALL': '20-99人',
-    'MEDIUM': '100-499人',
-    'LARGE': '500-999人',
-    'XLARGE': '1000-9999人',
-    'XXLARGE': '10000+人'
+    TINY: '0-20人',
+    SMALL: '20-99人',
+    MEDIUM: '100-499人',
+    LARGE: '500-999人',
+    XLARGE: '1000-9999人',
+    XXLARGE: '10000+人'
   }
-  
+
   return sizeMap[size] || '未知'
 }
 
 // 获取状态类型
-const getStatusType = (status) => {
+const getStatusType = status => {
   switch (status) {
     case 'ACTIVE':
       return 'success'
@@ -401,7 +413,7 @@ const getStatusType = (status) => {
 }
 
 // 获取状态文本
-const getStatusLabel = (status) => {
+const getStatusLabel = status => {
   switch (status) {
     case 'ACTIVE':
       return '招聘中'
@@ -427,44 +439,42 @@ const applyJobDirectly = async () => {
       confirmButtonText: '去登录',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(() => {
-      router.push({
-        path: '/login',
-        query: { redirect: route.fullPath }
+    })
+      .then(() => {
+        router.push({
+          path: '/login',
+          query: { redirect: route.fullPath }
+        })
       })
-    }).catch(() => {})
+      .catch(() => {})
     return
   }
-  
+
   // 检查是否为求职者
   if (userStore.userInfo.role !== 'JOB_SEEKER') {
     ElMessage.warning('只有求职者才能投递职位')
     return
   }
-  
+
   try {
     applying.value = true
-    
+
     // 确认投递
-    await ElMessageBox.confirm(
-      `确认投递职位：${job.value.title}？`, 
-      '一键投递', 
-      {
-        confirmButtonText: '确认投递',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    )
-    
+    await ElMessageBox.confirm(`确认投递职位：${job.value.title}？`, '一键投递', {
+      confirmButtonText: '确认投递',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
+
     // 调用API投递职位
     await apiApplyJob(job.value.id)
-    
+
     // 投递成功
     ElMessage.success('投递成功！招聘方会尽快查看您的简历')
   } catch (error) {
     // 处理错误
     if (error === 'cancel') return
-    
+
     if (error.response && error.response.data && error.response.data.message) {
       ElMessage.error(error.response.data.message)
     } else {
@@ -477,7 +487,7 @@ const applyJobDirectly = async () => {
 }
 
 // 查看相关职位
-const viewJob = (id) => {
+const viewJob = id => {
   router.push({
     name: 'RecruitmentJobDetail',
     params: { id }
@@ -494,7 +504,7 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  
+
   @media (max-width: 768px) {
     padding: 15px;
   }
@@ -505,13 +515,13 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .back-button {
     display: flex;
     align-items: center;
@@ -519,12 +529,13 @@ onMounted(() => {
   }
 }
 
-.loading-container, .empty-container {
+.loading-container,
+.empty-container {
   margin: 40px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  
+
   .back-to-list {
     margin-top: 20px;
   }
@@ -538,63 +549,63 @@ onMounted(() => {
   margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 20px;
     padding: 24px;
   }
-  
+
   &-left {
     flex: 1;
     min-width: 0;
-    
+
     .job-title {
       font-size: 28px;
       font-weight: 600;
       color: #2c3e50;
       margin: 0 0 16px 0;
       line-height: 1.3;
-      
+
       @media (max-width: 576px) {
         font-size: 22px;
       }
     }
-    
+
     .company-info {
       display: flex;
       align-items: center;
       gap: 12px;
-      
+
       .company-name {
         font-size: 16px;
         color: #606266;
       }
-      
+
       .status-tag {
         font-size: 12px;
       }
     }
   }
-  
+
   &-right {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     justify-content: center;
     gap: 16px;
-    
+
     @media (max-width: 768px) {
       align-items: flex-start;
     }
-    
+
     .salary {
       font-size: 24px;
       font-weight: 600;
       color: #ff6b6b;
       white-space: nowrap;
     }
-    
+
     .apply-button {
       min-width: 120px;
     }
@@ -604,11 +615,11 @@ onMounted(() => {
 .job-content {
   display: flex;
   gap: 24px;
-  
+
   @media (max-width: 992px) {
     flex-direction: column;
   }
-  
+
   .job-main {
     flex: 1;
     min-width: 0;
@@ -616,14 +627,14 @@ onMounted(() => {
     flex-direction: column;
     gap: 24px;
   }
-  
+
   .job-sidebar {
     width: 320px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 24px;
-    
+
     @media (max-width: 992px) {
       width: 100%;
     }
@@ -635,16 +646,16 @@ onMounted(() => {
   overflow: hidden;
   transition: box-shadow 0.3s;
   border-radius: 12px;
-  
+
   &:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
-  
+
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
+
     h3 {
       margin: 0;
       font-size: 18px;
@@ -656,27 +667,27 @@ onMounted(() => {
 
 .job-meta {
   padding: 16px 0;
-  
+
   .meta-row {
     display: flex;
     margin-bottom: 24px;
     gap: 40px;
-    
+
     @media (max-width: 576px) {
       flex-direction: column;
       gap: 20px;
     }
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
-  
+
   .meta-item {
     display: flex;
     align-items: flex-start;
     flex: 1;
-    
+
     .meta-icon {
       margin-right: 12px;
       padding: 8px;
@@ -684,17 +695,17 @@ onMounted(() => {
       border-radius: 8px;
       color: #0352c9;
     }
-    
+
     .meta-content {
       flex: 1;
       min-width: 0;
-      
+
       .meta-label {
         font-size: 13px;
         color: #909399;
         margin-bottom: 4px;
       }
-      
+
       .meta-value {
         font-size: 15px;
         font-weight: 500;
@@ -706,14 +717,14 @@ onMounted(() => {
 
 .job-description {
   margin-top: 24px;
-  
+
   .description-section {
     margin-bottom: 32px;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
-    
+
     .section-title {
       font-size: 16px;
       font-weight: 600;
@@ -722,7 +733,7 @@ onMounted(() => {
       padding-bottom: 12px;
       border-bottom: 1px solid #f0f0f0;
       position: relative;
-      
+
       &:before {
         content: '';
         position: absolute;
@@ -733,7 +744,7 @@ onMounted(() => {
         background-color: #0352c9;
       }
     }
-    
+
     .section-content {
       font-size: 14px;
       line-height: 1.8;
@@ -745,7 +756,7 @@ onMounted(() => {
 
 .location-info {
   padding: 16px 0;
-  
+
   .location-address {
     display: flex;
     align-items: center;
@@ -758,35 +769,35 @@ onMounted(() => {
 .company-card {
   .company-content {
     padding: 16px 0;
-    
+
     .company-name {
       font-size: 18px;
       font-weight: 600;
       color: #2c3e50;
       margin: 0 0 16px 0;
     }
-    
+
     .company-meta {
       margin-bottom: 16px;
-      
+
       &-item {
         display: flex;
         margin-bottom: 8px;
         font-size: 14px;
-        
+
         .label {
           color: #909399;
           width: 80px;
           flex-shrink: 0;
         }
-        
+
         .value {
           color: #606266;
           flex: 1;
         }
       }
     }
-    
+
     .company-description {
       font-size: 14px;
       color: #606266;
@@ -803,23 +814,23 @@ onMounted(() => {
     border-bottom: 1px solid #f0f0f0;
     cursor: pointer;
     transition: all 0.3s;
-    
+
     &:last-child {
       border-bottom: none;
     }
-    
+
     &:hover {
       background-color: #f5f9ff;
-      
+
       .related-job-title {
         color: #0352c9;
       }
     }
-    
+
     .related-job-info {
       flex: 1;
       min-width: 0;
-      
+
       .related-job-title {
         font-size: 15px;
         font-weight: 500;
@@ -829,13 +840,13 @@ onMounted(() => {
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      
+
       .related-job-company {
         font-size: 13px;
         color: #909399;
       }
     }
-    
+
     .related-job-salary {
       font-size: 14px;
       font-weight: 500;
@@ -851,4 +862,4 @@ onMounted(() => {
   color: #909399;
   font-size: 14px;
 }
-</style> 
+</style>

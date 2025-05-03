@@ -109,7 +109,12 @@
 
         <!-- 关键字搜索 -->
         <div class="search-wrapper">
-          <el-input v-model="searchKeyword" placeholder="输入关键词搜索" class="search-input" @keyup.enter="handleSearch">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="输入关键词搜索"
+            class="search-input"
+            @keyup.enter="handleSearch"
+          >
             <template #append>
               <el-button @click="handleSearch">
                 <el-icon><Search /></el-icon>
@@ -148,9 +153,9 @@
           </div>
           <div class="job-actions">
             <el-button type="primary" size="small" @click="viewDetail(item.id)">查看</el-button>
-            <el-button 
-              type="success" 
-              size="small" 
+            <el-button
+              type="success"
+              size="small"
               @click="applyJobDirectly(item)"
               :loading="item.applying"
               :disabled="item.status !== 'ACTIVE'"
@@ -162,7 +167,11 @@
       </div>
 
       <div v-if="loading" class="loading-state">
-        <el-card shadow="never" style="background: transparent; border: none; height: 100px" v-loading="true"></el-card>
+        <el-card
+          shadow="never"
+          style="background: transparent; border: none; height: 100px"
+          v-loading="true"
+        ></el-card>
       </div>
 
       <div v-if="!loading && jobList.length === 0" class="empty-state">
@@ -191,14 +200,21 @@
           <span class="close-btn" @click="showMoreCities = false">×</span>
         </div>
         <div class="provinces-container">
-          <div v-for="(province, index) in regionData" :key="'province-' + index" class="province-group">
+          <div
+            v-for="(province, index) in regionData"
+            :key="'province-' + index"
+            class="province-group"
+          >
             <div class="province-name">{{ province.name }}</div>
             <div class="cities-list">
               <div
                 v-for="(city, cityIndex) in province.children"
                 :key="'city-' + cityIndex"
                 :class="['city-item', { active: selectedCity === city.name.replace('市', '') }]"
-                @click="handleCityChange(city.name.replace('市', '')); showMoreCities = false"
+                @click="
+                  handleCityChange(city.name.replace('市', '')),
+                  showMoreCities = false
+                "
               >
                 {{ city.name.replace('市', '') }}
               </div>
@@ -224,19 +240,13 @@ const router = useRouter()
 const userStore = useUserStore()
 
 // 一级行业分类
-const industryCategories = ref([
-  { id: 'all', name: '全部' },
-])
+const industryCategories = ref([{ id: 'all', name: '全部' }])
 
 // 二级行业分类
-const industrySubCategories = ref([
-  { id: 'all', name: '全部' },
-])
+const industrySubCategories = ref([{ id: 'all', name: '全部' }])
 
 // 城市选项
-const cities = ref([
-  { value: 'all', label: '全部' }
-])
+const cities = ref([{ value: 'all', label: '全部' }])
 
 // 薪资范围
 const salaryRanges = ref([
@@ -247,7 +257,7 @@ const salaryRanges = ref([
   { value: '15000-20000', label: '15K-20K' },
   { value: '20000-30000', label: '20K-30K' },
   { value: '30000-50000', label: '30K-50K' },
-  { value: '50000-0', label: '50K以上' },
+  { value: '50000-0', label: '50K以上' }
 ])
 
 // 工作经验枚举(对应ExperienceLevel)
@@ -259,7 +269,7 @@ const experienceRanges = ref([
   { value: 'ONE_TO_THREE', label: '1-3年' },
   { value: 'THREE_TO_FIVE', label: '3-5年' },
   { value: 'FIVE_TO_TEN', label: '5-10年' },
-  { value: 'MORE_THAN_TEN', label: '10年以上' },
+  { value: 'MORE_THAN_TEN', label: '10年以上' }
 ])
 
 // 学历要求(对应Degree)
@@ -270,7 +280,7 @@ const educationLevels = ref([
   { value: 'BACHELOR', label: '本科学历' },
   { value: 'MASTER', label: '硕士学历' },
   { value: 'DOCTORATE', label: '博士学历' },
-  { value: 'OTHER', label: '其他学历' },
+  { value: 'OTHER', label: '其他学历' }
 ])
 
 // 地区数据
@@ -310,7 +320,7 @@ const hotCities = ref([
 ])
 
 // 监听行业分类变化，更新二级分类
-watch(selectedIndustry, async (newVal) => {
+watch(selectedIndustry, async newVal => {
   if (newVal !== 'all') {
     await fetchSubCategories(newVal)
   } else {
@@ -320,26 +330,23 @@ watch(selectedIndustry, async (newVal) => {
 })
 
 // 获取二级分类
-const fetchSubCategories = async (categoryId) => {
+const fetchSubCategories = async categoryId => {
   try {
     // 如果categoryId是'all'，直接返回全部选项
     if (categoryId === 'all') {
       industrySubCategories.value = [{ id: 'all', name: '全部' }]
       return
     }
-    
+
     // 转换为数字类型确保比较正确
     const categoryIdNum = parseInt(categoryId)
-    
+
     // 查找选中的一级分类
     const selectedCategory = industryCategories.value.find(cat => cat.id === categoryIdNum)
-    
+
     if (selectedCategory && selectedCategory.subCategories) {
       // 使用一级分类中已包含的子分类数据
-      industrySubCategories.value = [
-        { id: 'all', name: '全部' },
-        ...selectedCategory.subCategories
-      ]
+      industrySubCategories.value = [{ id: 'all', name: '全部' }, ...selectedCategory.subCategories]
     } else {
       // 如果没有子分类，显示空列表
       industrySubCategories.value = [{ id: 'all', name: '全部' }]
@@ -356,7 +363,7 @@ const fetchCityData = async () => {
     if (Array.isArray(response)) {
       // 省级数据
       regionData.value = response
-      
+
       // 从省级数据中提取出所有城市
       const cityList = []
       response.forEach(province => {
@@ -369,10 +376,10 @@ const fetchCityData = async () => {
           })
         }
       })
-      
+
       // 按照城市名称排序
       cityList.sort((a, b) => a.label.localeCompare(b.label, 'zh'))
-      
+
       // 更新所有城市列表
       allCities.value = cityList
     }
@@ -409,7 +416,7 @@ const useDefaultCities = () => {
 }
 
 // 筛选事件处理
-const handleIndustryChange = (id) => {
+const handleIndustryChange = id => {
   // 将字符串类型的'all'保持不变，但数字ID需要转换为数字类型
   selectedIndustry.value = id === 'all' ? 'all' : parseInt(id)
   // 重置分页
@@ -418,7 +425,7 @@ const handleIndustryChange = (id) => {
   fetchJobList()
 }
 
-const handleSubIndustryChange = (id) => {
+const handleSubIndustryChange = id => {
   // 将字符串类型的'all'保持不变，但数字ID需要转换为数字类型
   selectedSubIndustry.value = id === 'all' ? 'all' : parseInt(id)
   // 重置分页
@@ -427,7 +434,7 @@ const handleSubIndustryChange = (id) => {
   fetchJobList()
 }
 
-const handleCityChange = (city) => {
+const handleCityChange = city => {
   selectedCity.value = city
   // 重置分页
   currentPage.value = 1
@@ -435,7 +442,7 @@ const handleCityChange = (city) => {
   fetchJobList()
 }
 
-const handleSalaryChange = (salary) => {
+const handleSalaryChange = salary => {
   selectedSalary.value = salary
   // 重置分页
   currentPage.value = 1
@@ -443,7 +450,7 @@ const handleSalaryChange = (salary) => {
   fetchJobList()
 }
 
-const handleExperienceChange = (experience) => {
+const handleExperienceChange = experience => {
   selectedExperience.value = experience
   // 重置分页
   currentPage.value = 1
@@ -451,7 +458,7 @@ const handleExperienceChange = (experience) => {
   fetchJobList()
 }
 
-const handleEducationChange = (education) => {
+const handleEducationChange = education => {
   selectedEducation.value = education
   // 重置分页
   currentPage.value = 1
@@ -468,12 +475,12 @@ const handleSearch = () => {
 }
 
 // 分页事件处理
-const handleSizeChange = (size) => {
+const handleSizeChange = size => {
   pageSize.value = size
   fetchJobList()
 }
 
-const handleCurrentChange = (page) => {
+const handleCurrentChange = page => {
   currentPage.value = page
   fetchJobList()
 }
@@ -481,37 +488,37 @@ const handleCurrentChange = (page) => {
 // 获取招聘列表数据
 const fetchJobList = async () => {
   loading.value = true
-  
+
   // 构建查询参数
   const params = {
     page: currentPage.value,
     pageSize: pageSize.value,
-    keyword: searchKeyword.value,
+    keyword: searchKeyword.value
   }
-  
+
   // 添加筛选条件 - 确保ID类型正确
   if (selectedIndustry.value !== 'all') {
     params.categoryId = parseInt(selectedIndustry.value)
   }
-  
+
   if (selectedSubIndustry.value !== 'all') {
     params.subCategoryId = parseInt(selectedSubIndustry.value)
   }
-  
+
   if (selectedCity.value !== 'all') {
     params.city = selectedCity.value
   }
-  
+
   if (selectedSalary.value !== 'all') {
     const [min, max] = selectedSalary.value.split('-')
     if (min) params.salaryMin = min
     if (max) params.salaryMax = max
   }
-  
+
   if (selectedExperience.value !== 'all') {
     params.experienceReq = selectedExperience.value
   }
-  
+
   if (selectedEducation.value !== 'all') {
     params.educationReq = selectedEducation.value
   }
@@ -534,10 +541,7 @@ const fetchIndustryCategories = async () => {
   try {
     const data = await getIndustryCategories()
     // 响应拦截器已经处理过返回数据，直接使用返回的data
-    industryCategories.value = [
-      { id: 'all', name: '全部' },
-      ...data.list
-    ]
+    industryCategories.value = [{ id: 'all', name: '全部' }, ...data.list]
   } catch (error) {
     console.error('获取行业分类失败:', error)
   }
@@ -552,44 +556,44 @@ const formatSalary = (min, max) => {
 }
 
 // 格式化工作经验显示
-const formatExperience = (exp) => {
+const formatExperience = exp => {
   if (!exp) return '经验不限'
-  
+
   const experienceMap = {
-    'STUDENT': '在校生',
-    'FRESH_GRADUATE': '应届生',
-    'LESS_THAN_ONE': '1年以内',
-    'ONE_TO_THREE': '1-3年',
-    'THREE_TO_FIVE': '3-5年',
-    'FIVE_TO_TEN': '5-10年',
-    'MORE_THAN_TEN': '10年以上'
+    STUDENT: '在校生',
+    FRESH_GRADUATE: '应届生',
+    LESS_THAN_ONE: '1年以内',
+    ONE_TO_THREE: '1-3年',
+    THREE_TO_FIVE: '3-5年',
+    FIVE_TO_TEN: '5-10年',
+    MORE_THAN_TEN: '10年以上'
   }
-  
+
   return experienceMap[exp] || '经验不限'
 }
 
 // 格式化学历要求显示
-const formatEducation = (edu) => {
+const formatEducation = edu => {
   const educationMap = {
-    'HIGH_SCHOOL': '高中学历',
-    'ASSOCIATE': '大专学历',
-    'BACHELOR': '本科学历',
-    'MASTER': '硕士学历',
-    'DOCTORATE': '博士学历',
-    'OTHER': '其他学历'
+    HIGH_SCHOOL: '高中学历',
+    ASSOCIATE: '大专学历',
+    BACHELOR: '本科学历',
+    MASTER: '硕士学历',
+    DOCTORATE: '博士学历',
+    OTHER: '其他学历'
   }
   return educationMap[edu] || '学历不限'
 }
 
 // 格式化日期显示
-const formatDate = (dateStr) => {
+const formatDate = dateStr => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 // 详情页和一键投递按钮处理
-const viewDetail = (id) => {
+const viewDetail = id => {
   router.push({
     name: 'RecruitmentJobDetail',
     params: { id }
@@ -597,52 +601,50 @@ const viewDetail = (id) => {
 }
 
 // 一键投递职位
-const applyJobDirectly = async (job) => {
+const applyJobDirectly = async job => {
   // 检查是否登录
   if (!userStore.isLoggedIn) {
     ElMessageBox.confirm('请先登录后再投递职位', '提示', {
       confirmButtonText: '去登录',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(() => {
-      router.push({
-        path: '/login',
-        query: { redirect: router.currentRoute.value.fullPath }
+    })
+      .then(() => {
+        router.push({
+          path: '/login',
+          query: { redirect: router.currentRoute.value.fullPath }
+        })
       })
-    }).catch(() => {})
+      .catch(() => {})
     return
   }
-  
+
   // 检查是否为求职者
   if (userStore.userInfo.role !== 'JOB_SEEKER') {
     ElMessage.warning('只有求职者才能投递职位')
     return
   }
-  
+
   // 设置该职位为投递中状态
   job.applying = true
-  
+
   try {
     // 确认投递
-    await ElMessageBox.confirm(
-      `确认投递职位：${job.title}？`, 
-      '一键投递', 
-      {
-        confirmButtonText: '确认投递',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    )
-    
+    await ElMessageBox.confirm(`确认投递职位：${job.title}？`, '一键投递', {
+      confirmButtonText: '确认投递',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
+
     // 调用API投递职位
     await apiApplyJob(job.id)
-    
+
     // 投递成功
     ElMessage.success('投递成功！招聘方会尽快查看您的简历')
   } catch (error) {
     // 处理错误
     if (error === 'cancel') return
-    
+
     if (error.response && error.response.data && error.response.data.message) {
       ElMessage.error(error.response.data.message)
     } else {
@@ -656,11 +658,7 @@ const applyJobDirectly = async (job) => {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    fetchIndustryCategories(),
-    fetchCityData(),
-  fetchJobList()
-  ])
+  await Promise.all([fetchIndustryCategories(), fetchCityData(), fetchJobList()])
 })
 </script>
 
@@ -676,18 +674,18 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+
   h1 {
     font-size: 24px;
     color: #2c3e50;
     margin: 0;
     font-weight: 600;
   }
-  
+
   .stats {
     font-size: 14px;
     color: #606266;
-    
+
     span {
       color: #0352c9;
       font-weight: 600;
@@ -760,29 +758,29 @@ onMounted(async () => {
 
   .search-input {
     width: 360px;
-    
+
     .el-input__wrapper {
       box-shadow: 0 0 0 1px #dcdfe6 inset;
       border-radius: 6px;
-      
+
       &:hover {
         box-shadow: 0 0 0 1px #c0c4cc inset;
       }
-      
+
       &.is-focus {
         box-shadow: 0 0 0 1px #0352c9 inset;
       }
     }
-    
+
     .el-input-group__append {
       background-color: #0352c9;
       box-shadow: 0 0 0 1px #0352c9 inset;
       color: white;
-      
+
       .el-button {
         color: white;
         border: none;
-        
+
         &:hover {
           background-color: darken(#0352c9, 5%);
         }
@@ -834,7 +832,7 @@ onMounted(async () => {
       color: #666;
       display: flex;
       align-items: center;
-      
+
       &:before {
         content: '';
         display: inline-block;
@@ -874,7 +872,7 @@ onMounted(async () => {
       border-radius: 6px;
       font-size: 13px;
       transition: all 0.2s;
-      
+
       &:hover {
         background-color: #eef2fd;
         color: #0352c9;
@@ -912,7 +910,7 @@ onMounted(async () => {
       &:last-child {
         margin-right: 0;
       }
-      
+
       &:before {
         content: '';
         display: inline-block;
@@ -928,40 +926,41 @@ onMounted(async () => {
   .job-actions {
     display: flex;
     gap: 12px;
-    
+
     .el-button {
       padding: 8px 16px;
       border-radius: 6px;
       transition: all 0.3s;
-      
+
       &--primary {
         background-color: rgba(3, 82, 201, 0.05);
         color: #0352c9;
         border-color: rgba(3, 82, 201, 0.2);
-        
+
         &:hover {
           background-color: #0352c9;
           color: white;
           border-color: #0352c9;
         }
       }
-      
+
       &--success {
         background-color: rgba(64, 158, 255, 0.05);
-        color: #409EFF;
+        color: #409eff;
         border-color: rgba(64, 158, 255, 0.2);
-        
+
         &:hover {
-          background-color: #409EFF;
+          background-color: #409eff;
           color: white;
-          border-color: #409EFF;
+          border-color: #409eff;
         }
       }
     }
   }
 }
 
-.loading-state, .empty-state {
+.loading-state,
+.empty-state {
   padding: 40px 0;
   display: flex;
   justify-content: center;
@@ -973,7 +972,7 @@ onMounted(async () => {
   margin-top: 30px;
   display: flex;
   justify-content: center;
-  
+
   .el-pagination {
     --el-pagination-button-color: #606266;
     --el-pagination-button-bg-color: #f4f4f5;
@@ -1051,16 +1050,16 @@ onMounted(async () => {
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: #c0c4cc #f4f4f5;
-    
+
     &::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background-color: #f4f4f5;
       border-radius: 3px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background-color: #c0c4cc;
       border-radius: 3px;
@@ -1115,12 +1114,12 @@ onMounted(async () => {
   border: 1px solid rgba(3, 82, 201, 0.1);
   display: flex;
   align-items: center;
-  
+
   .icon-arrow {
     margin-left: 4px;
     font-size: 12px;
   }
-  
+
   &:hover {
     background-color: rgba(3, 82, 201, 0.1);
     border-color: rgba(3, 82, 201, 0.2);

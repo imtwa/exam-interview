@@ -15,7 +15,12 @@
         <el-form :inline="true" class="filter-form">
           <div class="filter-items">
             <el-form-item label="状态" label-width="60px">
-              <el-select v-model="queryParams.status" placeholder="选择状态" clearable style="width: 180px">
+              <el-select
+                v-model="queryParams.status"
+                placeholder="选择状态"
+                clearable
+                style="width: 180px"
+              >
                 <el-option
                   v-for="item in statusOptions"
                   :key="item.value"
@@ -25,7 +30,12 @@
               </el-select>
             </el-form-item>
             <el-form-item label="学历要求" label-width="80px">
-              <el-select v-model="queryParams.education" placeholder="选择学历要求" clearable style="width: 180px">
+              <el-select
+                v-model="queryParams.education"
+                placeholder="选择学历要求"
+                clearable
+                style="width: 180px"
+              >
                 <el-option
                   v-for="item in educationOptions"
                   :key="item.value"
@@ -35,7 +45,12 @@
               </el-select>
             </el-form-item>
             <el-form-item label="关键词" label-width="60px">
-              <el-input v-model="queryParams.keyword" placeholder="职位名称" clearable style="width: 200px" />
+              <el-input
+                v-model="queryParams.keyword"
+                placeholder="职位名称"
+                clearable
+                style="width: 200px"
+              />
             </el-form-item>
           </div>
           <div class="filter-actions">
@@ -215,19 +230,32 @@
             />
           </el-form-item>
           <el-form-item label="详细地址" prop="address">
-            <el-input v-model="jobForm.address" placeholder="请输入详细地址（如：海淀区中关村大街1号）" />
+            <el-input
+              v-model="jobForm.address"
+              placeholder="请输入详细地址（如：海淀区中关村大街1号）"
+            />
           </el-form-item>
           <el-form-item label="薪资范围">
             <el-row :gutter="10">
               <el-col :span="11">
                 <el-form-item prop="salaryMin">
-                  <el-input-number v-model="jobForm.salaryMin" :min="0" placeholder="最低薪资" style="width: 100%" />
+                  <el-input-number
+                    v-model="jobForm.salaryMin"
+                    :min="0"
+                    placeholder="最低薪资"
+                    style="width: 100%"
+                  />
                 </el-form-item>
               </el-col>
               <el-col :span="2" class="text-center">至</el-col>
               <el-col :span="11">
                 <el-form-item prop="salaryMax">
-                  <el-input-number v-model="jobForm.salaryMax" :min="0" placeholder="最高薪资" style="width: 100%" />
+                  <el-input-number
+                    v-model="jobForm.salaryMax"
+                    :min="0"
+                    placeholder="最高薪资"
+                    style="width: 100%"
+                  />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -298,7 +326,12 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
-import { getJobsByInterviewer, createJob as createJobAPI, updateJob, deleteJob as deleteJobAPI } from '@/api/job'
+import {
+  getJobsByInterviewer,
+  createJob as createJobAPI,
+  updateJob,
+  deleteJob as deleteJobAPI
+} from '@/api/job'
 import { getIndustryCategories } from '@/api/industry'
 import { getRegionData } from '@/api/region'
 import { formatDate, formatFriendlyDate } from '@/utils/formatDate'
@@ -352,65 +385,65 @@ const experienceOptions = [
 
 // 获取职位列表
 const fetchJobs = async (page = queryParams.page) => {
-  loading.value = true;
-  queryParams.page = page;
-  
+  loading.value = true
+  queryParams.page = page
+
   try {
-    const response = await getJobsByInterviewer(queryParams);
-    
+    const response = await getJobsByInterviewer(queryParams)
+
     // 检查响应结构，兼容后端直接返回数据或嵌套在data字段中的情况
     if (response.data && response.data.list) {
       // 数据嵌套在data字段中的情况
-      jobs.value = response.data.list;
-      total.value = response.data.total;
+      jobs.value = response.data.list
+      total.value = response.data.total
     } else if (response.list) {
       // 数据直接在response中的情况
-      jobs.value = response.list;
-      total.value = response.total;
+      jobs.value = response.list
+      total.value = response.total
     } else {
       // 异常情况，可能是格式不对
-      console.warn('职位数据格式不符合预期:', response);
-      jobs.value = [];
-      total.value = 0;
+      console.warn('职位数据格式不符合预期:', response)
+      jobs.value = []
+      total.value = 0
     }
   } catch (error) {
-    console.error('获取职位列表失败:', error);
-    ElMessage.error('获取职位列表失败');
-    jobs.value = [];
-    total.value = 0;
+    console.error('获取职位列表失败:', error)
+    ElMessage.error('获取职位列表失败')
+    jobs.value = []
+    total.value = 0
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 获取行业分类和地区数据
 const fetchOptions = async () => {
   try {
     // 获取行业分类
-    const categoryRes = await getIndustryCategories();
+    const categoryRes = await getIndustryCategories()
     // 确保返回的数据有list属性且为数组
     if (categoryRes && categoryRes.list && Array.isArray(categoryRes.list)) {
-      industryCategories.value = categoryRes.list;
+      industryCategories.value = categoryRes.list
     } else {
-      console.warn('行业分类数据格式不正确:', categoryRes);
-      industryCategories.value = [];
+      console.warn('行业分类数据格式不正确:', categoryRes)
+      industryCategories.value = []
     }
-    
+
     // 获取地区数据
-    const regionRes = await getRegionData();
+    const regionRes = await getRegionData()
     // 确保返回的数据是数组
     if (Array.isArray(regionRes)) {
-      regionData.value = regionRes;
+      regionData.value = regionRes
     } else {
-      console.warn('地区数据格式不正确:', regionRes);
-      regionData.value = [];
+      console.warn('地区数据格式不正确:', regionRes)
+      regionData.value = []
     }
   } catch (error) {
-    console.error('获取选项数据失败:', error);
-    industryCategories.value = [];
-    regionData.value = [];
+    console.error('获取选项数据失败:', error)
+    industryCategories.value = []
+    regionData.value = []
   }
-};
+}
 
 // 重置筛选条件
 const resetFilters = () => {
@@ -422,12 +455,12 @@ const resetFilters = () => {
 }
 
 // 处理分页变化
-const handleSizeChange = (size) => {
+const handleSizeChange = size => {
   queryParams.pageSize = size
   fetchJobs()
 }
 
-const handleCurrentChange = (page) => {
+const handleCurrentChange = page => {
   queryParams.page = page
   fetchJobs()
 }
@@ -497,7 +530,7 @@ const createJob = () => {
     isRemote: false,
     status: 'ACTIVE'
   }
-  
+
   // 如果没有公司ID或面试官ID，尝试刷新获取
   if (!jobForm.value.companyId || !jobForm.value.interviewerId) {
     userStore.fetchInterviewerProfile().then(() => {
@@ -505,12 +538,12 @@ const createJob = () => {
       jobForm.value.interviewerId = userStore.interviewerId || 0
     })
   }
-  
+
   jobFormVisible.value = true
 }
 
 // 编辑职位
-const editJob = async (jobId) => {
+const editJob = async jobId => {
   try {
     // 获取职位详情
     const jobDetail = jobs.value.find(job => job.id === jobId)
@@ -518,15 +551,16 @@ const editJob = async (jobId) => {
       ElMessage.error('未找到职位信息')
       return
     }
-    
+
     formType.value = 'edit'
     editingJobId.value = jobId
-    
+
     // 将年份转换为经验级别
-    const experienceLevel = typeof jobDetail.experienceReq === 'number' 
-      ? convertYearsToLevel(jobDetail.experienceReq)
-      : jobDetail.experienceReq || ''
-    
+    const experienceLevel =
+      typeof jobDetail.experienceReq === 'number'
+        ? convertYearsToLevel(jobDetail.experienceReq)
+        : jobDetail.experienceReq || ''
+
     jobForm.value = {
       title: jobDetail.title,
       companyId: jobDetail.companyId || userStore.companyId || 0,
@@ -544,18 +578,21 @@ const editJob = async (jobId) => {
       isRemote: jobDetail.isRemote || false,
       status: jobDetail.status
     }
-    
+
     // 如果没有公司ID或面试官ID，尝试刷新获取
     if (!jobForm.value.companyId || !jobForm.value.interviewerId) {
-      userStore.checkUserProfile().then(() => {
-        jobForm.value.companyId = userStore.companyId || 0
-        jobForm.value.interviewerId = userStore.interviewerId || 0
-      }).catch(error => {
-        console.error('获取面试官信息失败:', error)
-        ElMessage.warning('获取面试官信息失败，请刷新后重试')
-      })
+      userStore
+        .checkUserProfile()
+        .then(() => {
+          jobForm.value.companyId = userStore.companyId || 0
+          jobForm.value.interviewerId = userStore.interviewerId || 0
+        })
+        .catch(error => {
+          console.error('获取面试官信息失败:', error)
+          ElMessage.warning('获取面试官信息失败，请刷新后重试')
+        })
     }
-    
+
     jobFormVisible.value = true
   } catch (error) {
     console.error('获取职位详情失败:', error)
@@ -564,47 +601,47 @@ const editJob = async (jobId) => {
 }
 
 // 提交职位表单
-const submitJobForm = async (formEl) => {
+const submitJobForm = async formEl => {
   if (!formEl) return
-  
-  await formEl.validate(async (valid) => {
+
+  await formEl.validate(async valid => {
     if (valid) {
       // 验证薪资范围
       if (jobForm.value.salaryMin > jobForm.value.salaryMax) {
         ElMessage.error('薪资下限不能大于薪资上限')
         return
       }
-      
+
       // 确保公司ID和面试官ID已设置
       if (!jobForm.value.companyId) {
         ElMessage.error('缺少公司ID，请确保您的账号已关联公司')
         return
       }
-      
+
       if (!jobForm.value.interviewerId) {
         ElMessage.error('缺少面试官ID，请确保您的账号信息完整')
         return
       }
-      
+
       jobFormLoading.value = true
       try {
         // 构建要提交的数据
         const submitData = { ...jobForm.value }
-        
+
         // 确保ID字段为数字类型
         submitData.companyId = Number(submitData.companyId)
         submitData.interviewerId = Number(submitData.interviewerId)
         if (submitData.subCategoryId) {
           submitData.subCategoryId = Number(submitData.subCategoryId)
         }
-        
+
         let response
         if (formType.value === 'create') {
           response = await createJobAPI(submitData)
         } else {
           response = await updateJob(editingJobId.value, submitData)
         }
-        
+
         ElMessage.success(formType.value === 'create' ? '发布职位成功' : '更新职位成功')
         jobFormVisible.value = false
         fetchJobs()
@@ -619,7 +656,7 @@ const submitJobForm = async (formEl) => {
 }
 
 // 复制职位
-const copyJob = async (jobId) => {
+const copyJob = async jobId => {
   try {
     // 获取职位详情
     const jobDetail = jobs.value.find(job => job.id === jobId)
@@ -627,14 +664,15 @@ const copyJob = async (jobId) => {
       ElMessage.error('未找到职位信息')
       return
     }
-    
+
     formType.value = 'create'
-    
+
     // 将年份转换为经验级别
-    const experienceLevel = typeof jobDetail.experienceReq === 'number' 
-      ? convertYearsToLevel(jobDetail.experienceReq)
-      : jobDetail.experienceReq || ''
-    
+    const experienceLevel =
+      typeof jobDetail.experienceReq === 'number'
+        ? convertYearsToLevel(jobDetail.experienceReq)
+        : jobDetail.experienceReq || ''
+
     jobForm.value = {
       title: `${jobDetail.title} - 副本`,
       companyId: jobDetail.companyId || userStore.companyId || 0,
@@ -652,18 +690,21 @@ const copyJob = async (jobId) => {
       isRemote: jobDetail.isRemote || false,
       status: 'ACTIVE' // 默认为招聘中
     }
-    
+
     // 如果没有公司ID或面试官ID，尝试刷新获取
     if (!jobForm.value.companyId || !jobForm.value.interviewerId) {
-      userStore.checkUserProfile().then(() => {
-        jobForm.value.companyId = userStore.companyId || 0
-        jobForm.value.interviewerId = userStore.interviewerId || 0
-      }).catch(error => {
-        console.error('获取面试官信息失败:', error)
-        ElMessage.warning('获取面试官信息失败，请刷新后重试')
-      })
+      userStore
+        .checkUserProfile()
+        .then(() => {
+          jobForm.value.companyId = userStore.companyId || 0
+          jobForm.value.interviewerId = userStore.interviewerId || 0
+        })
+        .catch(error => {
+          console.error('获取面试官信息失败:', error)
+          ElMessage.warning('获取面试官信息失败，请刷新后重试')
+        })
     }
-    
+
     jobFormVisible.value = true
   } catch (error) {
     console.error('复制职位失败:', error)
@@ -672,14 +713,14 @@ const copyJob = async (jobId) => {
 }
 
 // 删除职位
-const deleteJob = async (jobId) => {
+const deleteJob = async jobId => {
   try {
     await ElMessageBox.confirm('确定要删除该职位吗？已投递简历的候选人将无法查看该职位。', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     await deleteJobAPI(jobId)
     ElMessage.success('职位删除成功')
     fetchJobs()
@@ -696,20 +737,20 @@ const toggleJobStatus = async (jobId, currentStatus) => {
   try {
     const newStatus = currentStatus === 'ACTIVE' ? 'FILLED' : 'ACTIVE'
     const statusText = newStatus === 'ACTIVE' ? '开放招聘' : '暂停招聘'
-    
+
     await ElMessageBox.confirm(`确定要${statusText}吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     // 获取当前职位的完整信息
     const jobDetail = jobs.value.find(job => job.id === jobId)
     if (!jobDetail) {
       ElMessage.error('找不到职位信息，请刷新页面后重试')
       return
     }
-    
+
     // 构建完整的更新数据对象，只修改status字段
     const updateData = {
       title: jobDetail.title,
@@ -727,7 +768,7 @@ const toggleJobStatus = async (jobId, currentStatus) => {
       isRemote: jobDetail.isRemote || false,
       status: newStatus // 只修改状态
     }
-    
+
     await updateJob(jobId, updateData)
     ElMessage.success(`${statusText}成功`)
     fetchJobs() // 刷新列表
@@ -740,22 +781,22 @@ const toggleJobStatus = async (jobId, currentStatus) => {
 }
 
 // 查看职位详情
-const viewJobDetail = (jobId) => {
+const viewJobDetail = jobId => {
   router.push(`/job-management/detail/${jobId}`)
 }
 
 // 查看应聘者
-const viewApplications = (jobId) => {
+const viewApplications = jobId => {
   router.push(`/candidate-management?jobId=${jobId}`)
 }
 
 // 查看面试安排
-const viewInterviews = (jobId) => {
+const viewInterviews = jobId => {
   router.push(`/interview-schedule?jobId=${jobId}`)
 }
 
 // 获取状态显示类型
-const getStatusType = (status) => {
+const getStatusType = status => {
   switch (status) {
     case 'ACTIVE':
       return 'success'
@@ -769,7 +810,7 @@ const getStatusType = (status) => {
 }
 
 // 获取状态显示文本
-const getStatusLabel = (status) => {
+const getStatusLabel = status => {
   switch (status) {
     case 'ACTIVE':
       return '招聘中'
@@ -783,13 +824,13 @@ const getStatusLabel = (status) => {
 }
 
 // 获取教育要求文本
-const getEducationLabel = (education) => {
+const getEducationLabel = education => {
   const found = educationOptions.find(option => option.value === education)
   return found ? found.label : '不限'
 }
 
 // 获取工作经验要求文本
-const getExperienceLabel = (experience) => {
+const getExperienceLabel = experience => {
   if (!experience) return '不限'
   const found = experienceOptions.find(option => option.value === experience)
   return found ? found.label : '不限'
@@ -804,12 +845,12 @@ const formatSalary = (min, max) => {
 }
 
 // 处理地区选择变化
-const handleRegionChange = (value) => {
+const handleRegionChange = value => {
   if (value && value.length > 0) {
     // 提取选中的地区名称
     const selectedLabels = []
     let currentLevel = regionData.value
-    
+
     for (const code of value) {
       const found = currentLevel.find(item => item.code === code)
       if (found) {
@@ -817,7 +858,7 @@ const handleRegionChange = (value) => {
         currentLevel = found.children || []
       }
     }
-    
+
     // 更新城市字段
     jobForm.value.city = selectedLabels.join(' ')
   } else {
@@ -826,19 +867,19 @@ const handleRegionChange = (value) => {
 }
 
 // 将经验年数转换为经验级别
-const convertYearsToLevel = (years) => {
-  if (typeof years === 'string') return years;
-  
-  if (years === 0) return 'ENTRY_LEVEL';
-  if (years < 3) return 'JUNIOR';
-  if (years < 5) return 'MID_LEVEL';
-  if (years < 8) return 'SENIOR';
-  return 'EXPERT';
+const convertYearsToLevel = years => {
+  if (typeof years === 'string') return years
+
+  if (years === 0) return 'ENTRY_LEVEL'
+  if (years < 3) return 'JUNIOR'
+  if (years < 5) return 'MID_LEVEL'
+  if (years < 8) return 'SENIOR'
+  return 'EXPERT'
 }
 
 onMounted(async () => {
   loading.value = true
-  
+
   // 确保获取面试官ID和公司ID
   if (!userStore.companyId || !userStore.interviewerId) {
     try {
@@ -857,7 +898,7 @@ onMounted(async () => {
       interviewerId: userStore.interviewerId
     })
   }
-  
+
   await fetchJobs()
   loading.value = false
   fetchOptions()
@@ -888,18 +929,18 @@ onMounted(async () => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   padding: 20px 24px;
   margin-bottom: 24px;
-  
+
   .filter-form {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    
+
     .filter-items {
       display: flex;
       flex-wrap: wrap;
       flex: 1;
     }
-    
+
     .filter-actions {
       display: flex;
       gap: 10px;
@@ -908,12 +949,12 @@ onMounted(async () => {
       height: 40px;
       line-height: 40px;
     }
-    
+
     .el-form-item {
       margin-bottom: 10px;
       margin-right: 20px;
     }
-    
+
     :deep(.el-form-item__content) {
       display: flex;
       align-items: center;
@@ -933,13 +974,13 @@ onMounted(async () => {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   padding: 20px;
-  
+
   :deep(.el-table) {
     .el-button {
       padding: 4px 10px;
     }
-    
-    .el-button+.el-dropdown {
+
+    .el-button + .el-dropdown {
       margin-left: 5px;
     }
   }
@@ -1000,4 +1041,4 @@ onMounted(async () => {
 :deep(.el-dropdown) {
   margin-left: 5px;
 }
-</style> 
+</style>

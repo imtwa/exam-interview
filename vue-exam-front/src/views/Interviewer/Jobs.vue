@@ -207,31 +207,31 @@ const educationOptions = [
 
 // 获取职位列表
 const fetchJobs = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    const response = await getJobs(queryParams);
-    jobs.value = response.list;
-    total.value = response.total;
+    const response = await getJobs(queryParams)
+    jobs.value = response.list
+    total.value = response.total
   } catch (error) {
-    console.error('获取职位列表失败:', error);
-    ElMessage.error('获取职位列表失败');
+    console.error('获取职位列表失败:', error)
+    ElMessage.error('获取职位列表失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 获取行业分类和热门城市
 const fetchOptions = async () => {
   try {
-    const categoryRes = await getIndustrySubCategories();
-    subCategories.value = categoryRes.list;
-    
-    const citiesRes = await getRegionData();
-    hotCities.value = citiesRes.list;
+    const categoryRes = await getIndustrySubCategories()
+    subCategories.value = categoryRes.list
+
+    const citiesRes = await getRegionData()
+    hotCities.value = citiesRes.list
   } catch (error) {
-    console.error('获取选项数据失败:', error);
+    console.error('获取选项数据失败:', error)
   }
-};
+}
 
 // 重置筛选条件
 const resetFilters = () => {
@@ -243,12 +243,12 @@ const resetFilters = () => {
 }
 
 // 处理分页变化
-const handleSizeChange = (size) => {
+const handleSizeChange = size => {
   queryParams.pageSize = size
   fetchJobs()
 }
 
-const handleCurrentChange = (page) => {
+const handleCurrentChange = page => {
   queryParams.page = page
   fetchJobs()
 }
@@ -316,7 +316,7 @@ const createJob = () => {
 }
 
 // 打开编辑职位表单
-const editJob = async (jobId) => {
+const editJob = async jobId => {
   try {
     // 获取职位详情
     const jobDetail = jobs.value.find(job => job.id === jobId)
@@ -324,7 +324,7 @@ const editJob = async (jobId) => {
       ElMessage.error('未找到职位信息')
       return
     }
-    
+
     formType.value = 'edit'
     editingJobId.value = jobId
     jobForm.value = {
@@ -351,34 +351,34 @@ const editJob = async (jobId) => {
 
 // 提交职位表单
 const submitJob = async () => {
-  jobFormRef.value.validate(async (valid) => {
+  jobFormRef.value.validate(async valid => {
     if (valid) {
-      submitLoading.value = true;
-      
+      submitLoading.value = true
+
       try {
-        let response;
+        let response
         if (isEdit.value) {
-          response = await updateJob(editingJobId.value, jobForm);
-          ElMessage.success('更新职位成功');
+          response = await updateJob(editingJobId.value, jobForm)
+          ElMessage.success('更新职位成功')
         } else {
-          response = await createJob(jobForm);
-          ElMessage.success('创建职位成功');
+          response = await createJob(jobForm)
+          ElMessage.success('创建职位成功')
         }
-        
-        dialogVisible.value = false;
-        await fetchJobs();
+
+        dialogVisible.value = false
+        await fetchJobs()
       } catch (error) {
-        console.error(isEdit.value ? '更新职位失败:' : '创建职位失败:', error);
-        ElMessage.error(isEdit.value ? '更新职位失败' : '创建职位失败');
+        console.error(isEdit.value ? '更新职位失败:' : '创建职位失败:', error)
+        ElMessage.error(isEdit.value ? '更新职位失败' : '创建职位失败')
       } finally {
-        submitLoading.value = false;
+        submitLoading.value = false
       }
     }
-  });
-};
+  })
+}
 
 // 复制职位
-const copyJob = async (jobId) => {
+const copyJob = async jobId => {
   try {
     // 获取职位详情
     const jobDetail = jobs.value.find(job => job.id === jobId)
@@ -386,7 +386,7 @@ const copyJob = async (jobId) => {
       ElMessage.error('未找到职位信息')
       return
     }
-    
+
     formType.value = 'create'
     jobForm.value = {
       title: `${jobDetail.title} - 副本`,
@@ -405,61 +405,61 @@ const copyJob = async (jobId) => {
     }
     jobFormVisible.value = true
   } catch (error) {
-      console.error('复制职位失败:', error)
+    console.error('复制职位失败:', error)
     ElMessage.error('复制职位失败')
   }
 }
 
 // 删除职位
-const deleteJob = async (jobId) => {
+const deleteJob = async jobId => {
   try {
     await ElMessageBox.confirm('确认删除该职位？删除后将无法恢复。', '警告', {
       confirmButtonText: '确认',
       cancelButtonText: '取消',
       type: 'warning'
-    });
-    
-    await deleteJob(jobId);
-    ElMessage.success('删除职位成功');
-    await fetchJobs();
+    })
+
+    await deleteJob(jobId)
+    ElMessage.success('删除职位成功')
+    await fetchJobs()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('删除职位失败:', error);
-      ElMessage.error('删除职位失败');
+      console.error('删除职位失败:', error)
+      ElMessage.error('删除职位失败')
     }
   }
-};
+}
 
 // 更改职位状态
 const toggleJobStatus = async (jobId, currentStatus) => {
-  const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
   try {
-    await updateJob(jobId, { status: newStatus });
-    ElMessage.success(`职位状态已更新为${newStatus === 'ACTIVE' ? '招聘中' : '已关闭'}`);
-    await fetchJobs();
+    await updateJob(jobId, { status: newStatus })
+    ElMessage.success(`职位状态已更新为${newStatus === 'ACTIVE' ? '招聘中' : '已关闭'}`)
+    await fetchJobs()
   } catch (error) {
-    console.error('更新职位状态失败:', error);
-    ElMessage.error('更新职位状态失败');
+    console.error('更新职位状态失败:', error)
+    ElMessage.error('更新职位状态失败')
   }
-};
+}
 
 // 查看职位详情
-const viewJobDetail = (jobId) => {
+const viewJobDetail = jobId => {
   router.push(`/job-management/detail/${jobId}`)
 }
 
 // 查看应聘者
-const viewApplications = (jobId) => {
+const viewApplications = jobId => {
   router.push(`/candidate-management?jobId=${jobId}`)
 }
 
 // 查看面试安排
-const viewInterviews = (jobId) => {
+const viewInterviews = jobId => {
   router.push(`/interview-schedule?jobId=${jobId}`)
 }
 
 // 获取状态显示类型
-const getStatusType = (status) => {
+const getStatusType = status => {
   switch (status) {
     case 'ACTIVE':
       return 'success'
@@ -473,7 +473,7 @@ const getStatusType = (status) => {
 }
 
 // 获取状态显示文本
-const getStatusLabel = (status) => {
+const getStatusLabel = status => {
   switch (status) {
     case 'ACTIVE':
       return '招聘中'
@@ -487,7 +487,7 @@ const getStatusLabel = (status) => {
 }
 
 // 获取教育要求文本
-const getEducationLabel = (education) => {
+const getEducationLabel = education => {
   const found = educationOptions.find(option => option.value === education)
   return found ? found.label : '不限'
 }
@@ -589,4 +589,3 @@ onMounted(() => {
   color: #f56c6c;
 }
 </style>
-

@@ -5,9 +5,11 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { logger } from './common/logger/logger.config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const nestLogger = new Logger('Bootstrap');
 
   // 允许跨域
@@ -31,6 +33,11 @@ async function bootstrap() {
     }),
   );
 
+  // 配置静态文件服务
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
   // 配置 Swagger
   const config = new DocumentBuilder()
     .setTitle('在线招聘面试平台 API')
@@ -50,6 +57,9 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
       },
       'JWT',
     )

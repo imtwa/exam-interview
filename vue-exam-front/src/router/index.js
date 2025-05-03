@@ -41,7 +41,7 @@ const routes = [
       {
         path: 'recruitment',
         name: 'Recruitment',
-        component: () => import('../views/Recruitment/index.vue')
+        component: () => import('@/views/Recruitment/index.vue')
       },
       // {
       //     path: 'online-exam',

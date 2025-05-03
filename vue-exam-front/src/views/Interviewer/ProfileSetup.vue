@@ -654,14 +654,14 @@ const submitProfile = async () => {
 
     if (response) {
       console.log('面试官资料设置成功，返回数据:', response)
-      
+
       // 在资料设置成功后直接更新存储
       // 保存面试官信息到Pinia store
       const userStore = useUserStore()
       userStore.setInterviewerInfo(response.interviewer || response)
       // 标记用户资料已完善
       userStore.setProfileStatus(true)
-      
+
       ElMessage.success('个人资料设置成功')
       // 跳转到主页或仪表板
       router.push('/profile')

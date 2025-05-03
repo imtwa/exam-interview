@@ -27,17 +27,22 @@
       <div class="filter-container">
         <el-form :inline="true" class="filter-form">
           <el-form-item label="职位">
-            <el-select v-model="queryParams.jobId" placeholder="选择职位" clearable @change="fetchExams">
-              <el-option
-                v-for="job in jobs"
-                :key="job.id"
-                :label="job.title"
-                :value="job.id"
-              />
+            <el-select
+              v-model="queryParams.jobId"
+              placeholder="选择职位"
+              clearable
+              @change="fetchExams"
+            >
+              <el-option v-for="job in jobs" :key="job.id" :label="job.title" :value="job.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="状态">
-            <el-select v-model="queryParams.status" placeholder="选择状态" clearable @change="fetchExams">
+            <el-select
+              v-model="queryParams.status"
+              placeholder="选择状态"
+              clearable
+              @change="fetchExams"
+            >
               <el-option
                 v-for="item in statusOptions"
                 :key="item.value"
@@ -84,9 +89,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="duration" label="时长" width="80">
-              <template #default="{ row }">
-                {{ row.duration }}分钟
-              </template>
+              <template #default="{ row }"> {{ row.duration }}分钟 </template>
             </el-table-column>
             <el-table-column prop="questionsCount" label="题目数" width="90" align="center">
               <template #default="{ row }">
@@ -128,7 +131,9 @@
                     <el-dropdown-menu>
                       <el-dropdown-item @click="viewExamDetail(row.id)">查看详情</el-dropdown-item>
                       <el-dropdown-item @click="duplicateExam(row.id)">复制考试</el-dropdown-item>
-                      <el-dropdown-item @click="assignCandidates(row.id)">分配考生</el-dropdown-item>
+                      <el-dropdown-item @click="assignCandidates(row.id)"
+                        >分配考生</el-dropdown-item
+                      >
                       <el-dropdown-item @click="toggleExamStatus(row.id, row.status)">
                         {{ row.status === 'ACTIVE' ? '暂停考试' : '重新启用' }}
                       </el-dropdown-item>
@@ -175,7 +180,7 @@ const total = ref(0)
 const jobs = ref([])
 
 // 获取URL中的jobId
-const jobId = computed(() => route.query.jobId ? parseInt(route.query.jobId) : null)
+const jobId = computed(() => (route.query.jobId ? parseInt(route.query.jobId) : null))
 
 // 查询参数
 const queryParams = reactive({
@@ -195,7 +200,7 @@ const statusOptions = [
 ]
 
 // 获取状态显示类型
-const getStatusType = (status) => {
+const getStatusType = status => {
   switch (status) {
     case 'ACTIVE':
       return 'success'
@@ -211,16 +216,16 @@ const getStatusType = (status) => {
 }
 
 // 获取状态显示文本
-const getStatusLabel = (status) => {
+const getStatusLabel = status => {
   const found = statusOptions.find(option => option.value === status)
   return found ? found.label : '未知'
 }
 
 // 获取考试列表
 const fetchExams = async (page = currentPage.value) => {
-  loading.value = true;
-  currentPage.value = page;
-  
+  loading.value = true
+  currentPage.value = page
+
   try {
     const response = await getExams({
       page: currentPage.value,
@@ -228,49 +233,49 @@ const fetchExams = async (page = currentPage.value) => {
       jobId: filterForm.jobId,
       status: filterForm.status,
       keyword: filterForm.keyword
-    });
-    
-    exams.value = response.list;
-    total.value = response.total;
+    })
+
+    exams.value = response.list
+    total.value = response.total
   } catch (error) {
-    console.error('获取考试列表失败:', error);
-    ElMessage.error('获取考试列表失败');
+    console.error('获取考试列表失败:', error)
+    ElMessage.error('获取考试列表失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 获取职位列表
 const fetchJobs = async () => {
   try {
-    const response = await getJobs();
-    jobs.value = response.list;
+    const response = await getJobs()
+    jobs.value = response.list
   } catch (error) {
-    console.error('获取职位列表失败:', error);
+    console.error('获取职位列表失败:', error)
   }
-};
+}
 
 // 重置筛选条件
 const resetFilters = () => {
   queryParams.status = ''
   queryParams.keyword = ''
   queryParams.page = 1
-  
+
   // 如果是从职位详情页进入，保留jobId筛选
   if (!jobId.value) {
     queryParams.jobId = null
   }
-  
+
   fetchExams()
 }
 
 // 处理分页变化
-const handleSizeChange = (size) => {
+const handleSizeChange = size => {
   queryParams.pageSize = size
   fetchExams()
 }
 
-const handleCurrentChange = (page) => {
+const handleCurrentChange = page => {
   queryParams.page = page
   fetchExams()
 }
@@ -281,100 +286,100 @@ const createExam = () => {
 }
 
 // 查看考试详情
-const viewExamDetail = (id) => {
+const viewExamDetail = id => {
   router.push(`/exam-management/detail/${id}`)
 }
 
 // 编辑考试
-const editExam = (id) => {
+const editExam = id => {
   router.push(`/exam-management/edit/${id}`)
 }
 
 // 复制考试
-const duplicateExam = async (id) => {
+const duplicateExam = async id => {
   try {
     await ElMessageBox.confirm('确定要复制该考试吗？将创建一个包含相同题目的新考试。', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'info'
     })
-    
-    const response = await copyExam(id);
-    
-    ElMessage.success('复制考试成功');
-    router.push(`/exam-management/edit/${response.id}`);
+
+    const response = await copyExam(id)
+
+    ElMessage.success('复制考试成功')
+    router.push(`/exam-management/edit/${response.id}`)
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('复制考试失败:', error);
-      ElMessage.error('复制考试失败');
+      console.error('复制考试失败:', error)
+      ElMessage.error('复制考试失败')
     }
   }
 }
 
 // 分配考试给候选人
-const assignCandidates = async (examId) => {
+const assignCandidates = async examId => {
   try {
     const candidatesForm = {
       examId: examId,
       candidateIds: [1, 2, 3] // 示例数据，实际应从弹窗中获取
-    };
-    
-    const response = await assignExamToCandidates(candidatesForm);
-    
-    ElMessage.success('已成功分配考试给候选人');
-    await fetchExams();
+    }
+
+    const response = await assignExamToCandidates(candidatesForm)
+
+    ElMessage.success('已成功分配考试给候选人')
+    await fetchExams()
   } catch (error) {
-    console.error('分配考试失败:', error);
-    ElMessage.error('分配考试失败');
+    console.error('分配考试失败:', error)
+    ElMessage.error('分配考试失败')
   }
-};
+}
 
 // 查看考生
-const viewCandidates = (id) => {
+const viewCandidates = id => {
   router.push(`/exam-management/candidates/${id}`)
 }
 
 // 更改考试状态
-const toggleExamStatus = async (exam) => {
+const toggleExamStatus = async exam => {
   try {
-    const newStatus = exam.status === 'active' ? 'inactive' : 'active';
-    const response = await updateExamStatus(exam.id, newStatus);
-    
-    ElMessage.success(`考试已${newStatus === 'active' ? '启用' : '停用'}`);
-    await fetchExams();
+    const newStatus = exam.status === 'active' ? 'inactive' : 'active'
+    const response = await updateExamStatus(exam.id, newStatus)
+
+    ElMessage.success(`考试已${newStatus === 'active' ? '启用' : '停用'}`)
+    await fetchExams()
   } catch (error) {
-    console.error('更新考试状态失败:', error);
-    ElMessage.error('更新考试状态失败');
+    console.error('更新考试状态失败:', error)
+    ElMessage.error('更新考试状态失败')
   }
-};
+}
 
 // 删除考试
-const deleteExam = async (exam) => {
+const deleteExam = async exam => {
   try {
     await ElMessageBox.confirm(`确定要删除考试 "${exam.title}" 吗？此操作不可逆`, '警告', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
-    });
-    
-    const response = await removeExam(exam.id);
-    
-    ElMessage.success('考试已删除');
-    await fetchExams();
+    })
+
+    const response = await removeExam(exam.id)
+
+    ElMessage.success('考试已删除')
+    await fetchExams()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('删除考试失败:', error);
-      ElMessage.error('删除考试失败');
+      console.error('删除考试失败:', error)
+      ElMessage.error('删除考试失败')
     }
   }
-};
+}
 
 onMounted(() => {
   // 如果有URL参数，更新查询条件
   if (jobId.value) {
     queryParams.jobId = jobId.value
   }
-  
+
   fetchJobs()
   fetchExams()
 })
@@ -470,4 +475,4 @@ onMounted(() => {
 .text-danger {
   color: #f56c6c;
 }
-</style> 
+</style>

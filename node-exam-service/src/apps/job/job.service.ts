@@ -375,14 +375,23 @@ export class JobService {
         sortOrder = 'desc',
       } = query;
 
-      this.logger.log(`查询参数: page=${page}, pageSize=${pageSize}, keyword=${keyword}, city=${city}, salaryMin=${salaryMin}, salaryMax=${salaryMax}, experienceReq=${experienceReq}, educationReq=${educationReq}`);
+      this.logger.log(
+        `查询参数: page=${page}, pageSize=${pageSize}, keyword=${keyword}, city=${city}, salaryMin=${salaryMin}, salaryMax=${salaryMax}, experienceReq=${experienceReq}, educationReq=${educationReq}`,
+      );
 
       // 确保数值参数为数字类型
       const pageNum = typeof page === 'string' ? parseInt(page) : page;
-      const pageSizeNum = typeof pageSize === 'string' ? parseInt(pageSize) : pageSize;
-      const salaryMinNum = salaryMin && typeof salaryMin === 'string' ? parseInt(salaryMin) : salaryMin;
-      const salaryMaxNum = salaryMax && typeof salaryMax === 'string' ? parseInt(salaryMax) : salaryMax;
-      
+      const pageSizeNum =
+        typeof pageSize === 'string' ? parseInt(pageSize) : pageSize;
+      const salaryMinNum =
+        salaryMin && typeof salaryMin === 'string'
+          ? parseInt(salaryMin)
+          : salaryMin;
+      const salaryMaxNum =
+        salaryMax && typeof salaryMax === 'string'
+          ? parseInt(salaryMax)
+          : salaryMax;
+
       const skip = (pageNum - 1) * pageSizeNum;
 
       // 构建查询条件
@@ -433,13 +442,17 @@ export class JobService {
       // 一级分类筛选
       if (categoryId) {
         where.subCategory = {
-          categoryId: typeof categoryId === 'string' ? parseInt(categoryId) : categoryId,
+          categoryId:
+            typeof categoryId === 'string' ? parseInt(categoryId) : categoryId,
         };
       }
 
       // 二级分类筛选
       if (subCategoryId) {
-        where.subCategoryId = typeof subCategoryId === 'string' ? parseInt(subCategoryId) : subCategoryId;
+        where.subCategoryId =
+          typeof subCategoryId === 'string'
+            ? parseInt(subCategoryId)
+            : subCategoryId;
       }
 
       // 构建排序条件
@@ -497,7 +510,7 @@ export class JobService {
       });
 
       this.logger.log(`查询到 ${total} 条记录，返回 ${jobs.length} 条数据`);
-      
+
       return { jobs: jobList, total };
     } catch (error) {
       this.logger.error(`获取招聘信息列表失败: ${error.message}`, error);
@@ -644,7 +657,7 @@ export class JobService {
       status?: string;
       sortField?: string;
       sortOrder?: 'asc' | 'desc';
-    }
+    },
   ) {
     try {
       const {
@@ -737,5 +750,95 @@ export class JobService {
       this.logger.error(`获取面试官职位列表失败: ${error.message}`, error);
       throw error;
     }
+  }
+
+  /**
+   * 申请职位
+   * @param jobId 职位ID
+   * @param userId 用户ID
+   * @returns 申请结果
+   */
+  async applyForJob(jobId: number, userId: number) {
+    this.logger.log(`用户 ${userId} 申请职位 ${jobId}`);
+
+    // 1. 验证职位是否存在
+    const job = await this.prisma.jobPosting.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job) {
+      this.logger.error(`职位 ${jobId} 不存在`);
+      throw new NotFoundException('职位不存在');
+    }
+
+    // 2. 验证职位是否处于招聘中状态
+    if (job.status !== 'ACTIVE') {
+      this.logger.error(`职位 ${jobId} 当前不在招聘中`);
+      throw new BadRequestException('该职位当前不在招聘中');
+    }
+
+    // 3. 获取求职者信息
+    const jobSeeker = await this.getJobSeekerByUserId(userId);
+
+    // 4. 检查是否已经申请过该职位
+    const existingApplication = await this.prisma.jobApplication.findFirst({
+      where: {
+        jobId,
+        jobSeekerId: jobSeeker.id,
+      },
+    });
+
+    if (existingApplication) {
+      this.logger.error(`用户 ${userId} 已经申请过职位 ${jobId}`);
+      throw new BadRequestException('您已经申请过该职位');
+    }
+
+    // 5. 创建申请记录 - 一键投递，无需额外字段
+    const application = await this.prisma.jobApplication.create({
+      data: {
+        jobId,
+        jobSeekerId: jobSeeker.id,
+        status: 'RESUME_SCREENING',
+      },
+      include: {
+        job: {
+          include: {
+            company: true,
+          },
+        },
+        jobSeeker: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    this.logger.log(`用户 ${userId} 成功申请职位 ${jobId}`);
+    return application;
+  }
+
+  /**
+   * 根据用户ID获取求职者信息
+   * @param userId 用户ID
+   * @returns 求职者信息
+   */
+  private async getJobSeekerByUserId(userId: number) {
+    const jobSeeker = await this.prisma.jobSeeker.findFirst({
+      where: { userId },
+    });
+
+    if (!jobSeeker) {
+      this.logger.error(`用户 ${userId} 的求职者信息不存在`);
+      throw new BadRequestException('请先完善求职者信息');
+    }
+
+    // 检查求职者是否已上传简历
+    if (!jobSeeker.resumeUrl) {
+      this.logger.error(`用户 ${userId} 未上传简历`);
+      throw new BadRequestException('请先上传简历');
+    }
+
+    return jobSeeker;
   }
 }
