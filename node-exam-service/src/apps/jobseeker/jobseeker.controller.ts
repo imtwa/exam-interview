@@ -237,4 +237,43 @@ export class JobSeekerController {
     await this.jobSeekerService.removeWorkExperience(+id, req.user.userId);
     return success(null, '删除工作经验成功');
   }
+
+  @ApiOperation({ summary: '获取求职者应用列表' })
+  @ApiQuery({
+    name: 'page',
+    description: '当前页码',
+    required: true,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    required: true,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'status',
+    description: '应用状态',
+    required: false,
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: '返回求职者应用列表及分页信息' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Get('applications')
+  async getUserApplications(
+    @Query('page') page: string,
+    @Query('pageSize') pageSize: string,
+    @Query('status') status: string,
+    @Request() req,
+  ) {
+    this.logger.log(`获取用户${req.user.userId}的求职者应用列表`);
+    const { items, total } = await this.jobSeekerService.getUserApplications(
+      req.user.userId,
+      parseInt(page),
+      parseInt(pageSize),
+      status,
+    );
+    return pagination(items, total, parseInt(page), parseInt(pageSize));
+  }
 }

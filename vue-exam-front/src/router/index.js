@@ -31,7 +31,12 @@ const routes = [
       {
         path: 'job/:id',
         name: 'RecruitmentJobDetail',
-        component: () => import('../views/Recruitment/JobDetail.vue')
+        component: () => import('@/views/Recruitment/JobDetail.vue')
+      },
+      {
+        path: 'company/:id',
+        name: 'CompanyDetail',
+        component: () => import('@/views/Recruitment/CompanyDetail.vue')
       },
       {
         path: 'practice-exam/:id',
@@ -103,16 +108,6 @@ const routes = [
         component: () => import('../views/Interviewer/Jobs/index.vue'),
         meta: {
           title: '岗位管理',
-          requireAuth: true,
-          roles: ['INTERVIEWER']
-        }
-      },
-      {
-        path: '/job-management/detail/:id',
-        name: 'JobManagementDetail',
-        component: () => import('../views/Interviewer/Jobs/Detail.vue'),
-        meta: {
-          title: '岗位管理详情',
           requireAuth: true,
           roles: ['INTERVIEWER']
         }

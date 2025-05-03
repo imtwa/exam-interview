@@ -145,7 +145,7 @@ export function applyForJob(jobId) {
  */
 export function getUserApplications(params) {
   return request({
-    url: '/applications',
+    url: '/jobseeker/applications',
     method: 'get',
     params
   })
@@ -242,18 +242,6 @@ export function getJobsByInterviewer(params) {
     url: '/job/interviewer/jobs',
     method: 'get',
     params
-  })
-}
-
-/**
- * 投递职位申请
- * @param {number} jobId 职位ID
- * @returns {Promise<any>}
- */
-export function applyJob(jobId) {
-  return request({
-    url: `/application/submit/${jobId}`,
-    method: 'post'
   })
 }
 

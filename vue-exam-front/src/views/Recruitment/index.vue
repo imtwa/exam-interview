@@ -130,8 +130,10 @@
       <div v-for="(item, index) in jobList" :key="index" class="job-item">
         <div class="job-header">
           <div class="job-title-section">
-            <div class="job-title">{{ item.title }}</div>
-            <div class="job-company">{{ item.company?.name }}</div>
+        <div class="job-title">{{ item.title }}</div>
+            <div class="job-company" @click.stop="viewCompanyDetail(item.companyId)">
+              {{ item.company?.name }}
+            </div>
           </div>
           <div class="job-salary">{{ formatSalary(item.salaryMin, item.salaryMax) }}</div>
         </div>
@@ -147,12 +149,12 @@
           </div>
         </div>
         <div class="job-footer">
-          <div class="job-info">
+        <div class="job-info">
             <span>{{ item.views || 0 }}次浏览</span>
             <span>{{ formatDate(item.createdAt) }}</span>
-          </div>
-          <div class="job-actions">
-            <el-button type="primary" size="small" @click="viewDetail(item.id)">查看</el-button>
+        </div>
+        <div class="job-actions">
+          <el-button type="primary" size="small" @click="viewDetail(item.id)">查看</el-button>
             <el-button
               type="success"
               size="small"
@@ -228,7 +230,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { getJobList, getJobById, applyJob as apiApplyJob } from '@/api/job'
+import { getJobList, applyForJob } from '@/api/job'
 import { getIndustryCategories, getSubCategoriesByCategoryId } from '@/api/industry'
 import { getRegionData } from '@/api/region'
 import { ElMessage, ElLoading, ElMessageBox } from 'element-plus'
@@ -600,6 +602,14 @@ const viewDetail = id => {
   })
 }
 
+// 查看公司详情
+const viewCompanyDetail = id => {
+  router.push({
+    name: 'CompanyDetail',
+    params: { id }
+  })
+}
+
 // 一键投递职位
 const applyJobDirectly = async job => {
   // 检查是否登录
@@ -637,7 +647,7 @@ const applyJobDirectly = async job => {
     })
 
     // 调用API投递职位
-    await apiApplyJob(job.id)
+    await applyForJob(job.id)
 
     // 投递成功
     ElMessage.success('投递成功！招聘方会尽快查看您的简历')
@@ -820,7 +830,7 @@ onMounted(async () => {
   }
 
   .job-title-section {
-    .job-title {
+  .job-title {
       font-size: 18px;
       color: #2c3e50;
       font-weight: 600;
@@ -832,6 +842,7 @@ onMounted(async () => {
       color: #666;
       display: flex;
       align-items: center;
+      cursor: pointer;
 
       &:before {
         content: '';
@@ -841,6 +852,11 @@ onMounted(async () => {
         border-radius: 50%;
         background-color: #0352c9;
         margin-right: 8px;
+      }
+      
+      &:hover {
+        color: #0352c9;
+        text-decoration: underline;
       }
     }
   }

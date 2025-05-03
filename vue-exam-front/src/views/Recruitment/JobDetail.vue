@@ -40,6 +40,7 @@
             @click="applyJobDirectly"
             :disabled="job.status !== 'ACTIVE' || applying"
             :loading="applying"
+            v-if="!userStore.isInterviewer"
           >
             {{ applying ? '投递中...' : '一键投递' }}
           </el-button>
@@ -167,7 +168,10 @@
             </template>
 
             <div class="company-content">
-              <h4 class="company-name">{{ job.company?.name }}</h4>
+              <h4 class="company-name" @click="goToCompanyDetail(job.companyId)">
+                {{ job.company?.name }}
+                <el-icon><ArrowRight /></el-icon>
+              </h4>
 
               <div class="company-meta">
                 <div class="company-meta-item">
@@ -240,9 +244,10 @@ import {
   Timer,
   OfficeBuilding,
   Calendar,
-  VideoPlay
+  VideoPlay,
+  ArrowRight
 } from '@element-plus/icons-vue'
-import { getJob, getJobList, applyJob as apiApplyJob } from '@/api/job'
+import { getJob, getJobList, applyForJob } from '@/api/job'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
@@ -467,7 +472,7 @@ const applyJobDirectly = async () => {
     })
 
     // 调用API投递职位
-    await apiApplyJob(job.value.id)
+    await applyForJob(job.value.id)
 
     // 投递成功
     ElMessage.success('投递成功！招聘方会尽快查看您的简历')
@@ -490,6 +495,14 @@ const applyJobDirectly = async () => {
 const viewJob = id => {
   router.push({
     name: 'RecruitmentJobDetail',
+    params: { id }
+  })
+}
+
+// 跳转到公司详情页
+const goToCompanyDetail = id => {
+  router.push({
+    name: 'CompanyDetail',
     params: { id }
   })
 }
@@ -772,9 +785,21 @@ onMounted(() => {
 
     .company-name {
       font-size: 18px;
-      font-weight: 600;
       color: #2c3e50;
-      margin: 0 0 16px 0;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      width: fit-content;
+      
+      &:hover {
+        color: #409eff;
+      }
+
+      .el-icon {
+        margin-left: 5px;
+        font-size: 14px;
+      }
     }
 
     .company-meta {

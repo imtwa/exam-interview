@@ -4,8 +4,8 @@ import {
   login,
   logout as authLogout,
   getProfile,
-  checkProfileStatus,
-  checkProfile
+  checkProfileStatus
+  
 } from '@/api/auth'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
@@ -131,29 +131,7 @@ export const useUserStore = defineStore('user', () => {
       }
 
       // 否则发送请求获取最新信息
-      let res
-
-      // 如果是面试官，使用更详细的面试官资料API
-      if (isInterviewer.value) {
-        try {
-          res = await checkProfile()
-
-          // 保存面试官详细信息
-          if (res && res.profileData) {
-            setInterviewerInfo(res.profileData)
-          }
-
-          // 设置资料完善状态
-          setProfileStatus(!!res.profileCompleted)
-
-          return Promise.resolve(res)
-        } catch (error) {
-          console.error('获取面试官详细资料失败，尝试使用基本资料API:', error)
-        }
-      }
-
-      // 回退使用基本资料检查API
-      res = await checkProfileStatus()
+      const res = await checkProfileStatus()
 
       // 保存资料完善状态
       setProfileStatus(!!res.profileCompleted)
@@ -179,7 +157,7 @@ export const useUserStore = defineStore('user', () => {
       }
 
       // 使用checkProfile API获取面试官详细信息
-      const response = await checkProfile()
+      const response = await checkProfileStatus()
 
       // 如果获取成功，更新面试官信息
       if (response.profileCompleted && response.profileData) {

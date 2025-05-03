@@ -129,7 +129,7 @@
 
                     <!-- 面试官菜单项 - 只保留个人中心相关的选项，移除导航栏已有的选项 -->
                     <template v-else>
-                      <el-dropdown-item @click="router.push('/company-profile')"
+                      <el-dropdown-item @click="router.push(`/company/${interviewerInfo.companyId}`)"
                         >公司信息</el-dropdown-item
                       >
                       <el-dropdown-item @click="router.push('/account-settings')"
@@ -232,6 +232,13 @@
           >
             专属试卷
           </router-link>
+          <router-link
+            :to="`/company/${interviewerInfo?.companyId}`"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/company/') }"
+          >
+            公司信息
+          </router-link>
         </template>
 
         <!-- Mobile search -->
@@ -264,7 +271,7 @@ import { storeToRefs } from 'pinia'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
-const { isLoggedIn, userInfo, userRole, isJobSeeker, isInterviewer } = storeToRefs(userStore)
+const { isLoggedIn, userInfo, interviewerInfo, isJobSeeker, isInterviewer } = storeToRefs(userStore)
 
 // 使用 Pinia store 的状态
 const userName = computed(() => userStore.userInfo?.username || '')
@@ -276,7 +283,6 @@ const mobileMenuOpen = ref(false)
 
 // 导航菜单类型
 const navActiveIndex = ref('/')
-
 // 导航菜单项
 const navItems = computed(() => {
   // 基本菜单项

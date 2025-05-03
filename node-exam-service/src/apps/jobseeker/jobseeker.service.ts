@@ -686,4 +686,92 @@ export class JobSeekerService {
 
     return jobSeeker;
   }
+
+  /**
+   * 获取求职者的职位申请列表
+   * @param userId 用户ID
+   * @param page 页码
+   * @param pageSize 每页大小
+   * @param status 申请状态，可选
+   * @returns 申请列表及总数
+   */
+  async getUserApplications(
+    userId: number,
+    page: number,
+    pageSize: number,
+    status?: string,
+  ) {
+    this.logger.log(`获取用户${userId}的职位申请列表`);
+
+    try {
+      // 获取求职者信息
+      const jobSeeker = await this.getOrCreateJobSeeker(userId);
+
+      // 构建查询条件
+      const where: any = {
+        jobSeekerId: jobSeeker.id,
+      };
+
+      // 如果指定了状态，添加状态过滤条件
+      if (status && status !== 'ALL') {
+        where.status = status;
+      }
+
+      // 查询申请总数
+      const total = await this.prisma.jobApplication.count({ where });
+
+      // 查询申请列表
+      const applications = await this.prisma.jobApplication.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: {
+          appliedAt: 'desc',
+        },
+        include: {
+          job: {
+            select: {
+              id: true,
+              title: true,
+              city: true,
+              salaryMin: true,
+              salaryMax: true,
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                  size: true,
+                  fundingStage: true,
+                },
+              },
+              subCategory: {
+                select: {
+                  name: true,
+                  category: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          interviews: {
+            orderBy: {
+              scheduleTime: 'desc',
+            },
+            take: 1,
+          },
+        },
+      });
+
+      return {
+        items: applications,
+        total,
+      };
+    } catch (error) {
+      this.logger.error(`获取职位申请列表失败: ${error.message}`, error);
+      throw error;
+    }
+  }
 }
