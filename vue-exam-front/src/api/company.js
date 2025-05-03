@@ -39,6 +39,20 @@ export function getCompany(id) {
 }
 
 /**
+ * 获取公司的HR/面试官列表
+ * @param {string|number} companyId 公司ID
+ * @param {Object} params 查询参数 (page, pageSize等)
+ * @returns {Promise}
+ */
+export function getCompanyInterviewers(companyId, params) {
+  return request({
+    url: `/company/${companyId}/interviewers`,
+    method: 'get',
+    params
+  })
+}
+
+/**
  * 更新公司信息
  * @param {string|number} id 公司ID
  * @param {Object} data 公司信息

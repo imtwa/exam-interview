@@ -107,6 +107,34 @@ export class CompanyController {
     return success(result);
   }
 
+  @ApiOperation({ summary: '获取公司的HR/面试官列表' })
+  @ApiParam({ name: 'id', description: '公司ID', type: 'number' })
+  @ApiQuery({
+    name: 'page',
+    description: '当前页码',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    required: false,
+    type: Number,
+  })
+  @ApiResponse({ status: 200, description: '返回公司的HR/面试官列表' })
+  @ApiResponse({ status: 404, description: '公司不存在' })
+  @Get(':id/interviewers')
+  async findInterviewers(@Param('id') id: string, @Query() query) {
+    const { page = 1, pageSize = 10 } = query;
+    this.logger.log(`查询公司${id}的HR/面试官列表`);
+    const { interviewers, total } = await this.companyService.findInterviewers(
+      +id,
+      +page,
+      +pageSize,
+    );
+    return pagination(interviewers, total, +page, +pageSize);
+  }
+
   @ApiOperation({ summary: '更新公司信息' })
   @ApiParam({ name: 'id', description: '公司ID', type: 'number' })
   @ApiResponse({ status: 200, description: '更新成功' })

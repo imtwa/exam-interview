@@ -254,4 +254,56 @@ export class CompanyService {
       throw new BadRequestException('验证公司失败');
     }
   }
+
+  /**
+   * 根据公司ID查询HR/面试官列表
+   * @param companyId 公司ID
+   * @param page 页码
+   * @param pageSize 每页数量
+   * @returns HR/面试官列表及总数
+   */
+  async findInterviewers(companyId: number, page: number, pageSize: number) {
+    // 先检查公司是否存在
+    await this.findOne(companyId);
+
+    const skip = (page - 1) * pageSize;
+
+    try {
+      const [interviewers, total] = await Promise.all([
+        this.prisma.interviewer.findMany({
+          where: { 
+            companyId,
+            deletedAt: null 
+          },
+          skip,
+          take: pageSize,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+                createdAt: true,
+              }
+            }
+          },
+        }),
+        this.prisma.interviewer.count({ 
+          where: { 
+            companyId,
+            deletedAt: null 
+          } 
+        }),
+      ]);
+
+      this.logger.log(
+        `查询公司${companyId}的HR/面试官列表成功: 页码${page}, 每页${pageSize}, 总数${total}`,
+      );
+      return { interviewers, total };
+    } catch (error) {
+      this.logger.error(`查询公司HR/面试官列表失败: ${error.message}`, error.stack);
+      throw new BadRequestException('查询公司HR/面试官列表失败');
+    }
+  }
 }

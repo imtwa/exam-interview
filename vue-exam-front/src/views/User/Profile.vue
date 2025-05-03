@@ -37,7 +37,7 @@
             {{ userInfo.bio }}
           </div>
         </div>
-        <div class="user-actions">
+        <div class="user-actions" v-if="isCurrentUser">
           <el-button type="primary" @click="editProfile">编辑资料</el-button>
         </div>
       </div>
@@ -45,15 +45,15 @@
       <!-- 用户组件区域 -->
       <div class="profile-components">
         <!-- 所有用户都显示的收藏列表 -->
-        <UserFavoritesList />
+        <UserFavoritesList :user-id="userId" />
 
         <!-- 求职者专属组件 -->
-        <UserApplicationsList v-if="isJobSeeker" />
+        <UserApplicationsList v-if="isJobSeeker" :user-id="userId" />
 
         <!-- 面试官专属组件 -->
         <template v-if="isInterviewer">
-          <InterviewerJobsList />
-          <InterviewerFavoritesList />
+          <InterviewerJobsList :user-id="userId" />
+          <InterviewerFavoritesList :user-id="userId" />
         </template>
       </div>
     </div>
@@ -62,10 +62,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Message, Calendar } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { getUserProfile } from '@/api/user' // 假设你有一个API函数来获取用户资料
 
 // 动态导入组件
 import UserFavoritesList from './components/profile/UserFavoritesList.vue'
@@ -73,37 +74,87 @@ import UserApplicationsList from './components/profile/UserApplicationsList.vue'
 import InterviewerJobsList from './components/profile/InterviewerJobsList.vue'
 import InterviewerFavoritesList from './components/profile/InterviewerFavoritesList.vue'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const userInfo = ref({})
 
-// 计算属性：判断用户角色
-const isJobSeeker = computed(() => userInfo.value.role === 'JOB_SEEKER' || userStore.isJobSeeker)
+// 获取URL中的用户ID参数，如果没有则使用当前登录用户的ID
+const userId = computed(() => {
+  const routeUserId = route.params.id ? parseInt(route.params.id) : null
+  return routeUserId || (userStore.userInfo ? userStore.userInfo.id : null)
+})
 
-const isInterviewer = computed(
-  () => userInfo.value.role === 'INTERVIEWER' || userStore.isInterviewer
-)
+// 判断是否是当前登录用户的资料页
+const isCurrentUser = computed(() => {
+  return userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.id === userId.value
+})
+
+// 用于生成头像URL的计算属性
+const userAvatarUrl = computed(() => {
+  // 如果是当前用户，使用store中的头像URL
+  if (isCurrentUser.value) {
+    return userStore.avatarUrl
+  }
+  // 否则使用用户信息中的头像或基于用户名生成
+  return userInfo.value.avatar || generateAvatarFromUsername(userInfo.value.username || '')
+})
+
+// 生成基于用户名的头像URL
+function generateAvatarFromUsername(username) {
+  if (!username) return ''
+  // 这里可以实现一个简单的方法来生成基于用户名的头像URL
+  // 例如，使用第三方服务或本地生成
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`
+}
+
+// 计算属性：判断用户角色
+const isJobSeeker = computed(() => userInfo.value.role === 'JOB_SEEKER')
+
+const isInterviewer = computed(() => userInfo.value.role === 'INTERVIEWER')
 
 // 获取用户信息
 const fetchUserInfo = async () => {
   try {
-    // 如果Pinia已有用户信息，优先使用
-    if (userStore.userInfo) {
+    if (!userId.value) {
+      ElMessage.error('未指定用户ID')
+      router.push('/')
+      return
+    }
+
+    // 如果是当前用户，使用store中的信息
+    if (isCurrentUser.value && userStore.userInfo) {
       userInfo.value = userStore.userInfo
       return
     }
 
-    // 如果没有，从API获取
-    await userStore.getInfo()
-    userInfo.value = userStore.userInfo || {}
+    // 如果是查看其他用户，或当前用户未加载信息，则从API获取
+    const response = await getUserProfile(userId.value)
+    if (response && response.data) {
+      userInfo.value = response.data
+    } else if (response) {
+      userInfo.value = response
+    } else {
+      ElMessage.warning('获取用户信息失败')
+      if (!isCurrentUser.value) {
+        router.push('/')
+      }
+    }
   } catch (error) {
     console.error('获取用户信息失败:', error)
     ElMessage.error('获取用户信息失败，请稍后再试')
+    if (!isCurrentUser.value) {
+      router.push('/')
+    }
   }
 }
 
 // 编辑个人资料
 const editProfile = () => {
+  if (!isCurrentUser.value) {
+    ElMessage.warning('只能编辑自己的资料')
+    return
+  }
   router.push('/profile/edit')
 }
 
