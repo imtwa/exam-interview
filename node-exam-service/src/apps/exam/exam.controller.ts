@@ -12,6 +12,8 @@ import {
   UseGuards,
   BadRequestException,
   ForbiddenException,
+  HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -23,6 +25,9 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CreateSubCategoryDto } from './dto/create-subcategory.dto';
 import { UpdateSubCategoryDto } from './dto/update-subcategory.dto';
+import { VerifyInvitationDto } from './dto/verify-invitation.dto';
+import { SubmitExamDto } from './dto/submit-exam.dto';
+import { AssignExamDto } from './dto/assign-exam.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -34,6 +39,9 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { QueryUserFavoritesDto } from './dto/query-user-favorites.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserDecodeDto } from '../auth/dto/user-decode.dto';
+import { QueryUserExamsDto } from './dto/query-user-exams.dto';
 
 @ApiTags('exam')
 @Controller()
@@ -780,6 +788,149 @@ export class ExamController {
       };
     } catch (error) {
       throw error;
+    }
+  }
+
+  // 在线考试相关接口
+  @Post('invitation/verify')
+  @ApiOperation({ summary: '验证考试邀请码' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: '验证成功，返回考试信息',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: '邀请码无效或已过期',
+  })
+  async verifyInvitationCode(@Body() verifyDto: VerifyInvitationDto) {
+    try {
+      const result = await this.examService.verifyInvitationCode(
+        verifyDto.invitationCode,
+      );
+      return {
+        code: HttpStatus.OK,
+        data: result,
+        message: '验证成功',
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          code: HttpStatus.BAD_REQUEST,
+          message: error.message || '邀请码验证失败',
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @ApiOperation({ summary: '开始考试并获取试卷内容' })
+  @ApiParam({ name: 'code', description: '邀请码', type: 'string' })
+  @ApiResponse({
+    status: 200,
+    description: '获取试卷内容成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '获取试卷内容成功' },
+        data: {
+          type: 'object',
+          properties: {
+            examId: { type: 'number', example: 1 },
+            examTitle: { type: 'string', example: '前端开发笔试' },
+            questions: { type: 'array', items: { type: 'object' } },
+            duration: { type: 'number', example: 120 },
+            startTime: { type: 'string', example: '2023-06-01T10:30:00Z' },
+            endTime: { type: 'string', example: '2023-06-01T12:30:00Z' },
+          },
+        },
+      },
+    },
+  })
+  @Get('online-exam/start/:code')
+  async startExam(@Param('code') invitationCode: string) {
+    try {
+      const result = await this.examService.startExam(invitationCode);
+
+      return {
+        code: 200,
+        message: '获取试卷内容成功',
+        data: result,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: '提交考试答案' })
+  @ApiBody({ type: SubmitExamDto })
+  @ApiResponse({
+    status: 200,
+    description: '提交答案成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '提交答案成功' },
+        data: {
+          type: 'object',
+          properties: {
+            score: { type: 'number', example: 85 },
+            totalScore: { type: 'number', example: 100 },
+            percentage: { type: 'number', example: 85 },
+          },
+        },
+      },
+    },
+  })
+  @Post('online-exam/submit')
+  async submitExam(@Body() submitExamDto: SubmitExamDto) {
+    try {
+      const result = await this.examService.submitExam(
+        submitExamDto.invitationCode,
+        submitExamDto.answers,
+      );
+
+      return {
+        code: 200,
+        message: '提交答案成功',
+        data: result,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 获取用户的考试列表
+  @Post('user-exams')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '获取用户的考试列表' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: '获取成功，返回考试列表',
+  })
+  async getUserExams(
+    @Body() queryDto: QueryUserExamsDto,
+    @CurrentUser() user: UserDecodeDto,
+  ) {
+    try {
+      const { items, total } = await this.examService.getUserExams(
+        user.userId,
+        queryDto,
+      );
+      return {
+        code: HttpStatus.OK,
+        data: { items, total },
+        message: '获取成功',
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          code: HttpStatus.BAD_REQUEST,
+          message: error.message || '获取考试列表失败',
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }

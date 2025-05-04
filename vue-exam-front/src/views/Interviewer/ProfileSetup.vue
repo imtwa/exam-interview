@@ -647,10 +647,7 @@ const prepareSubmitData = () => {
 const submitProfile = async () => {
   try {
     loading.value = true
-    const result = await updateInterviewerProfile(profileSetupForm)
-
-    // 处理可能存在的嵌套结构
-    const response = result.data || result
+    const response = await updateInterviewerProfile(profileSetupForm)
 
     if (response) {
       console.log('面试官资料设置成功，返回数据:', response)
@@ -658,9 +655,7 @@ const submitProfile = async () => {
       // 在资料设置成功后直接更新存储
       // 保存面试官信息到Pinia store
       const userStore = useUserStore()
-      userStore.setInterviewerInfo(response.interviewer || response)
-      // 标记用户资料已完善
-      userStore.setProfileStatus(true)
+      userStore.setInterviewerInfo(response)
 
       ElMessage.success('个人资料设置成功')
       // 跳转到主页或仪表板

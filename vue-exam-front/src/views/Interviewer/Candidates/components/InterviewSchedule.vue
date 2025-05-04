@@ -6,17 +6,11 @@
     width="550px"
     @close="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      label-position="right"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" label-position="right">
       <el-form-item label="候选人" prop="candidateName">
         <el-input v-model="form.candidateName" disabled />
       </el-form-item>
-      
+
       <el-form-item label="面试类型" prop="type">
         <el-select v-model="form.type" placeholder="请选择面试类型" style="width: 100%">
           <el-option label="电话面试" value="phone" />
@@ -24,7 +18,7 @@
           <el-option label="现场面试" value="onsite" />
         </el-select>
       </el-form-item>
-      
+
       <el-form-item label="面试时间" prop="interviewTime">
         <el-date-picker
           v-model="form.interviewTime"
@@ -34,18 +28,18 @@
           :disabled-date="disabledDate"
         />
       </el-form-item>
-      
+
       <el-form-item label="面试时长" prop="duration">
-        <el-input-number 
-          v-model="form.duration" 
-          :min="30" 
-          :max="180" 
+        <el-input-number
+          v-model="form.duration"
+          :min="30"
+          :max="180"
           :step="15"
           style="width: 100%"
         />
         <span class="unit">分钟</span>
       </el-form-item>
-      
+
       <el-form-item label="面试官" prop="interviewerIds">
         <el-select
           v-model="form.interviewerIds"
@@ -61,17 +55,12 @@
           />
         </el-select>
       </el-form-item>
-      
+
       <el-form-item label="备注" prop="notes">
-        <el-input
-          v-model="form.notes"
-          type="textarea"
-          :rows="3"
-          placeholder="面试备注信息"
-        />
+        <el-input v-model="form.notes" type="textarea" :rows="3" placeholder="面试备注信息" />
       </el-form-item>
     </el-form>
-    
+
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="closeDialog">取 消</el-button>
@@ -117,22 +106,14 @@ const form = reactive({
 
 // 表单验证规则
 const rules = reactive({
-  type: [
-    { required: true, message: '请选择面试类型', trigger: 'change' }
-  ],
-  interviewTime: [
-    { required: true, message: '请选择面试时间', trigger: 'change' }
-  ],
-  duration: [
-    { required: true, message: '请设置面试时长', trigger: 'change' }
-  ],
-  interviewerIds: [
-    { required: true, message: '请选择至少一位面试官', trigger: 'change' }
-  ]
+  type: [{ required: true, message: '请选择面试类型', trigger: 'change' }],
+  interviewTime: [{ required: true, message: '请选择面试时间', trigger: 'change' }],
+  duration: [{ required: true, message: '请设置面试时长', trigger: 'change' }],
+  interviewerIds: [{ required: true, message: '请选择至少一位面试官', trigger: 'change' }]
 })
 
 // 禁用过去的日期
-const disabledDate = (time) => {
+const disabledDate = time => {
   return time.getTime() < Date.now() - 8.64e7 // 禁用今天之前的日期
 }
 
@@ -150,10 +131,10 @@ const fetchInterviewers = async () => {
 // 提交表单
 const submitForm = async () => {
   if (!formRef.value) return
-  
+
   try {
     await formRef.value.validate()
-    
+
     loading.value = true
     await scheduleInterview(form.candidateId, {
       scheduleTime: form.interviewTime,
@@ -163,7 +144,7 @@ const submitForm = async () => {
       interviewerIds: form.interviewerIds,
       type: form.type
     })
-    
+
     ElMessage.success('面试安排成功')
     emit('success')
     emit('update:visible', false)
@@ -191,19 +172,27 @@ const handleClose = () => {
 }
 
 // 监听候选人变化
-watch(() => props.candidate, (newVal) => {
-  if (newVal && newVal.id) {
-    form.candidateId = newVal.id
-    form.candidateName = newVal.candidateName || newVal.jobSeeker?.user?.username || '未知候选人'
-  }
-}, { immediate: true })
+watch(
+  () => props.candidate,
+  newVal => {
+    if (newVal && newVal.id) {
+      form.candidateId = newVal.id
+      form.candidateName = newVal.candidateName || newVal.jobSeeker?.user?.username || '未知候选人'
+    }
+  },
+  { immediate: true }
+)
 
 // 监听对话框显示状态
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
-    fetchInterviewers()
-  }
-}, { immediate: true })
+watch(
+  () => props.visible,
+  newVal => {
+    if (newVal) {
+      fetchInterviewers()
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
@@ -219,4 +208,4 @@ watch(() => props.visible, (newVal) => {
   gap: 12px;
   padding-top: 16px;
 }
-</style> 
+</style>

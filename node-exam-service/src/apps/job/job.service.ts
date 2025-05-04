@@ -554,7 +554,7 @@ export class JobService {
 
   /**
    * 获取面试官发布的职位列表
-   * @param userId 用户ID
+   * @param userId 用户ID或面试官ID
    * @param page 页码
    * @param pageSize 每页数量
    * @returns 职位列表
@@ -563,19 +563,29 @@ export class JobService {
     try {
       const skip = (page - 1) * pageSize;
 
-      // 获取用户的面试官信息
-      const interviewer = await this.prisma.interviewer.findUnique({
-        where: { userId, deletedAt: null },
+      // 首先尝试查找是否是面试官ID
+      let interviewerId = userId;
+      let interviewer = await this.prisma.interviewer.findUnique({
+        where: { id: userId, deletedAt: null },
       });
 
+      // 如果不是面试官ID，则尝试通过用户ID查找
       if (!interviewer) {
-        throw new ForbiddenException('用户不是面试官');
+        interviewer = await this.prisma.interviewer.findUnique({
+          where: { userId, deletedAt: null },
+        });
+
+        if (!interviewer) {
+          throw new ForbiddenException('未找到对应的面试官信息');
+        }
+
+        interviewerId = interviewer.id;
       }
 
       const [jobs, total] = await Promise.all([
         this.prisma.jobPosting.findMany({
           where: {
-            interviewer: { userId },
+            interviewerId,
             deletedAt: null,
           },
           skip,
@@ -601,7 +611,7 @@ export class JobService {
         }),
         this.prisma.jobPosting.count({
           where: {
-            interviewer: { userId },
+            interviewerId,
             deletedAt: null,
           },
         }),

@@ -250,12 +250,12 @@ import {
 import { getJob, getJobList, applyForJob } from '@/api/job'
 import { useUserStore } from '@/stores/user'
 import { ElLoading } from 'element-plus'
-import { 
-  formatSalary, 
-  formatDate, 
-  formatExperience, 
-  formatEducation, 
-  formatFundingStage, 
+import {
+  formatSalary,
+  formatDate,
+  formatExperience,
+  formatEducation,
+  formatFundingStage,
   formatCompanySize,
   getStatusType,
   getStatusLabel

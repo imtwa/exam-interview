@@ -42,9 +42,9 @@ export const generateAvatar = username => {
  */
 export const formatSalary = (min, max) => {
   if (!min && !max) return '薪资面议'
-  if (min && !max) return `${(min).toFixed(0)}K以上`
-  if (!min && max) return `${(max).toFixed(0)}K以下`
-  return `${(min).toFixed(0)}K-${(max).toFixed(0)}K`
+  if (min && !max) return `${min.toFixed(0)}K以上`
+  if (!min && max) return `${max.toFixed(0)}K以下`
+  return `${min.toFixed(0)}K-${max.toFixed(0)}K`
 }
 
 /**

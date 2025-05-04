@@ -6,6 +6,7 @@ import { LoggerService } from '../../common/logger/logger.service';
 import { PrismaClient } from '../../../prisma/generated/client';
 import { LoggerModule } from '../../common/logger/logger.module';
 import { ConfigModule } from '@nestjs/config';
+import { EmailService } from '../email/email.service';
 import * as multer from 'multer';
 import * as path from 'path';
 
@@ -56,6 +57,10 @@ import * as path from 'path';
     {
       provide: 'PRISMA_CLIENT',
       useValue: new PrismaClient(),
+    },
+    {
+      provide: EmailService,
+      useClass: EmailService,
     },
   ],
   exports: [ExamService],

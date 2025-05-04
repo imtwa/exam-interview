@@ -15,6 +15,8 @@ import { LoggerService } from '../../common/logger/logger.service';
 import { UpdateInterviewerProfileDto } from './dto/update-interviewer-profile.dto';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import * as crypto from 'crypto';
+import { AssignExamDto } from './dto/assign-exam.dto';
 
 @Injectable()
 export class InterviewerService {
@@ -438,6 +440,7 @@ export class InterviewerService {
           note: note || '',
           assignedBy: userId,
           status: 'PENDING', // 初始状态为待完成
+          jobSeekerId: 1, // 添加默认值，后续可以根据applicationId获取真实的jobSeekerId
         },
       });
 
@@ -679,19 +682,16 @@ export class InterviewerService {
 
   /**
    * 分配笔试试卷并发送邮件通知
+   * @param userId 操作者ID(面试官)
+   * @param assignExamDto 分配试卷DTO
    */
-  async assignExamToCandidate(
-    applicationId: number,
-    examId: number,
-    userId: number,
-    note?: string,
-  ) {
+  async assignExamToCandidate(userId: number, assignExamDto: AssignExamDto) {
     // 查找面试官ID以验证权限
     const interviewer = await this.getInterviewerByUserId(userId);
 
     // 查找申请
     const application = await this.prisma.jobApplication.findUnique({
-      where: { id: applicationId },
+      where: { id: assignExamDto.applicationId },
       include: {
         job: true,
         jobSeeker: {
@@ -703,7 +703,9 @@ export class InterviewerService {
     });
 
     if (!application) {
-      throw new NotFoundException(`申请不存在 ID: ${applicationId}`);
+      throw new NotFoundException(
+        `申请不存在 ID: ${assignExamDto.applicationId}`,
+      );
     }
 
     // 确认该申请属于此面试官负责的职位
@@ -713,53 +715,79 @@ export class InterviewerService {
 
     // 验证试卷是否存在
     const exam = await this.prisma.examPaper.findUnique({
-      where: { id: examId },
+      where: { id: assignExamDto.examId },
     });
 
     if (!exam) {
-      throw new NotFoundException(`试卷不存在 ID: ${examId}`);
+      throw new NotFoundException(`试卷不存在 ID: ${assignExamDto.examId}`);
     }
+
+    // 使用传递进来的jobSeekerId或从application中获取
+    const seekerId = assignExamDto.jobSeekerId || application.jobSeekerId;
 
     // 检查是否已经分配过此试卷
     const existingAssignment = await this.prisma.examAssignment.findFirst({
       where: {
-        applicationId,
-        examId,
+        applicationId: assignExamDto.applicationId,
+        examId: assignExamDto.examId,
+        jobSeekerId: seekerId,
         status: 'PENDING', // 只检查待完成的分配
       },
     });
 
     if (existingAssignment) {
       // 已存在分配，返回现有分配信息
-      this.logger.log(`申请ID:${applicationId}已分配过试卷ID:${examId}`);
+      this.logger.log(
+        `申请ID:${assignExamDto.applicationId}已分配过试卷ID:${assignExamDto.examId}`,
+      );
       return existingAssignment;
     }
+
+    // 生成随机邀请码
+    const invitationCode = crypto.randomBytes(5).toString('hex').toUpperCase();
+
+    // 设置考试时间
+    const startTime = assignExamDto.examStartTime
+      ? new Date(assignExamDto.examStartTime)
+      : new Date();
+    const endTime = assignExamDto.examEndTime
+      ? new Date(assignExamDto.examEndTime)
+      : new Date(startTime.getTime() + 7 * 24 * 60 * 60 * 1000); // 默认7天后截止
+    const examDuration = assignExamDto.duration || 120; // 默认120分钟
 
     // 创建笔试记录
     const examAssignment = await this.prisma.examAssignment.create({
       data: {
-        applicationId,
-        examId,
-        note: note || '',
+        applicationId: assignExamDto.applicationId,
+        examId: assignExamDto.examId,
+        note: assignExamDto.note || '',
         assignedBy: userId,
         status: 'PENDING', // 初始状态为待完成
+        jobSeekerId: seekerId,
+        invitationCode,
+        examStartTime: startTime,
+        examEndTime: endTime,
+        duration: examDuration,
+        completed: false,
       },
     });
 
     // 更新申请状态为笔试
     await this.prisma.jobApplication.update({
-      where: { id: applicationId },
+      where: { id: assignExamDto.applicationId },
       data: {
         status: 'WRITTEN_TEST',
       },
     });
 
-    this.logger.log(`为申请ID:${applicationId}分配笔试试卷ID:${examId}`);
+    this.logger.log(
+      `为申请ID:${assignExamDto.applicationId}分配笔试试卷ID:${assignExamDto.examId}`,
+    );
 
     // 生成考试链接
     const baseUrl =
       this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
-    const examUrl = `${baseUrl}/exam-session/${examAssignment.id}`;
+    const examUrl = `${baseUrl}/exam-session/${invitationCode}`;
 
     // 获取求职者信息
     const candidate = application.jobSeeker.user;
@@ -773,6 +801,26 @@ export class InterviewerService {
     // 构建邮件内容
     if (candidateEmail) {
       try {
+        // 格式化考试时间
+        const startTimeStr = startTime
+          ? new Date(startTime).toLocaleString('zh-CN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '立即';
+        const endTimeStr = endTime
+          ? new Date(endTime).toLocaleString('zh-CN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '无限制';
+
         // 使用 EmailService 发送邮件通知
         const emailService = new EmailService(this.configService);
         await emailService.sendMail({
@@ -789,9 +837,13 @@ export class InterviewerService {
               </div>
               <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0;">
                 <p style="margin: 0;"><strong>笔试链接：</strong> <a href="${examUrl}">${examUrl}</a></p>
-                ${note ? `<p style="margin: 10px 0 0;"><strong>笔试说明：</strong> ${note}</p>` : ''}
+                <p style="margin: 5px 0;"><strong>邀请码：</strong> ${invitationCode}</p>
+                <p style="margin: 5px 0;"><strong>考试时长：</strong> ${examDuration} 分钟</p>
+                <p style="margin: 5px 0;"><strong>开始时间：</strong> ${startTimeStr}</p>
+                <p style="margin: 5px 0;"><strong>截止时间：</strong> ${endTimeStr}</p>
+                ${assignExamDto.note ? `<p style="margin: 10px 0 0;"><strong>笔试说明：</strong> ${assignExamDto.note}</p>` : ''}
               </div>
-              <p>请在收到邮件后尽快完成笔试，以便我们继续为您安排后续面试环节。</p>
+              <p>请在考试截止时间前完成笔试，以便我们继续为您安排后续面试环节。</p>
               <p>如有任何问题，请及时与我们联系。</p>
               <p style="margin-top: 20px;">祝好，<br>${companyName} 招聘团队</p>
             </div>
@@ -806,9 +858,7 @@ export class InterviewerService {
         // 即使邮件发送失败，我们也继续返回笔试分配信息
       }
     } else {
-      this.logger.warn(
-        `候选人ID:${application.jobSeekerId}没有邮箱，无法发送笔试邀请`,
-      );
+      this.logger.warn(`候选人ID:${seekerId}没有邮箱，无法发送笔试邀请`);
     }
 
     return {

@@ -268,6 +268,12 @@ export class JobController {
     required: false,
     type: Number,
   })
+  @ApiQuery({
+    name: 'interviewerId',
+    description: '面试官ID（可选，如不提供则使用当前登录用户）',
+    required: false,
+    type: Number,
+  })
   @ApiResponse({ status: 200, description: '返回职位列表及分页信息' })
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiResponse({ status: 403, description: '用户不是面试官' })
@@ -276,11 +282,16 @@ export class JobController {
   @Get('interviewer/jobs')
   async getInterviewerJobs(@Request() req, @Query() query) {
     const userId = req.user.userId;
-    const { page = 1, pageSize = 10 } = query;
+    const { page = 1, pageSize = 10, interviewerId } = query;
 
-    this.logger.log(`获取面试官ID:${userId}发布的职位列表`);
+    // 如果提供了interviewerId参数，则使用参数值；否则使用当前登录用户
+    const targetInterviewerId = interviewerId
+      ? parseInt(interviewerId as string)
+      : userId;
+
+    this.logger.log(`获取面试官ID:${targetInterviewerId}发布的职位列表`);
     const { items, total } = await this.jobService.getInterviewerJobs(
-      userId,
+      targetInterviewerId,
       parseInt(page as string),
       parseInt(pageSize as string),
     );

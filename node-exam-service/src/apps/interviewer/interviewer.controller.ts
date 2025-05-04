@@ -23,6 +23,7 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
+import { AssignExamDto } from './dto/assign-exam.dto';
 
 @ApiTags('interviewer')
 @Controller('interviewer')
@@ -418,63 +419,32 @@ export class InterviewerController {
   }
 
   /**
-   * 分配笔试试卷并发送通知邮件
+   * 分配笔试试卷给求职者
    */
-  @ApiOperation({ summary: '分配笔试试卷并发送通知邮件' })
-  @ApiParam({
-    name: 'id',
-    description: '职位申请ID',
-    required: true,
-    type: Number,
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        examId: {
-          type: 'number',
-          description: '试卷ID',
-          example: 1,
-        },
-        note: {
-          type: 'string',
-          description: '笔试说明',
-          example: '请在24小时内完成笔试，祝您成功！',
-        },
-      },
-      required: ['examId'],
-    },
-  })
-  @ApiResponse({ status: 200, description: '分配成功并已发送邮件' })
-  @ApiResponse({ status: 400, description: '参数错误' })
+  @ApiOperation({ summary: '分配笔试试卷给求职者' })
+  @ApiResponse({ status: 200, description: '分配成功' })
+  @ApiResponse({ status: 400, description: '参数错误或试卷已分配' })
   @ApiResponse({ status: 401, description: '未授权' })
-  @ApiResponse({ status: 403, description: '无权操作此申请' })
+  @ApiResponse({ status: 403, description: '无权限操作该申请' })
   @ApiResponse({ status: 404, description: '申请或试卷不存在' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Post('applications/:id/assign-exam')
-  async assignExam(
-    @Param('id') id: string,
-    @Body('examId') examId: number,
-    @Body('note') note: string,
-    @Req() req,
-  ) {
+  @Post('applications/assign-exam')
+  async assignExam(@Body() assignExamDto: AssignExamDto, @Req() req) {
     const userId = req.user.userId;
     this.logger.log(
-      `用户${userId}为申请ID:${id}分配试卷ID:${examId}, 笔试说明: ${note || '无'}`,
+      `为应聘申请${assignExamDto.applicationId}分配笔试, 用户ID: ${userId}`,
     );
 
     try {
       const result = await this.interviewerService.assignExamToCandidate(
-        parseInt(id),
-        examId,
         userId,
-        note,
+        assignExamDto,
       );
 
-      return success(result, '笔试试卷分配成功并已发送邮件通知');
+      return success(result, '分配笔试成功');
     } catch (error) {
-      this.logger.error(`分配笔试试卷失败: ${error.message}`, error);
+      this.logger.error(`分配笔试失败: ${error.message}`, error);
       throw error;
     }
   }

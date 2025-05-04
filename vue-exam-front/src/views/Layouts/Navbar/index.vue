@@ -125,6 +125,9 @@
                       <el-dropdown-item @click="router.push('/applications')"
                         >应聘进度</el-dropdown-item
                       >
+                      <el-dropdown-item @click="router.push('/online-exam/user-exams')"
+                        >我的笔试</el-dropdown-item
+                      >
                     </template>
 
                     <!-- 面试官菜单项 - 只保留个人中心相关的选项，移除导航栏已有的选项 -->
@@ -298,7 +301,10 @@ const navItems = computed(() => {
     if (isJobSeeker.value) {
       baseItems.push(
         { index: '/my-exams', name: '我的考试' },
-        { index: '/recruitment', name: '招聘岗位' }
+        { index: '/recruitment', name: '招聘岗位' },
+        { index: '/applications', name: '我的申请' },
+        { index: '/favorites', name: '我的收藏' },
+        { index: '/online-exam/user-exams', name: '我的笔试' }
       )
     } else if (isInterviewer.value) {
       baseItems.push(

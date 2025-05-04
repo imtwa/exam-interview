@@ -372,14 +372,19 @@ model ExamAssignment {
   id              Int       @id @default(autoincrement()) /// 分配ID，自增主键
   applicationId   Int /// 关联的职位申请ID
   application     JobApplication @relation(fields: [applicationId], references: [id]) /// 关联的职位申请
+  jobSeekerId     Int /// 关联的求职者ID
   examId          Int /// 笔试试卷ID
   examPaper       ExamPaper @relation(fields: [examId], references: [id]) /// 关联的试卷
   note            String?   @db.Text /// 笔试说明
   assignedBy      Int /// 分配人ID（面试官/HR）
   status          String    @default("PENDING") /// 状态：待完成/已完成/已过期
-  score           Float?    /// 考试得分
-  startTime       DateTime? /// 开始时间
-  endTime         DateTime? /// 结束时间
+  score           Float     @default(0) /// 考试得分
+  invitationCode  String    @unique @default(uuid()) /// 邀请码，用于考试验证
+  examStartTime   DateTime  @default(now()) /// 考试可开始时间
+  examEndTime     DateTime  @default(now()) /// 考试截止时间
+  duration        Int       @default(60) /// 考试时长(分钟)
+  completed       Boolean   @default(false) /// 是否已完成考试
+  answers         Json?     /// 考生答案，JSON格式存储
   createdAt       DateTime  @default(now()) /// 创建时间
   updatedAt       DateTime  @updatedAt /// 更新时间
 

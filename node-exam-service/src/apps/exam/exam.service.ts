@@ -1811,4 +1811,320 @@ export class ExamService {
       throw error;
     }
   }
+
+  /**
+   * 验证考试邀请码
+   * @param invitationCode 邀请码
+   */
+  async verifyInvitationCode(invitationCode: string) {
+    this.logger.log(`验证考试邀请码: ${invitationCode}`);
+
+    // 查询邀请码对应的考试分配记录
+    const assignment = await this.prisma.examAssignment.findFirst({
+      where: {
+        invitationCode,
+      },
+      include: {
+        examPaper: true,
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('邀请码无效');
+    }
+
+    if (assignment.completed) {
+      throw new BadRequestException('该考试已完成，不能重复进入');
+    }
+
+    // 检查考试时间是否在有效范围内
+    const now = new Date();
+    const examStartTime = assignment.examStartTime;
+    const examEndTime = assignment.examEndTime;
+
+    // 判断当前时间是否在考试时间范围内
+    const canStart = now >= examStartTime && now <= examEndTime;
+
+    return {
+      examId: assignment.examId,
+      examTitle: assignment.examPaper?.name,
+      note: assignment.note,
+      duration: assignment.duration,
+      canStart,
+      examStartTime,
+      examEndTime,
+    };
+  }
+
+  /**
+   * 开始考试并获取试卷内容
+   * @param invitationCode 邀请码
+   */
+  async startExam(invitationCode: string) {
+    this.logger.log(`开始考试: ${invitationCode}`);
+
+    // 验证邀请码并获取考试信息
+    const verifyResult = await this.verifyInvitationCode(invitationCode);
+
+    if (!verifyResult.canStart) {
+      throw new BadRequestException('当前不在考试时间范围内');
+    }
+
+    // 获取试卷详情
+    const exam = await this.getExamDetail(verifyResult.examId);
+
+    // 获取考试分配记录
+    const assignment = await this.prisma.examAssignment.findFirst({
+      where: {
+        invitationCode,
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('邀请码无效');
+    }
+
+    // 整理返回数据，移除答案
+    const questions = exam.examQuestions.map((eq) => {
+      const { question } = eq;
+      return {
+        id: question.id,
+        qtype: question.qtype,
+        question: question.question,
+        options: question.options,
+        score: eq.score,
+        // 移除答案和解析
+        answer: undefined,
+        ai_analysis: undefined,
+      };
+    });
+
+    return {
+      examId: exam.id,
+      examTitle: exam.name,
+      questions,
+      duration: verifyResult.duration,
+      examStartTime: assignment.examStartTime,
+      examEndTime: assignment.examEndTime,
+    };
+  }
+
+  /**
+   * 提交考试答案
+   * @param invitationCode 邀请码
+   * @param answers 考生答案
+   */
+  async submitExam(invitationCode: string, answers: Record<string, any>) {
+    this.logger.log(`提交考试答案: ${invitationCode}`);
+
+    // 查询邀请码对应的考试分配记录
+    const assignment = await this.prisma.examAssignment.findFirst({
+      where: {
+        invitationCode,
+      },
+      include: {
+        examPaper: {
+          include: {
+            examQuestions: {
+              include: {
+                question: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('邀请码无效');
+    }
+
+    if (assignment.completed) {
+      throw new BadRequestException('该考试已完成，不能重复提交');
+    }
+
+    // 检查考试时间是否已结束
+    const now = new Date();
+    if (assignment.examEndTime && now > assignment.examEndTime) {
+      throw new BadRequestException('考试时间已结束，无法提交');
+    }
+
+    // 计算得分
+    let totalScore = 0;
+    let earnedScore = 0;
+
+    // 遍历试卷中的每个题目
+    if (assignment.examPaper?.examQuestions) {
+      for (const examQuestion of assignment.examPaper.examQuestions) {
+        const questionId = examQuestion.questionId.toString();
+        const question = examQuestion.question;
+        const score = examQuestion.score;
+
+        totalScore += score;
+
+        // 检查答案是否正确
+        if (questionId in answers) {
+          const userAnswer = answers[questionId];
+          let isCorrect = false;
+
+          switch (question.qtype) {
+            case 1: // 单选题
+              isCorrect = userAnswer === question.answer;
+              break;
+            case 2: // 多选题
+              // 将答案排序后比较
+              const correctAnswers = question.answer
+                .split(',')
+                .sort()
+                .join(',');
+              const userAnswers = Array.isArray(userAnswer)
+                ? [...userAnswer].sort().join(',')
+                : userAnswer;
+              isCorrect = userAnswers === correctAnswers;
+              break;
+            case 3: // 判断题
+              isCorrect = userAnswer.toString() === question.answer;
+              break;
+            case 4: // 填空题
+              isCorrect = userAnswer === question.answer;
+              break;
+            default:
+              break;
+          }
+
+          if (isCorrect) {
+            earnedScore += score;
+          }
+        }
+      }
+    }
+
+    // 计算百分比
+    const percentage = Math.round((earnedScore / totalScore) * 100);
+
+    // 更新考试状态
+    await this.prisma.examAssignment.update({
+      where: { id: assignment.id },
+      data: {
+        score: earnedScore,
+        status: 'COMPLETED',
+        completed: true,
+        answers: answers as any,
+      },
+    });
+
+    return {
+      score: earnedScore,
+      totalScore,
+      percentage,
+    };
+  }
+
+  // 获取用户的考试列表
+  async getUserExams(userId: number, query: any) {
+    const { page = 1, pageSize = 10 } = query;
+    const skip = (page - 1) * pageSize;
+
+    try {
+      // 查询条件：查找指定用户ID相关的考试
+      const where = {
+        application: {
+          jobSeeker: {
+            user: {
+              id: userId,
+            },
+          },
+        },
+      };
+
+      // 查询用户的考试列表及总数
+      const [assignments, total] = await Promise.all([
+        this.prisma.examAssignment.findMany({
+          where,
+          skip,
+          take: pageSize,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            examPaper: true,
+            application: {
+              include: {
+                jobSeeker: true,
+                job: {
+                  include: {
+                    company: true,
+                  },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.examAssignment.count({ where }),
+      ]);
+
+      // 获取所有相关的面试官信息
+      const interviewerIds = assignments
+        .filter((assignment) => assignment.application?.job?.interviewerId)
+        .map((assignment) => assignment.application?.job?.interviewerId);
+
+      // 如果有面试官ID，查询面试官详情
+      let interviewers = [];
+      if (interviewerIds.length > 0) {
+        interviewers = await this.prisma.interviewer.findMany({
+          where: {
+            id: {
+              in: interviewerIds,
+            },
+          },
+          include: {
+            user: true,
+          },
+        });
+      }
+
+      // 格式化返回数据
+      const formattedItems = assignments.map((assignment) => {
+        // 获取关联实体数据（如果存在）
+        const job = assignment.application?.job;
+        const company = job?.company;
+
+        // 查找对应的面试官
+        const interviewer = job?.interviewerId
+          ? interviewers.find((i) => i.id === job.interviewerId)
+          : null;
+
+        // 计算截止时间（考试开始时间 + 时长）
+        const endDateTime = assignment.examEndTime;
+
+        // 判断考试状态
+        let status = assignment.status;
+        if (status === 'PENDING' && new Date() > assignment.examEndTime) {
+          status = 'EXPIRED'; // 如果超过了考试截止时间，则标记为过期
+        }
+
+        return {
+          id: assignment.id,
+          examId: assignment.examId,
+          examTitle: assignment.examPaper?.name,
+          status: status,
+          score: assignment.score,
+          duration: assignment.duration,
+          startTime: assignment.examStartTime,
+          endTime: endDateTime,
+          submittedAt: assignment.completed ? assignment.updatedAt : null,
+          invitationCode: assignment.invitationCode,
+          companyId: company?.id,
+          companyName: company?.name,
+          positionId: job?.id,
+          positionName: job?.title,
+          interviewerId: interviewer?.id,
+          interviewerName: interviewer?.user?.username,
+        };
+      });
+
+      return { items: formattedItems, total };
+    } catch (error) {
+      this.logger.error(`获取用户考试列表失败: ${error.message}`, error.stack);
+      throw new Error('获取用户考试列表失败');
+    }
+  }
 }

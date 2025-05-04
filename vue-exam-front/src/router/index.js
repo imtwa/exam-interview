@@ -156,11 +156,43 @@ const routes = [
           requireAuth: true,
           roles: ['INTERVIEWER'] // 只允许面试官/HR访问
         }
+      },
+      // 在线考试路由
+      {
+        path: 'online-exam',
+        name: 'OnlineExam',
+        component: () => import('@/views/OnlineExam/index.vue'),
+        meta: { title: '在线笔试' }
+      },
+      {
+        path: 'online-exam/invitation',
+        name: 'ExamInvitation',
+        component: () => import('@/views/OnlineExam/Invitation.vue'),
+        meta: { title: '考试邀请码' }
+      },
+      {
+        path: 'online-exam/user-exams',
+        name: 'UserExams',
+        component: () => import('@/views/OnlineExam/UserExams.vue'),
+        meta: { title: '我的笔试', requireAuth: true }
+      },
+      {
+        path: 'online-exam/session/:id',
+        name: 'ExamSession',
+        component: () => import('@/views/OnlineExam/ExamSession.vue'),
+        meta: { title: '在线考试', keepAlive: true }
+      },
+      {
+        path: 'online-exam/result/:id',
+        name: 'ExamResult',
+        component: () => import('@/views/OnlineExam/ExamResult.vue'),
+        meta: { title: '考试结果' }
       }
     ]
   }
 ]
 
+// 在线考试路由
 const router = createRouter({
   history: createWebHashHistory(),
   routes

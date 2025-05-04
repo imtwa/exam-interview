@@ -1,8 +1,8 @@
 <template>
   <div class="private-exams-container">
     <div class="header">
-       <!-- 面包屑导航 -->
-       <div class="breadcrumb-container">
+      <!-- 面包屑导航 -->
+      <div class="breadcrumb-container">
         <el-breadcrumb separator="/">
           <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
           <el-breadcrumb-item>专属试卷</el-breadcrumb-item>
@@ -54,12 +54,7 @@
             {{ scope.row.subCategory?.name || '无' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="examQuestions.length"
-          label="题目数量"
-          width="100"
-          align="center"
-        >
+        <el-table-column prop="examQuestions.length" label="题目数量" width="100" align="center">
           <template #default="scope">
             {{ scope.row.examQuestions?.length || scope.row.questionsCount || 0 }}
           </template>
@@ -75,9 +70,11 @@
               <el-button link type="primary" size="small">查看</el-button>
             </router-link>
             <el-button link type="primary" size="small" @click="copyExamLink(scope.row.id)"
-              >复制链接</el-button>
+              >复制链接</el-button
+            >
             <el-button link type="danger" size="small" @click="confirmDelete(scope.row)"
-              >删除</el-button>
+              >删除</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -147,7 +144,7 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        
+
         <!-- 收藏试卷选择区域 -->
         <el-form-item label="收藏试卷" prop="favoriteExamIds">
           <div v-if="loadingFavorites" class="loading-favorites">
@@ -185,13 +182,18 @@
                 </div>
               </el-option>
             </el-select>
-            
+
             <!-- 显示已选择的试卷信息 -->
             <div class="selected-favorites" v-if="examForm.favoriteExamIds.length > 0">
               <div class="section-title">已选择{{ examForm.favoriteExamIds.length }}份试卷：</div>
               <el-table :data="selectedFavorites" size="small" style="width: 100%">
                 <el-table-column prop="name" label="试卷名称" min-width="150" />
-                <el-table-column prop="questionsCount" label="题目数量" width="100" align="center" />
+                <el-table-column
+                  prop="questionsCount"
+                  label="题目数量"
+                  width="100"
+                  align="center"
+                />
                 <el-table-column label="可抽题数" width="100" align="center">
                   <template #default="scope">
                     最多{{ Math.min(examForm.questionsPerExam, scope.row.questionsCount || 0) }}题
@@ -201,7 +203,7 @@
             </div>
           </div>
         </el-form-item>
-        
+
         <el-form-item label="每卷抽题数量" prop="questionsPerExam">
           <el-input-number
             v-model="examForm.questionsPerExam"
@@ -211,14 +213,13 @@
           ></el-input-number>
           <span class="hint">每个试卷抽取的题目数量，建议5-20题</span>
         </el-form-item>
-        
+
         <div class="dialog-summary" v-if="examForm.favoriteExamIds.length > 0">
-          <el-alert
-            type="info"
-            :closable="false"
-          >
+          <el-alert type="info" :closable="false">
             <template #title>
-              将从{{ examForm.favoriteExamIds.length }}份试卷中随机抽取约{{ getTotalQuestions() }}道题组成新试卷
+              将从{{ examForm.favoriteExamIds.length }}份试卷中随机抽取约{{
+                getTotalQuestions()
+              }}道题组成新试卷
             </template>
           </el-alert>
         </div>
@@ -226,9 +227,9 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="showCreateDialog = false">取 消</el-button>
-          <el-button 
-            type="primary" 
-            @click="submitForm" 
+          <el-button
+            type="primary"
+            @click="submitForm"
             :loading="submitting"
             :disabled="favorites.length === 0"
           >
@@ -373,8 +374,8 @@ const updateSelectedFavorites = () => {
     selectedFavorites.value = []
     return
   }
-  
-  selectedFavorites.value = favorites.value.filter(favorite => 
+
+  selectedFavorites.value = favorites.value.filter(favorite =>
     examForm.favoriteExamIds.includes(favorite.id)
   )
 }
@@ -382,12 +383,12 @@ const updateSelectedFavorites = () => {
 // 计算预计的总题目数
 const getTotalQuestions = () => {
   if (!selectedFavorites.value.length) return 0
-  
+
   let total = 0
   selectedFavorites.value.forEach(favorite => {
     total += Math.min(examForm.questionsPerExam, favorite.questionsCount || 0)
   })
-  
+
   return total
 }
 
@@ -444,7 +445,7 @@ const resetForm = () => {
 // 提交表单
 const submitForm = async () => {
   if (!examFormRef.value) return
-  
+
   await examFormRef.value.validate(async valid => {
     if (valid) {
       submitting.value = true
@@ -482,20 +483,16 @@ const copyExamLink = examId => {
 }
 
 // 确认删除
-const confirmDelete = (exam) => {
-  ElMessageBox.confirm(
-    `确定要删除试卷"${exam.name}"吗？删除后不可恢复。`,
-    '删除确认',
-    {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
+const confirmDelete = exam => {
+  ElMessageBox.confirm(`确定要删除试卷"${exam.name}"吗？删除后不可恢复。`, '删除确认', {
+    confirmButtonText: '确定删除',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
     .then(() => {
       ElMessage({
         type: 'success',
-        message: '删除功能暂未实现',
+        message: '删除功能暂未实现'
       })
     })
     .catch(() => {
@@ -533,7 +530,8 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.loading-container, .empty-container {
+.loading-container,
+.empty-container {
   padding: 40px 0;
   display: flex;
   flex-direction: column;

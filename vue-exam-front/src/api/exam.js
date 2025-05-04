@@ -242,3 +242,109 @@ export function getPrivateExamDetail(id) {
     method: 'get'
   })
 }
+
+// 在线考试相关接口
+/**
+ * 验证考试邀请码
+ * @param {string} invitationCode 邀请码
+ * @returns {Promise}
+ */
+export function verifyInvitationCode(invitationCode) {
+  return request({
+    url: '/exam/invitation/verify',
+    method: 'post',
+    data: { invitationCode }
+  })
+}
+
+/**
+ * 获取用户的考试列表
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getUserExams(params) {
+  return request({
+    url: '/exam/user-exams',
+    method: 'post',
+    data: params
+  })
+}
+
+/**
+ * 开始考试并获取试卷内容
+ * @param {string} invitationCode 邀请码
+ * @returns {Promise}
+ */
+export function startExam(invitationCode) {
+  return request({
+    url: `/online-exam/start/${invitationCode}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 提交考试答案
+ * @param {string} invitationCode 邀请码
+ * @param {Object} answers 答案
+ * @returns {Promise}
+ */
+export function submitExam(invitationCode, answers) {
+  return request({
+    url: '/online-exam/submit',
+    method: 'post',
+    data: { invitationCode, answers }
+  })
+}
+
+/**
+ * 分配笔试试卷给应聘者
+ * @param {Object} data 分配试卷数据
+ * @returns {Promise}
+ */
+export function assignExam(data) {
+  return request({
+    url: '/online-exam/assign',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取在线考试信息
+ * @param {string} examId 试卷ID
+ * @returns {Promise}
+ */
+export function getOnlineExam(examId) {
+  return request({
+    url: `/exam/online/${examId}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 保存考试答案（进行中）
+ * @param {string} examId 试卷ID
+ * @param {Object} answers 答案
+ * @returns {Promise}
+ */
+export function saveExamAnswers(examId, answers) {
+  return request({
+    url: `/exam/online/${examId}/save`,
+    method: 'post',
+    data: { answers }
+  })
+}
+
+/**
+ * 提交考试答案（完成）
+ * @param {string} examId 试卷ID
+ * @param {Object} answers 答案
+ * @returns {Promise}
+ */
+export function submitExamAnswers(examId, answers) {
+  return request({
+    url: `/exam/online/${examId}/submit`,
+    method: 'post',
+    data: { answers }
+  })
+}

@@ -18,7 +18,7 @@ export function getInterviewerProfile() {
  */
 export function updateInterviewerProfile(data) {
   return request({
-    url: '/interviewer/profile',
+    url: '/interviewer/profile/setup',
     method: 'post',
     data
   })
@@ -104,13 +104,12 @@ export function getInterviewers(params) {
 
 /**
  * 分配笔试试卷并发送邮件通知
- * @param {number} applicationId 职位申请ID
  * @param {Object} data 包含试卷ID和笔试说明的数据
  * @returns {Promise} 返回分配结果
  */
-export function assignExam(applicationId, data) {
+export function assignExam(data) {
   return request({
-    url: `/interviewer/applications/${applicationId}/assign-exam`,
+    url: `/interviewer/applications/assign-exam`,
     method: 'post',
     data
   })

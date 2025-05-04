@@ -234,12 +234,7 @@ import { ElMessage, ElLoading, ElMessageBox } from 'element-plus'
 import { ArrowDown, ArrowUp, Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { 
-  formatSalary, 
-  formatDate, 
-  formatExperience, 
-  formatEducation
-} from '@/utils/utils'
+import { formatSalary, formatDate, formatExperience, formatEducation } from '@/utils/utils'
 
 const router = useRouter()
 const userStore = useUserStore()
