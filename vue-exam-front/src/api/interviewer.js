@@ -88,3 +88,16 @@ export function getInterviewerJobs() {
     method: 'get'
   })
 }
+
+/**
+ * 获取面试官列表
+ * @param {Object} params 查询参数
+ * @returns {Promise} 返回面试官列表
+ */
+export function getInterviewers(params) {
+  return request({
+    url: '/api/interviewer/interviewers',
+    method: 'get',
+    params
+  })
+}
