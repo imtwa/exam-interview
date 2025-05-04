@@ -31,6 +31,7 @@ import {
   ApiConsumes,
   ApiBody,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { QueryUserFavoritesDto } from './dto/query-user-favorites.dto';
 
@@ -673,6 +674,109 @@ export class ExamController {
         code: 200,
         message: '获取专属试卷列表成功',
         data: result,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: '获取面试官的专属试卷列表' })
+  @ApiResponse({
+    status: 200,
+    description: '返回指定面试官的专属试卷列表',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '获取面试官专属试卷列表成功' },
+        data: {
+          type: 'object',
+          properties: {
+            items: { type: 'array', items: { type: 'object' } },
+            total: { type: 'number', example: 5 },
+          },
+        },
+      },
+    },
+  })
+  @ApiQuery({
+    name: 'interviewerId',
+    required: true,
+    type: 'number',
+    description: '面试官ID',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: 'number',
+    description: '页码，默认1',
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    type: 'number',
+    description: '每页数量，默认10',
+  })
+  @ApiQuery({
+    name: 'keyword',
+    required: false,
+    type: 'string',
+    description: '搜索关键词',
+  })
+  @ApiQuery({
+    name: 'sortField',
+    required: false,
+    type: 'string',
+    description: '排序字段',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    type: 'string',
+    description: '排序方向: asc/desc',
+  })
+  @Post('exam/private/interviewer')
+  async getInterviewerPrivateExams(
+    @Body('interviewerId', ParseIntPipe) interviewerId: number,
+    @Body() queryExamDto: QueryExamDto,
+  ) {
+    try {
+      const result = await this.examService.getInterviewerPrivateExams(
+        interviewerId,
+        queryExamDto,
+      );
+
+      return {
+        code: 200,
+        message: '获取面试官专属试卷列表成功',
+        data: result,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: '获取专属试卷详情' })
+  @ApiResponse({
+    status: 200,
+    description: '返回专属试卷详情',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '获取专属试卷详情成功' },
+        data: { type: 'object' },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: '试卷不存在' })
+  @Get('exam/private/:id')
+  async getPrivateExamDetail(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const exam = await this.examService.getPrivateExamDetail(id);
+
+      return {
+        code: 200,
+        message: '获取专属试卷详情成功',
+        data: exam,
       };
     } catch (error) {
       throw error;

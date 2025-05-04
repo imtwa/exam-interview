@@ -217,3 +217,28 @@ export function getAllCategories() {
     method: 'get'
   })
 }
+
+/**
+ * 获取面试官的专属试卷列表
+ * @param {Object} params 包含面试官ID和查询参数
+ * @returns {Promise}
+ */
+export function getInterviewerPrivateExams(data) {
+  return request({
+    url: '/exam/private/interviewer',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取专属试卷详情
+ * @param {number} id 试卷ID
+ * @returns {Promise}
+ */
+export function getPrivateExamDetail(id) {
+  return request({
+    url: `/exam/private/${id}`,
+    method: 'get'
+  })
+}

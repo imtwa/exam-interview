@@ -1660,4 +1660,152 @@ export class ExamService {
       throw error;
     }
   }
+
+  /**
+   * 获取面试官的专属试卷列表 - 无需授权，只需要面试官ID
+   * @param interviewerId 面试官用户ID
+   * @param queryExamDto 查询参数
+   */
+  async getInterviewerPrivateExams(interviewerId: number, queryExamDto: QueryExamDto) {
+    this.logger.log(
+      `获取面试官专属试卷列表, 面试官ID: ${interviewerId}, 参数: ${JSON.stringify(queryExamDto)}`,
+    );
+
+    try {
+      // 首先验证interviewerId是否是面试官
+      const interviewer = await this.prisma.frontUser.findFirst({
+        where: {
+          id: interviewerId,
+          role: 'INTERVIEWER',
+          deletedAt: null,
+        },
+      });
+
+      if (!interviewer) {
+        throw new NotFoundException(`ID为${interviewerId}的面试官不存在`);
+      }
+
+      const {
+        page = 1,
+        pageSize = 10,
+        keyword,
+        sortField = ExamSortField.CREATED_AT,
+        sortOrder = 'desc',
+      } = queryExamDto;
+
+      const skip = (page - 1) * pageSize;
+
+      // 构建查询条件
+      const where: any = {
+        deletedAt: null,
+        isPublic: false, // 只返回不公开的试卷
+        userId: interviewerId, // 只返回指定面试官创建的试卷
+      };
+
+      if (keyword) {
+        where.OR = [
+          { name: { contains: keyword } },
+          { description: { contains: keyword } },
+        ];
+      }
+
+      // 执行查询
+      const [exams, total] = await Promise.all([
+        this.prisma.examPaper.findMany({
+          where,
+          skip,
+          take: pageSize,
+          orderBy: {
+            [sortField]: sortOrder,
+          },
+          include: {
+            category: true,
+            subCategory: true,
+            _count: {
+              select: {
+                examQuestions: {
+                  where: { deletedAt: null },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.examPaper.count({ where }),
+      ]);
+
+      // 处理返回数据，添加题目总数等信息
+      const enrichedExams = exams.map((exam) => {
+        const questionsCount = exam._count.examQuestions;
+        // 从_count中移除examQuestions详情以减小数据量
+        const { _count, ...examData } = exam;
+        return {
+          ...examData,
+          questionsCount, // 添加题目总数
+        };
+      });
+
+      this.logger.log(
+        `查询结果: 共 ${enrichedExams.length} 条记录, 总数 ${total}`,
+      );
+
+      return {
+        items: enrichedExams,
+        total,
+        page,
+        pageSize,
+      };
+    } catch (error) {
+      this.logger.error(`获取面试官专属试卷列表失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取专属试卷详情
+   * @param id 试卷ID
+   */
+  async getPrivateExamDetail(id: number) {
+    this.logger.log(`获取专属试卷详情, 试卷ID: ${id}`);
+
+    try {
+      // 查询试卷，包括分类、创建者、题目等信息
+      const exam = await this.prisma.examPaper.findUnique({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        include: {
+          category: true,
+          subCategory: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              role: true,
+            },
+          },
+          examQuestions: {
+            where: { deletedAt: null },
+            include: {
+              question: true,
+            },
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+      });
+
+      if (!exam) {
+        throw new NotFoundException(`ID为${id}的试卷不存在`);
+      }
+
+      this.logger.log(`获取到试卷详情, 试卷名称: ${exam.name}`);
+
+      return exam;
+    } catch (error) {
+      this.logger.error(`获取专属试卷详情失败: ${error.message}`);
+      throw error;
+    }
+  }
 }

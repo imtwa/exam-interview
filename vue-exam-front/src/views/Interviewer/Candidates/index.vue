@@ -343,10 +343,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, Message } from '@element-plus/icons-vue'
 import { getInterviewerApplications, updateApplicationStatus, scheduleInterview } from '@/api/interviewer'
 import { getJobsByInterviewer } from '@/api/job'
-import { getPrivateExams } from '@/api/exam'
+import { getInterviewerPrivateExams } from '@/api/exam'
 import { formatDate } from '@/utils/formatDate'
 import InterviewSchedule from './components/InterviewSchedule.vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 // 响应式数据
 const loading = ref(true)
@@ -360,6 +361,7 @@ const currentCandidate = ref(null)
 const resumeDialogVisible = ref(false)
 const selectedCandidate = ref(null)
 const pdfWidth = ref('80%')
+const userStore = useUserStore()
 
 // 笔试相关状态
 const examDialogVisible = ref(false)
@@ -609,14 +611,15 @@ const viewJobDetail = (jobId) => {
 const fetchExams = async () => {
   loadingExams.value = true
   try {
-    const response = await getPrivateExams({ 
+    const response = await getInterviewerPrivateExams({ 
       page: 1, 
       pageSize: 50,
+      interviewerId: userStore.interviewerId,
       isPublic: false // 只获取HR创建的私有试卷
     })
     
-    if (response.data && response.data.items) {
-      examList.value = response.data.items
+    if (response.items) {
+      examList.value = response.items
     } else {
       examList.value = []
     }

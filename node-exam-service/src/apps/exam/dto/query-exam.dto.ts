@@ -4,8 +4,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export enum ExamSortField {
   CREATED_AT = 'createdAt',
-  FAVORITE_COUNT = 'favoriteCount',
+  UPDATED_AT = 'updatedAt',
   NAME = 'name',
+  FAVORITE_COUNT = 'favoriteCount',
 }
 
 export class QueryExamDto {
@@ -105,4 +106,19 @@ export class QueryExamDto {
   @IsOptional()
   @IsEnum(['asc', 'desc'], { message: '排序方式必须是asc或desc' })
   sortOrder?: 'asc' | 'desc' = 'desc';
+
+  @ApiProperty({
+    description: '面试官ID',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt({ message: '面试官ID必须是整数' })
+  @Min(1, { message: '面试官ID必须大于0' })
+  @Transform(({ value }) => {
+    if (value === undefined || value === '') return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  })
+  interviewerId?: number;
 }
