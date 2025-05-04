@@ -101,3 +101,17 @@ export function getInterviewers(params) {
     params
   })
 }
+
+/**
+ * 分配笔试试卷并发送邮件通知
+ * @param {number} applicationId 职位申请ID
+ * @param {Object} data 包含试卷ID和笔试说明的数据
+ * @returns {Promise} 返回分配结果
+ */
+export function assignExam(applicationId, data) {
+  return request({
+    url: `/interviewer/applications/${applicationId}/assign-exam`,
+    method: 'post',
+    data
+  })
+}

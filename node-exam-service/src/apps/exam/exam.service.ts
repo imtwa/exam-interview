@@ -1666,7 +1666,10 @@ export class ExamService {
    * @param interviewerId 面试官用户ID
    * @param queryExamDto 查询参数
    */
-  async getInterviewerPrivateExams(interviewerId: number, queryExamDto: QueryExamDto) {
+  async getInterviewerPrivateExams(
+    interviewerId: number,
+    queryExamDto: QueryExamDto,
+  ) {
     this.logger.log(
       `获取面试官专属试卷列表, 面试官ID: ${interviewerId}, 参数: ${JSON.stringify(queryExamDto)}`,
     );

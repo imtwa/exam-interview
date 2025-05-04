@@ -14,6 +14,7 @@ import { CreateInterviewerDto } from './dto/create-interviewer.dto';
 import { LoggerService } from '../../common/logger/logger.service';
 import { UpdateInterviewerProfileDto } from './dto/update-interviewer-profile.dto';
 import { ConfigService } from '@nestjs/config';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class InterviewerService {
@@ -304,7 +305,8 @@ export class InterviewerService {
     });
 
     // 获取基础URL
-    const baseUrl = this.configService.get('APP_URL') || 
+    const baseUrl =
+      this.configService.get('APP_URL') ||
       `http://localhost:${this.configService.get('PORT') || 3000}`;
 
     // 处理数据，添加必要的计算字段
@@ -342,9 +344,16 @@ export class InterviewerService {
       }
 
       // 如果是jobSeeker中的resumeUrl，也需要更新
-      if (item.jobSeeker && item.jobSeeker.resumeUrl && !item.jobSeeker.resumeUrl.startsWith('http')) {
-        item.jobSeeker.resumeUrl = `${baseUrl}/${item.jobSeeker.resumeUrl.startsWith('/') ? 
-          item.jobSeeker.resumeUrl.substring(1) : item.jobSeeker.resumeUrl}`;
+      if (
+        item.jobSeeker &&
+        item.jobSeeker.resumeUrl &&
+        !item.jobSeeker.resumeUrl.startsWith('http')
+      ) {
+        item.jobSeeker.resumeUrl = `${baseUrl}/${
+          item.jobSeeker.resumeUrl.startsWith('/')
+            ? item.jobSeeker.resumeUrl.substring(1)
+            : item.jobSeeker.resumeUrl
+        }`;
       }
 
       // 返回增强的对象
@@ -666,5 +675,145 @@ export class InterviewerService {
         '创建/更新面试官信息失败: ' + error.message,
       );
     }
+  }
+
+  /**
+   * 分配笔试试卷并发送邮件通知
+   */
+  async assignExamToCandidate(
+    applicationId: number,
+    examId: number,
+    userId: number,
+    note?: string,
+  ) {
+    // 查找面试官ID以验证权限
+    const interviewer = await this.getInterviewerByUserId(userId);
+
+    // 查找申请
+    const application = await this.prisma.jobApplication.findUnique({
+      where: { id: applicationId },
+      include: {
+        job: true,
+        jobSeeker: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      throw new NotFoundException(`申请不存在 ID: ${applicationId}`);
+    }
+
+    // 确认该申请属于此面试官负责的职位
+    if (application.job.interviewerId !== interviewer.id) {
+      throw new ForbiddenException('您无权为此申请分配笔试');
+    }
+
+    // 验证试卷是否存在
+    const exam = await this.prisma.examPaper.findUnique({
+      where: { id: examId },
+    });
+
+    if (!exam) {
+      throw new NotFoundException(`试卷不存在 ID: ${examId}`);
+    }
+
+    // 检查是否已经分配过此试卷
+    const existingAssignment = await this.prisma.examAssignment.findFirst({
+      where: {
+        applicationId,
+        examId,
+        status: 'PENDING', // 只检查待完成的分配
+      },
+    });
+
+    if (existingAssignment) {
+      // 已存在分配，返回现有分配信息
+      this.logger.log(`申请ID:${applicationId}已分配过试卷ID:${examId}`);
+      return existingAssignment;
+    }
+
+    // 创建笔试记录
+    const examAssignment = await this.prisma.examAssignment.create({
+      data: {
+        applicationId,
+        examId,
+        note: note || '',
+        assignedBy: userId,
+        status: 'PENDING', // 初始状态为待完成
+      },
+    });
+
+    // 更新申请状态为笔试
+    await this.prisma.jobApplication.update({
+      where: { id: applicationId },
+      data: {
+        status: 'WRITTEN_TEST',
+      },
+    });
+
+    this.logger.log(`为申请ID:${applicationId}分配笔试试卷ID:${examId}`);
+
+    // 生成考试链接
+    const baseUrl =
+      this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const examUrl = `${baseUrl}/exam-session/${examAssignment.id}`;
+
+    // 获取求职者信息
+    const candidate = application.jobSeeker.user;
+    const candidateName = candidate.username || '求职者';
+    const candidateEmail = candidate.email;
+
+    // 获取职位信息
+    const jobTitle = application.job.title || '职位';
+    const companyName = interviewer.company ? interviewer.company.name : '公司';
+
+    // 构建邮件内容
+    if (candidateEmail) {
+      try {
+        // 使用 EmailService 发送邮件通知
+        const emailService = new EmailService(this.configService);
+        await emailService.sendMail({
+          to: candidateEmail,
+          subject: `[笔试通知] ${companyName}邀请您参加"${jobTitle}"职位的在线笔试`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+              <h2 style="color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px;">笔试邀请</h2>
+              <p>尊敬的 ${candidateName}：</p>
+              <p>感谢您申请 <strong>${companyName}</strong> 的 <strong>${jobTitle}</strong> 职位。</p>
+              <p>我们很高兴地通知您，您已进入笔试环节。请通过以下链接参加在线笔试：</p>
+              <div style="margin: 20px 0; text-align: center;">
+                <a href="${examUrl}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">开始笔试</a>
+              </div>
+              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                <p style="margin: 0;"><strong>笔试链接：</strong> <a href="${examUrl}">${examUrl}</a></p>
+                ${note ? `<p style="margin: 10px 0 0;"><strong>笔试说明：</strong> ${note}</p>` : ''}
+              </div>
+              <p>请在收到邮件后尽快完成笔试，以便我们继续为您安排后续面试环节。</p>
+              <p>如有任何问题，请及时与我们联系。</p>
+              <p style="margin-top: 20px;">祝好，<br>${companyName} 招聘团队</p>
+            </div>
+          `,
+        });
+
+        this.logger.log(
+          `已向候选人${candidateName}(${candidateEmail})发送笔试邀请邮件`,
+        );
+      } catch (error) {
+        this.logger.error(`发送笔试邀请邮件失败: ${error.message}`, error);
+        // 即使邮件发送失败，我们也继续返回笔试分配信息
+      }
+    } else {
+      this.logger.warn(
+        `候选人ID:${application.jobSeekerId}没有邮箱，无法发送笔试邀请`,
+      );
+    }
+
+    return {
+      ...examAssignment,
+      examUrl,
+    };
   }
 }

@@ -327,7 +327,7 @@
           <el-button 
             type="primary" 
             :disabled="!selectedExamId || loadingExams" 
-            @click="assignExam"
+            @click="handleAssignExam"
           >
             确认发放
           </el-button>
@@ -341,7 +341,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, Message } from '@element-plus/icons-vue'
-import { getInterviewerApplications, updateApplicationStatus, scheduleInterview } from '@/api/interviewer'
+import { getInterviewerApplications, updateApplicationStatus, scheduleInterview, assignExam as assignExamApi } from '@/api/interviewer'
 import { getJobsByInterviewer } from '@/api/job'
 import { getInterviewerPrivateExams } from '@/api/exam'
 import { formatDate } from '@/utils/formatDate'
@@ -633,26 +633,30 @@ const fetchExams = async () => {
 }
 
 // 分配笔试
-const assignExam = async () => {
+const handleAssignExam = async () => {
   if (!selectedExamId.value) {
     ElMessage.warning('请选择一份试卷')
     return
   }
 
   try {
-    // 更新申请状态为笔试
-    await updateApplicationStatus(currentCandidate.value.id, { 
-      status: 'WRITTEN_TEST',
+    // 使用新的API端点发放笔试试卷并发送邮件
+    const response = await assignExamApi(currentCandidate.value.id, { 
       examId: selectedExamId.value,
       note: examNote.value || undefined
     })
     
-    ElMessage.success('笔试试卷已成功发放')
+    if (response && response.message) {
+      ElMessage.success(response.message || '笔试试卷已成功发放，并已发送通知邮件')
+    } else {
+      ElMessage.success('笔试试卷已成功发放，并已发送通知邮件') 
+    }
+    
     examDialogVisible.value = false
     fetchCandidates(currentPage.value)
   } catch (error) {
     console.error('发放笔试失败:', error)
-    ElMessage.error('发放笔试失败')
+    ElMessage.error(error.response?.data?.message || '发放笔试失败')
   }
 }
 
