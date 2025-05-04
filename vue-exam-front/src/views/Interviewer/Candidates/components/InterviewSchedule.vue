@@ -194,7 +194,7 @@ const handleClose = () => {
 watch(() => props.candidate, (newVal) => {
   if (newVal && newVal.id) {
     form.candidateId = newVal.id
-    form.candidateName = newVal.jobSeeker?.name || '未知候选人'
+    form.candidateName = newVal.candidateName || newVal.jobSeeker?.user?.username || '未知候选人'
   }
 }, { immediate: true })
 

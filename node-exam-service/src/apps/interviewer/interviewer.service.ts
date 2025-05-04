@@ -13,6 +13,7 @@ import {
 import { CreateInterviewerDto } from './dto/create-interviewer.dto';
 import { LoggerService } from '../../common/logger/logger.service';
 import { UpdateInterviewerProfileDto } from './dto/update-interviewer-profile.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class InterviewerService {
@@ -20,6 +21,7 @@ export class InterviewerService {
 
   constructor(
     @Inject('PRISMA_CLIENT') private prisma: PrismaClient,
+    private configService: ConfigService,
     loggerService: LoggerService,
   ) {
     this.logger = loggerService;
@@ -202,6 +204,8 @@ export class InterviewerService {
     page: number,
     pageSize: number,
     status?: string,
+    jobId?: number,
+    keyword?: string,
   ) {
     // 查找面试官ID
     const interviewer = await this.getInterviewerByUserId(userId);
@@ -218,6 +222,33 @@ export class InterviewerService {
       where.status = status as InterviewStatus;
     }
 
+    // 根据职位ID筛选
+    if (jobId) {
+      where.jobId = jobId;
+    }
+
+    // 关键词搜索
+    if (keyword) {
+      where.OR = [
+        {
+          jobSeeker: {
+            OR: [
+              { user: { email: { contains: keyword } } },
+              { user: { username: { contains: keyword } } },
+              {
+                education: {
+                  some: {
+                    school: { contains: keyword },
+                  },
+                },
+              },
+            ],
+          },
+        },
+        { job: { title: { contains: keyword } } },
+      ];
+    }
+
     const total = await this.prisma.jobApplication.count({ where });
     const items = await this.prisma.jobApplication.findMany({
       skip: (page - 1) * pageSize,
@@ -228,13 +259,25 @@ export class InterviewerService {
       },
       include: {
         jobSeeker: {
-          select: {
-            gender: true,
-            expectedPosition: true,
+          include: {
             user: {
               select: {
+                id: true,
+                username: true,
                 email: true,
               },
+            },
+            education: {
+              orderBy: {
+                endDate: 'desc',
+              },
+              take: 3,
+            },
+            workExperience: {
+              orderBy: {
+                endDate: 'desc',
+              },
+              take: 3,
             },
           },
         },
@@ -245,6 +288,7 @@ export class InterviewerService {
             city: true,
             company: {
               select: {
+                id: true,
                 name: true,
               },
             },
@@ -259,8 +303,62 @@ export class InterviewerService {
       },
     });
 
+    // 获取基础URL
+    const baseUrl = this.configService.get('APP_URL') || 
+      `http://localhost:${this.configService.get('PORT') || 3000}`;
+
+    // 处理数据，添加必要的计算字段
+    const processedItems = items.map((item) => {
+      // 从教育信息获取最高学历
+      const highestEducation =
+        item.jobSeeker?.education?.length > 0
+          ? item.jobSeeker.education[0]
+          : null;
+
+      // 根据工作经历计算总工作年限
+      let totalExperience = 0;
+      if (item.jobSeeker?.workExperience?.length > 0) {
+        const now = new Date();
+        item.jobSeeker.workExperience.forEach((exp) => {
+          const startDate = new Date(exp.startDate);
+          const endDate = exp.endDate ? new Date(exp.endDate) : now;
+
+          const years = endDate.getFullYear() - startDate.getFullYear();
+          const months = endDate.getMonth() - startDate.getMonth();
+
+          totalExperience += years * 12 + months;
+        });
+        totalExperience = Math.round(totalExperience / 12);
+      }
+
+      // 构建候选人姓名
+      const candidateName = item.jobSeeker?.user?.username || '未知候选人';
+
+      // 处理简历URL，确保返回完整的URL
+      let resumeUrl = item.jobSeeker?.resumeUrl;
+      if (resumeUrl && !resumeUrl.startsWith('http')) {
+        // 如果resumeUrl是相对路径，拼接完整URL
+        resumeUrl = `${baseUrl}/${resumeUrl.startsWith('/') ? resumeUrl.substring(1) : resumeUrl}`;
+      }
+
+      // 如果是jobSeeker中的resumeUrl，也需要更新
+      if (item.jobSeeker && item.jobSeeker.resumeUrl && !item.jobSeeker.resumeUrl.startsWith('http')) {
+        item.jobSeeker.resumeUrl = `${baseUrl}/${item.jobSeeker.resumeUrl.startsWith('/') ? 
+          item.jobSeeker.resumeUrl.substring(1) : item.jobSeeker.resumeUrl}`;
+      }
+
+      // 返回增强的对象
+      return {
+        ...item,
+        candidateName,
+        highestEducation,
+        totalExperience,
+        resumeUrl, // 添加处理后的resumeUrl
+      };
+    });
+
     return {
-      items,
+      items: processedItems,
       total,
     };
   }
@@ -272,6 +370,9 @@ export class InterviewerService {
     applicationId: number,
     status: string,
     userId: number,
+    feedback?: string,
+    examId?: number,
+    note?: string,
   ) {
     // 查找面试官ID以验证权限
     const interviewer = await this.getInterviewerByUserId(userId);
@@ -293,13 +394,46 @@ export class InterviewerService {
       throw new ForbiddenException('您无权更新此申请的状态');
     }
 
+    // 构建更新数据
+    const updateData: any = {
+      status: status as InterviewStatus,
+    };
+
+    // 如果有反馈信息，添加到更新数据中
+    if (feedback) {
+      updateData.feedback = feedback;
+    }
+
     // 更新申请状态
     const updatedApplication = await this.prisma.jobApplication.update({
       where: { id: applicationId },
-      data: {
-        status: status as InterviewStatus,
-      },
+      data: updateData,
     });
+
+    // 如果状态是笔试，检查是否提供了笔试试卷ID
+    if (status === 'WRITTEN_TEST' && examId) {
+      // 验证试卷是否存在
+      const exam = await this.prisma.examPaper.findUnique({
+        where: { id: examId },
+      });
+
+      if (!exam) {
+        throw new NotFoundException(`试卷不存在 ID: ${examId}`);
+      }
+
+      // 创建笔试记录
+      await this.prisma.examAssignment.create({
+        data: {
+          applicationId,
+          examId,
+          note: note || '',
+          assignedBy: userId,
+          status: 'PENDING', // 初始状态为待完成
+        },
+      });
+
+      this.logger.log(`为申请ID:${applicationId}分配笔试试卷ID:${examId}`);
+    }
 
     // 如果还有其他相关业务逻辑，比如发送通知等，可以在这里添加
 
@@ -391,7 +525,7 @@ export class InterviewerService {
 
         companyId = profileDto.existingCompanyId;
       } else {
-        // 用户选择使用现有公司但没有提供ID
+        // 用户选择使用现有公司但未提供公司ID
         this.logger.log('用户选择使用现有公司但未提供公司ID');
       }
     } else if (profileDto.company) {

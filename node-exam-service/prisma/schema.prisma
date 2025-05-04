@@ -125,6 +125,7 @@ model ExamPaper {
   user          FrontUser      @relation(fields: [userId], references: [id]) /// 创建用户，多对一关系
   examQuestions ExamQuestion[] /// 试卷包含的题目，一对多关系
   favorites     Favorite[] /// 收藏记录，一对多关系
+  examAssignments ExamAssignment[] /// 笔试分配记录，一对多关系
 
   @@map("exam_exampaper")
 }
@@ -357,11 +358,32 @@ model JobApplication {
   status         InterviewStatus @default(RESUME_SCREENING) /// 申请状态：简历筛选/笔试/一面/二面/HR面试/已安排/Offer/拒绝
   appliedAt      DateTime        @default(now()) /// 申请时间
   updatedAt      DateTime        @updatedAt /// 更新时间
+  feedback       String?         @db.Text /// 申请反馈
 
   // 关联表
   interviews     Interview[]     /// 该申请的面试安排，一对多关系
+  examAssignments ExamAssignment[] /// 该申请的笔试分配，一对多关系
   
   @@map("exam_recruitment_job_applications")
+}
+
+/// 笔试分配表：记录笔试试卷分配信息
+model ExamAssignment {
+  id              Int       @id @default(autoincrement()) /// 分配ID，自增主键
+  applicationId   Int /// 关联的职位申请ID
+  application     JobApplication @relation(fields: [applicationId], references: [id]) /// 关联的职位申请
+  examId          Int /// 笔试试卷ID
+  examPaper       ExamPaper @relation(fields: [examId], references: [id]) /// 关联的试卷
+  note            String?   @db.Text /// 笔试说明
+  assignedBy      Int /// 分配人ID（面试官/HR）
+  status          String    @default("PENDING") /// 状态：待完成/已完成/已过期
+  score           Float?    /// 考试得分
+  startTime       DateTime? /// 开始时间
+  endTime         DateTime? /// 结束时间
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+
+  @@map("exam_recruitment_exam_assignments")
 }
 
 /// 消息通知表：系统内各类通知

@@ -170,6 +170,18 @@ export class InterviewerController {
     required: false,
     type: String,
   })
+  @ApiQuery({
+    name: 'jobId',
+    description: '职位ID',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'keyword',
+    description: '关键词(姓名/邮箱/学校)',
+    required: false,
+    type: String,
+  })
   @ApiResponse({ status: 200, description: '返回申请列表及分页信息' })
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiBearerAuth('JWT')
@@ -177,9 +189,11 @@ export class InterviewerController {
   @Get('applications')
   async getApplications(@Req() req, @Query() query) {
     const userId = req.user.userId;
-    const { page = 1, pageSize = 10, status } = query;
+    const { page = 1, pageSize = 10, status, jobId, keyword } = query;
 
-    this.logger.log(`获取用户${userId}收到的职位申请列表, status: ${status}`);
+    this.logger.log(
+      `获取用户${userId}收到的职位申请列表, status: ${status}, jobId: ${jobId}, keyword: ${keyword}`,
+    );
 
     try {
       const { items, total } = await this.interviewerService.getApplications(
@@ -187,6 +201,8 @@ export class InterviewerController {
         parseInt(page as string),
         parseInt(pageSize as string),
         status as string,
+        jobId ? parseInt(jobId as string) : undefined,
+        keyword as string,
       );
       return pagination(
         items,
@@ -219,6 +235,16 @@ export class InterviewerController {
           description: '反馈信息',
           example: '您的简历非常符合我们的要求',
         },
+        examId: {
+          type: 'number',
+          description: '笔试试卷ID (仅状态为WRITTEN_TEST时需要)',
+          example: 1,
+        },
+        note: {
+          type: 'string',
+          description: '笔试说明 (仅状态为WRITTEN_TEST时有效)',
+          example: '请在24小时内完成笔试',
+        },
       },
       required: ['status'],
     },
@@ -233,13 +259,15 @@ export class InterviewerController {
     @Param('id') id: string,
     @Body('status') status: string,
     @Body('feedback') feedback: string,
+    @Body('examId') examId: number,
+    @Body('note') note: string,
     @Req() req,
   ) {
     const userId = req.user.userId;
     const applicationId = parseInt(id);
 
     this.logger.log(
-      `用户${userId}更新职位申请ID:${applicationId}状态为:${status}`,
+      `用户${userId}更新职位申请ID:${applicationId}状态为:${status}${examId ? ', 试卷ID:' + examId : ''}`,
     );
 
     try {
@@ -247,6 +275,9 @@ export class InterviewerController {
         applicationId,
         status,
         userId,
+        feedback,
+        examId,
+        note,
       );
       return success(application, '更新申请状态成功');
     } catch (error) {

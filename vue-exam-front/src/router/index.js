@@ -98,7 +98,7 @@ const routes = [
       {
         path: 'interviewer/jobs',
         name: 'InterviewerJobs',
-        component: () => import('../views/Interviewer/Jobs.vue')
+        component: () => import('../views/Interviewer/Jobs/index.vue')
       },
       // 求职者相关路由
       {
