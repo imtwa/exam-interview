@@ -6,7 +6,7 @@
         <el-breadcrumb separator="/">
           <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
           <el-breadcrumb-item :to="{ path: '/profile' }">个人中心</el-breadcrumb-item>
-          <el-breadcrumb-item>职位管理</el-breadcrumb-item>
+          <el-breadcrumb-item>岗位管理</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
 
@@ -391,11 +391,7 @@ const fetchJobs = async () => {
     const response = await getJobsByInterviewer(queryParams)
 
     // 检查响应结构，兼容后端直接返回数据或嵌套在data字段中的情况
-    if (response.data && response.data.list) {
-      // 数据嵌套在data字段中的情况
-      jobs.value = response.data.list
-      total.value = response.data.total
-    } else if (response.list) {
+    if (response.list) {
       // 数据直接在response中的情况
       jobs.value = response.list
       total.value = response.total

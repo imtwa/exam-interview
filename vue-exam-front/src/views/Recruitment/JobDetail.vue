@@ -249,6 +249,17 @@ import {
 } from '@element-plus/icons-vue'
 import { getJob, getJobList, applyForJob } from '@/api/job'
 import { useUserStore } from '@/stores/user'
+import { ElLoading } from 'element-plus'
+import { 
+  formatSalary, 
+  formatDate, 
+  formatExperience, 
+  formatEducation, 
+  formatFundingStage, 
+  formatCompanySize,
+  getStatusType,
+  getStatusLabel
+} from '@/utils/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -320,116 +331,6 @@ const formattedRequirements = computed(() => {
   if (!job.value.requirements) return ''
   return job.value.requirements.replace(/\n/g, '<br>')
 })
-
-// 格式化薪资
-const formatSalary = (min, max) => {
-  if (!min && !max) return '薪资面议'
-  if (min && !max) return `${(min / 1000).toFixed(0)}K以上`
-  if (!min && max) return `${(max / 1000).toFixed(0)}K以下`
-  return `${(min / 1000).toFixed(0)}K-${(max / 1000).toFixed(0)}K`
-}
-
-// 格式化日期
-const formatDate = dateStr => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
-
-// 格式化工作经验
-const formatExperience = exp => {
-  if (!exp) return '经验不限'
-
-  const experienceMap = {
-    STUDENT: '在校生',
-    FRESH_GRADUATE: '应届生',
-    LESS_THAN_ONE: '1年以内',
-    ONE_TO_THREE: '1-3年',
-    THREE_TO_FIVE: '3-5年',
-    FIVE_TO_TEN: '5-10年',
-    MORE_THAN_TEN: '10年以上'
-  }
-
-  return experienceMap[exp] || '经验不限'
-}
-
-// 格式化学历要求
-const formatEducation = edu => {
-  if (!edu) return '学历不限'
-
-  const educationMap = {
-    HIGH_SCHOOL: '高中学历',
-    ASSOCIATE: '大专学历',
-    BACHELOR: '本科学历',
-    MASTER: '硕士学历',
-    DOCTORATE: '博士学历',
-    OTHER: '其他学历'
-  }
-
-  return educationMap[edu] || '学历不限'
-}
-
-// 格式化融资阶段
-const formatFundingStage = stage => {
-  if (!stage) return '未知'
-
-  const stageMap = {
-    UNFUNDED: '未融资',
-    ANGEL: '天使轮',
-    SERIES_A: 'A轮',
-    SERIES_B: 'B轮',
-    SERIES_C: 'C轮',
-    SERIES_D: 'D轮及以上',
-    IPO: '已上市',
-    SELF_FUNDED: '不需要融资'
-  }
-
-  return stageMap[stage] || '未知'
-}
-
-// 格式化公司规模
-const formatCompanySize = size => {
-  if (!size) return '未知'
-
-  const sizeMap = {
-    TINY: '0-20人',
-    SMALL: '20-99人',
-    MEDIUM: '100-499人',
-    LARGE: '500-999人',
-    XLARGE: '1000-9999人',
-    XXLARGE: '10000+人'
-  }
-
-  return sizeMap[size] || '未知'
-}
-
-// 获取状态类型
-const getStatusType = status => {
-  switch (status) {
-    case 'ACTIVE':
-      return 'success'
-    case 'FILLED':
-      return 'warning'
-    case 'EXPIRED':
-      return 'info'
-    default:
-      return ''
-  }
-}
-
-// 获取状态文本
-const getStatusLabel = status => {
-  switch (status) {
-    case 'ACTIVE':
-      return '招聘中'
-    case 'FILLED':
-      return '已招满'
-    case 'EXPIRED':
-      return '已过期'
-    default:
-      return '未知'
-  }
-}
 
 // 返回职位列表
 const goBack = () => {

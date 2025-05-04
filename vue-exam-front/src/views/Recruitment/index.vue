@@ -234,6 +234,12 @@ import { ElMessage, ElLoading, ElMessageBox } from 'element-plus'
 import { ArrowDown, ArrowUp, Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { 
+  formatSalary, 
+  formatDate, 
+  formatExperience, 
+  formatEducation
+} from '@/utils/utils'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -544,51 +550,6 @@ const fetchIndustryCategories = async () => {
   } catch (error) {
     console.error('获取行业分类失败:', error)
   }
-}
-
-// 格式化薪资显示
-const formatSalary = (min, max) => {
-  if (!min && !max) return '薪资面议'
-  if (min && !max) return `${(min / 1000).toFixed(0)}K以上`
-  if (!min && max) return `${(max / 1000).toFixed(0)}K以下`
-  return `${(min / 1000).toFixed(0)}K-${(max / 1000).toFixed(0)}K`
-}
-
-// 格式化工作经验显示
-const formatExperience = exp => {
-  if (!exp) return '经验不限'
-
-  const experienceMap = {
-    STUDENT: '在校生',
-    FRESH_GRADUATE: '应届生',
-    LESS_THAN_ONE: '1年以内',
-    ONE_TO_THREE: '1-3年',
-    THREE_TO_FIVE: '3-5年',
-    FIVE_TO_TEN: '5-10年',
-    MORE_THAN_TEN: '10年以上'
-  }
-
-  return experienceMap[exp] || '经验不限'
-}
-
-// 格式化学历要求显示
-const formatEducation = edu => {
-  const educationMap = {
-    HIGH_SCHOOL: '高中学历',
-    ASSOCIATE: '大专学历',
-    BACHELOR: '本科学历',
-    MASTER: '硕士学历',
-    DOCTORATE: '博士学历',
-    OTHER: '其他学历'
-  }
-  return educationMap[edu] || '学历不限'
-}
-
-// 格式化日期显示
-const formatDate = dateStr => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 // 详情页和一键投递按钮处理

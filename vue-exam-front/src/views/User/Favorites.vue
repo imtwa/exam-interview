@@ -98,7 +98,7 @@
                 </span>
                 <span class="meta-item">
                   <el-icon><Calendar /></el-icon>
-                  收藏于: {{ formatDate(exam.favoriteCreatedAt) }}
+                  收藏于: {{ formatDateTime(exam.favoriteCreatedAt) }}
                 </span>
               </div>
               <div class="exam-tags">
@@ -156,6 +156,7 @@ import { getUserFavorites, toggleFavorite } from '@/api/exam'
 import { getCategoryList } from '@/api/category'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Star, Calendar } from '@element-plus/icons-vue'
+import { formatDateTime } from '@/utils/utils'
 
 const router = useRouter()
 
@@ -298,26 +299,6 @@ const cancelFavorite = async examId => {
       console.error('取消收藏失败:', error)
       ElMessage.error('操作失败，请稍后再试')
     }
-  }
-}
-
-// 格式化日期
-const formatDate = dateString => {
-  if (!dateString) return ''
-
-  try {
-    const date = new Date(dateString)
-
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-
-    return `${year}-${month}-${day} ${hours}:${minutes}`
-  } catch (error) {
-    console.error('日期格式化错误:', error)
-    return dateString
   }
 }
 
