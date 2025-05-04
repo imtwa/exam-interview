@@ -791,7 +791,7 @@ onMounted(() => {
       align-items: center;
       cursor: pointer;
       width: fit-content;
-      
+
       &:hover {
         color: #409eff;
       }

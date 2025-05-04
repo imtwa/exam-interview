@@ -59,11 +59,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, defineProps } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFavorites, toggleFavorite } from '@/api/exam'
+import { getUserFavorites, toggleFavorite } from '@/api/exam'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Star, ArrowRight } from '@element-plus/icons-vue'
+
+const props = defineProps({
+  userId: {
+    type: Number,
+    default: undefined
+  }
+})
 
 const router = useRouter()
 const loading = ref(false)
@@ -73,12 +80,19 @@ const favorites = ref([])
 const fetchFavorites = async () => {
   loading.value = true
   try {
-    const response = await getFavorites({
+    const params = {
       page: 1,
       pageSize: 6, // 只显示前6个收藏
-      sortField: 'createdAt',
+      sortField: 'favoriteCreatedAt', // 按收藏时间排序
       sortOrder: 'desc'
-    })
+    }
+
+    // 如果提供了用户ID，添加到查询参数中，确保是数字类型
+    if (props.userId) {
+      params.userId = Number(props.userId)
+    }
+
+    const response = await getUserFavorites(params)
     favorites.value = response.items || []
   } catch (error) {
     console.error('获取收藏列表失败:', error)

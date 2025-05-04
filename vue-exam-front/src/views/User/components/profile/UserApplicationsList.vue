@@ -3,7 +3,7 @@
     <!-- 标题及功能按钮 -->
     <div class="section-header">
       <h2 class="section-title">应聘记录</h2>
-      <router-link to="/applications" class="view-all-link">
+      <router-link v-if="isCurrentUser" to="/applications" class="view-all-link">
         查看全部
         <el-icon><ArrowRight /></el-icon>
       </router-link>
@@ -17,19 +17,21 @@
     <!-- 应聘记录列表 -->
     <div v-else class="applications-list">
       <div v-if="applications.length === 0" class="empty-data">
-        <el-empty description="暂无应聘记录" />
+        <el-empty :description="isCurrentUser ? '暂无应聘记录' : '该用户暂无应聘记录'" />
       </div>
       <div v-else>
         <el-table :data="applications" style="width: 100%">
           <el-table-column prop="jobTitle" label="应聘职位" min-width="160">
             <template #default="{ row }">
-              <span class="job-title" @click="viewJobDetail(row.jobId)">{{ row.jobTitle }}</span>
+              <span class="job-title" @click="viewJobDetail(row.jobId || row.job?.id)">
+                {{ row.jobTitle || row.job?.title }}
+              </span>
             </template>
           </el-table-column>
           <el-table-column prop="companyName" label="公司" min-width="150">
             <template #default="{ row }">
               <div class="company-info">
-                <span>{{ row.companyName }}</span>
+                <span>{{ row.companyName || row.job?.company?.name }}</span>
               </div>
             </template>
           </el-table-column>
@@ -40,7 +42,7 @@
           </el-table-column>
           <el-table-column prop="applyDate" label="申请时间" width="150">
             <template #default="{ row }">
-              {{ formatDate(row.applyDate) }}
+              {{ formatDate(row.applyDate || row.createdAt) }}
             </template>
           </el-table-column>
           <el-table-column fixed="right" label="操作" width="120">
@@ -51,68 +53,101 @@
             </template>
           </el-table-column>
         </el-table>
+
+        <!-- 分页 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[5, 10, 20]"
+            layout="total, sizes, prev, pager, next"
+            :total="total"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowRight } from '@element-plus/icons-vue'
+import { getUserApplications } from '@/api/job'
+import { useUserStore } from '@/stores/user'
+
+const props = defineProps({
+  userId: {
+    type: [Number, String],
+    required: true
+  }
+})
 
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const applications = ref([])
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(5)
+
+// 判断是否是当前登录用户
+const isCurrentUser = computed(() => {
+  return (
+    userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.id === parseInt(props.userId)
+  )
+})
 
 // 获取应聘记录列表
 const fetchApplications = async () => {
   loading.value = true
   try {
-    // 这里需要实现从API获取应聘记录的功能
-    // const response = await getApplications({ page: 1, pageSize: 5 })
-    // applications.value = response.items || []
+    const params = {
+      jobseekerId: props.userId,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    }
 
-    // 模拟数据，实际项目中应替换为API调用
-    setTimeout(() => {
-      applications.value = [
-        {
-          id: 1,
-          jobId: 101,
-          jobTitle: '前端开发工程师',
-          companyName: '腾讯科技有限公司',
-          status: 'pending',
-          applyDate: '2023-08-15T08:30:00'
-        },
-        {
-          id: 2,
-          jobId: 102,
-          jobTitle: '后端开发工程师',
-          companyName: '字节跳动有限公司',
-          status: 'interview',
-          applyDate: '2023-08-10T14:20:00'
-        },
-        {
-          id: 3,
-          jobId: 103,
-          jobTitle: '全栈开发工程师',
-          companyName: '百度科技有限公司',
-          status: 'rejected',
-          applyDate: '2023-08-05T09:15:00'
-        }
-      ]
-      loading.value = false
-    }, 500)
+    const response = await getUserApplications(params)
+
+    // 处理响应数据
+    if (response.data && response.data.list) {
+      applications.value = response.data.list
+      total.value = response.data.total
+    } else if (response.list) {
+      applications.value = response.list
+      total.value = response.total
+    } else {
+      applications.value = []
+      total.value = 0
+    }
   } catch (error) {
     console.error('获取应聘记录失败:', error)
     ElMessage.error('获取应聘记录失败，请稍后再试')
+    applications.value = []
+    total.value = 0
+  } finally {
     loading.value = false
   }
 }
 
+// 处理分页变化
+const handleSizeChange = size => {
+  pageSize.value = size
+  fetchApplications()
+}
+
+const handleCurrentChange = page => {
+  currentPage.value = page
+  fetchApplications()
+}
+
 // 查看职位详情
 const viewJobDetail = jobId => {
+  if (!jobId) return
   router.push(`/job/${jobId}`)
 }
 
@@ -124,12 +159,12 @@ const viewApplicationDetail = applicationId => {
 // 获取状态标签
 const getStatusLabel = status => {
   const statusMap = {
-    pending: '待处理',
-    screening: '筛选中',
-    interview: '面试中',
-    offer: '已录用',
-    rejected: '已拒绝',
-    withdrawn: '已撤回'
+    PENDING: '待处理',
+    REVIEWING: '审核中',
+    INTERVIEW: '面试中',
+    OFFER: '已录用',
+    REJECTED: '未通过',
+    WITHDRAWN: '已撤回'
   }
   return statusMap[status] || '未知状态'
 }
@@ -137,12 +172,12 @@ const getStatusLabel = status => {
 // 获取状态类型（用于标签颜色）
 const getStatusType = status => {
   const typeMap = {
-    pending: 'info',
-    screening: 'warning',
-    interview: 'primary',
-    offer: 'success',
-    rejected: 'danger',
-    withdrawn: 'info'
+    PENDING: 'info',
+    REVIEWING: 'warning',
+    INTERVIEW: 'primary',
+    OFFER: 'success',
+    REJECTED: 'danger',
+    WITHDRAWN: 'info'
   }
   return typeMap[status] || 'info'
 }
@@ -225,13 +260,11 @@ onMounted(() => {
 .company-info {
   display: flex;
   align-items: center;
+}
 
-  .company-logo {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    margin-right: 8px;
-    object-fit: contain;
-  }
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

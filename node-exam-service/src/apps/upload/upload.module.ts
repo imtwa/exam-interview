@@ -4,7 +4,7 @@ import { UploadService } from './upload.service';
 import { MulterModule } from '@nestjs/platform-express';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaClient } from '../../../prisma/generated/client';
 import { LoggerModule } from '../../common/logger/logger.module';
@@ -24,12 +24,12 @@ import * as fs from 'fs';
             destination: (req, file, cb) => {
               // 确保目录存在
               const dir = `${uploadsPath}/resumes`;
-              
+
               // 创建目录（如果不存在）
               if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
               }
-              
+
               cb(null, dir);
             },
             filename: (req, file, cb) => {
@@ -38,7 +38,7 @@ import * as fs from 'fs';
               // 处理中文文件名的扩展名
               const originalName = Buffer.from(
                 file.originalname,
-                'latin1'
+                'latin1',
               ).toString('utf8');
               const fileExt = extname(originalName);
               const filename = `${uniqueSuffix}${fileExt}`;

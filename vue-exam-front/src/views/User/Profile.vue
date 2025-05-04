@@ -5,16 +5,27 @@
       <div class="breadcrumb-container">
         <el-breadcrumb separator="/">
           <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item>个人中心</el-breadcrumb-item>
+          <el-breadcrumb-item v-if="isCurrentUser" :to="{ path: '/profile' }"
+            >个人中心</el-breadcrumb-item
+          >
+          <el-breadcrumb-item v-else>
+            <span>用户信息</span>
+          </el-breadcrumb-item>
+          <el-breadcrumb-item v-if="!isCurrentUser">{{
+            userInfo.username || '用户'
+          }}</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
 
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-container">
+        <el-skeleton animated :rows="6" />
+      </div>
+
       <!-- 个人信息卡片 -->
-      <div class="user-info-card">
+      <div v-else class="user-info-card">
         <div class="user-avatar">
-          <el-avatar :size="80" :src="userStore.avatarUrl">
-            {{ userInfo.username?.charAt(0).toUpperCase() }}
-          </el-avatar>
+          <el-avatar :size="80" :src="avatarUrl" />
         </div>
         <div class="user-details">
           <h1 class="user-name">{{ userInfo.username || '未设置用户名' }}</h1>
@@ -33,6 +44,15 @@
               注册于 {{ formatDate(userInfo.createdAt) }}
             </span>
           </div>
+
+          <!-- 面试官专属信息 -->
+          <div v-if="isInterviewer && companyInfo" class="interviewer-info">
+            <span class="company-info">
+              <el-icon><OfficeBuilding /></el-icon>
+              {{ companyInfo.name }} - {{ userInfo.position || '未设置职位' }}
+            </span>
+          </div>
+
           <div class="user-bio" v-if="userInfo.bio">
             {{ userInfo.bio }}
           </div>
@@ -44,108 +64,159 @@
 
       <!-- 用户组件区域 -->
       <div class="profile-components">
-        <!-- 所有用户都显示的收藏列表 -->
-        <UserFavoritesList :user-id="userId" />
-
         <!-- 求职者专属组件 -->
         <UserApplicationsList v-if="isJobSeeker" :user-id="userId" />
 
         <!-- 面试官专属组件 -->
         <template v-if="isInterviewer">
           <InterviewerJobsList :user-id="userId" />
-          <InterviewerFavoritesList :user-id="userId" />
         </template>
+
+        <!-- 所有用户都可以有的收藏列表 -->
+        <UserFavoritesList :user-id="userId" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Message, Calendar } from '@element-plus/icons-vue'
+import { Message, Calendar, OfficeBuilding } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { getUserProfile } from '@/api/user' // 假设你有一个API函数来获取用户资料
+import { getUserProfile, getUserProfileById, getUser } from '@/api/user'
+import { getInterviewerProfile } from '@/api/interviewer'
+import { getCompany } from '@/api/company'
+import { generateAvatar } from '@/utils/utils'
 
 // 动态导入组件
 import UserFavoritesList from './components/profile/UserFavoritesList.vue'
 import UserApplicationsList from './components/profile/UserApplicationsList.vue'
 import InterviewerJobsList from './components/profile/InterviewerJobsList.vue'
-import InterviewerFavoritesList from './components/profile/InterviewerFavoritesList.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const userInfo = ref({})
+const companyInfo = ref(null)
+const loading = ref(true)
 
 // 获取URL中的用户ID参数，如果没有则使用当前登录用户的ID
 const userId = computed(() => {
-  const routeUserId = route.params.id ? parseInt(route.params.id) : null
-  return routeUserId || (userStore.userInfo ? userStore.userInfo.id : null)
+  return route.params.id || userStore.userInfo?.id
+})
+
+// 监听userId变化和路由变化，重新加载数据
+watch([() => route.params.id, () => route.name], () => {
+  if (
+    ['UserProfile', 'ProfileWithId'].includes(route.name) ||
+    (route.name === 'Profile' && route.params.id)
+  ) {
+    fetchUserInfo()
+  }
 })
 
 // 判断是否是当前登录用户的资料页
 const isCurrentUser = computed(() => {
-  return userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.id === userId.value
-})
+  // 如果用户未登录，肯定不是查看自己的资料
+  if (!userStore.isLoggedIn || !userStore.userInfo) return false
 
-// 用于生成头像URL的计算属性
-const userAvatarUrl = computed(() => {
-  // 如果是当前用户，使用store中的头像URL
-  if (isCurrentUser.value) {
-    return userStore.avatarUrl
+  // 如果URL中有ID参数，检查是否与当前用户ID匹配
+  if (route.params.id) {
+    return userStore.userInfo.id === parseInt(route.params.id)
   }
-  // 否则使用用户信息中的头像或基于用户名生成
-  return userInfo.value.avatar || generateAvatarFromUsername(userInfo.value.username || '')
-})
 
-// 生成基于用户名的头像URL
-function generateAvatarFromUsername(username) {
-  if (!username) return ''
-  // 这里可以实现一个简单的方法来生成基于用户名的头像URL
-  // 例如，使用第三方服务或本地生成
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`
-}
+  // 如果URL中没有ID参数，且在个人资料页面，则是查看自己的资料
+  return route.name === 'Profile'
+})
 
 // 计算属性：判断用户角色
 const isJobSeeker = computed(() => userInfo.value.role === 'JOB_SEEKER')
-
 const isInterviewer = computed(() => userInfo.value.role === 'INTERVIEWER')
+
+// 用于生成头像URL的计算属性
+const avatarUrl = computed(() => {
+  // 基于用户名生成
+  return generateAvatar(userInfo.value.username || '')
+})
 
 // 获取用户信息
 const fetchUserInfo = async () => {
+  loading.value = true
   try {
-    if (!userId.value) {
-      ElMessage.error('未指定用户ID')
-      router.push('/')
+    let targetUserId = null
+
+    // 确定要获取的用户ID
+    if (route.params.id) {
+      // 如果URL中有ID参数，使用该ID
+      targetUserId = parseInt(route.params.id)
+    } else if (userStore.isLoggedIn && userStore.userInfo?.id) {
+      // 如果没有ID参数但用户已登录，使用当前用户ID
+      targetUserId = userStore.userInfo.id
+    } else {
+      // 如果既没有ID参数，用户也未登录，重定向到登录页面
+      ElMessage.error('用户ID无效')
+      router.push('/login')
       return
     }
 
-    // 如果是当前用户，使用store中的信息
-    if (isCurrentUser.value && userStore.userInfo) {
-      userInfo.value = userStore.userInfo
-      return
+    let userData = null
+
+    // 判断是否是当前登录用户
+    const isViewingSelf = userStore.isLoggedIn && userStore.userInfo?.id === targetUserId
+
+    if (isViewingSelf) {
+      // 查看自己的资料
+      if (userStore.userInfo) {
+        userData = userStore.userInfo
+      } else {
+        const response = await getUserProfile()
+        userData = response.data || response
+      }
+    } else {
+      // 查看他人资料
+      try {
+        const response = await getUserProfileById(targetUserId)
+        userData = response.data || response
+      } catch (error) {
+        console.error('获取用户资料失败:', error)
+        ElMessage.error('获取用户资料失败，该用户可能不存在')
+        router.push('/')
+        return
+      }
     }
 
-    // 如果是查看其他用户，或当前用户未加载信息，则从API获取
-    const response = await getUserProfile(userId.value)
-    if (response && response.data) {
-      userInfo.value = response.data
-    } else if (response) {
-      userInfo.value = response
+    // 设置用户信息
+    if (userData) {
+      userInfo.value = userData
+
+      // 如果是面试官，获取公司信息
+      if (userData.role === 'INTERVIEWER' && userData.companyId) {
+        await fetchCompanyInfo(userData.companyId)
+      }
     } else {
       ElMessage.warning('获取用户信息失败')
-      if (!isCurrentUser.value) {
+      if (!isViewingSelf) {
         router.push('/')
       }
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
     ElMessage.error('获取用户信息失败，请稍后再试')
-    if (!isCurrentUser.value) {
-      router.push('/')
-    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 获取面试官的公司信息
+const fetchCompanyInfo = async companyId => {
+  try {
+    const response = await getCompany(companyId)
+    companyInfo.value = response.data || response
+  } catch (error) {
+    console.error('获取公司信息失败:', error)
+    companyInfo.value = null
   }
 }
 
@@ -218,6 +289,14 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.loading-container {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  padding: 30px;
+  margin-bottom: 20px;
+}
+
 .user-info-card {
   background-color: #fff;
   border-radius: 8px;
@@ -257,10 +336,24 @@ onMounted(() => {
       }
     }
 
+    .interviewer-info {
+      margin-bottom: 12px;
+
+      .company-info {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #555;
+        font-size: 14px;
+        font-weight: 500;
+      }
+    }
+
     .user-bio {
       color: #666;
       font-size: 14px;
       line-height: 1.6;
+      margin-top: 12px;
     }
   }
 
@@ -288,7 +381,8 @@ onMounted(() => {
       text-align: center;
       margin-bottom: 16px;
 
-      .user-meta {
+      .user-meta,
+      .interviewer-info {
         justify-content: center;
       }
     }

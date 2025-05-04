@@ -150,7 +150,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPrivateExams, createPrivateExam } from '@/api/exam'
-import { getFavorites } from '@/api/exam'
+import { getUserFavorites } from '@/api/exam'
 import { getAllCategories } from '@/api/category'
 import { formatDate } from '@/utils/formatDate'
 
@@ -238,7 +238,7 @@ export default {
           page: 1,
           pageSize: 100 // 获取较多收藏，以便用户选择
         }
-        const res = await getFavorites(params)
+        const res = await getUserFavorites(params)
         favorites.value = res.data.items
       } catch (error) {
         console.error('获取收藏列表失败:', error)

@@ -238,16 +238,14 @@
                     <div class="el-upload__tip">请上传PDF格式的简历文件，大小不超过3MB</div>
                   </template>
                 </el-upload>
-                
+
                 <!-- 显示已上传的简历链接 -->
                 <div v-if="resumeUrl" class="resume-preview">
                   <div class="resume-info">
                     <i class="el-icon-document-checked"></i>
                     <span class="resume-name">已上传简历: {{ resumeFileName }}</span>
                   </div>
-                  <el-button type="text" size="small" @click="previewResume">
-                    预览简历
-                  </el-button>
+                  <el-button type="text" size="small" @click="previewResume"> 预览简历 </el-button>
                 </div>
               </el-form-item>
 
@@ -400,7 +398,12 @@
                         <span class="label">简历:</span>
                         <span class="value highlight">
                           {{ resumeFileName }}
-                          <el-button type="text" size="small" @click="previewResume" style="margin-left: 10px;">
+                          <el-button
+                            type="text"
+                            size="small"
+                            @click="previewResume"
+                            style="margin-left: 10px"
+                          >
                             预览
                           </el-button>
                         </span>
@@ -688,10 +691,12 @@ const submitProfile = async () => {
       jobIntention: jobIntentionForm,
 
       // 添加简历信息（如果有上传成功）
-      ...(resumeData ? { 
-        resumeUrl: resumeData.path,
-        resumeFileName: resumeData.fileName
-      } : {})
+      ...(resumeData
+        ? {
+            resumeUrl: resumeData.path,
+            resumeFileName: resumeData.fileName
+          }
+        : {})
     }
 
     // 检查教育信息是否已填写
@@ -1009,12 +1014,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   i {
     color: #409eff;
     font-size: 18px;
   }
-  
+
   .resume-name {
     color: #409eff;
     font-weight: 500;

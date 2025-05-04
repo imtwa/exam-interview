@@ -8,4 +8,4 @@ export class ApplyJobDto {
     example: '{}',
   })
   dummy?: void;
-} 
+}

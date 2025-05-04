@@ -384,9 +384,8 @@ const experienceOptions = [
 ]
 
 // 获取职位列表
-const fetchJobs = async (page = queryParams.page) => {
+const fetchJobs = async () => {
   loading.value = true
-  queryParams.page = page
 
   try {
     const response = await getJobsByInterviewer(queryParams)

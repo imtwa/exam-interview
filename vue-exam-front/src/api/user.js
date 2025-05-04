@@ -17,6 +17,14 @@ export function getUserProfile() {
   })
 }
 
+// 根据用户ID获取用户信息
+export function getUserProfileById(userId) {
+  return request({
+    url: `/user/${userId}`,
+    method: 'get'
+  })
+}
+
 // 根据ID获取用户信息
 export function getUser(id) {
   return request({

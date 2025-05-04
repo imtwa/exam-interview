@@ -49,29 +49,29 @@ export class UploadController {
 
     // 从环境变量获取上传路径
     const uploadsPath = this.configService.get('UPLOADS_PATH') || 'uploads';
-    
+
     // 构建正确的相对路径
     const relativePath = `${uploadsPath}/resumes/${file.filename}`;
-    
+
     // 解码文件名，确保中文文件名正确显示
-    const decodedFileName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    const decodedFileName = Buffer.from(file.originalname, 'latin1').toString(
+      'utf8',
+    );
 
     // 创建简历数据对象
     const resumeData = {
       path: relativePath,
-      originalName: decodedFileName
+      originalName: decodedFileName,
     };
 
     // 更新求职者简历URL和原始文件名
-    await this.uploadService.updateJobSeekerResume(
-      req.user.userId,
-      resumeData
-    );
+    await this.uploadService.updateJobSeekerResume(req.user.userId, resumeData);
 
     // 获取服务器基础URL
-    const baseUrl = this.configService.get('APP_URL') || 
-                    `http://localhost:${this.configService.get('PORT') || 3000}`;
-    
+    const baseUrl =
+      this.configService.get('APP_URL') ||
+      `http://localhost:${this.configService.get('PORT') || 3000}`;
+
     // 构建文件完整URL
     const fileUrl = `${baseUrl}/${relativePath}`;
 

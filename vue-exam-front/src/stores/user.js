@@ -1,12 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import {
-  login,
-  logout as authLogout,
-  getProfile,
-  checkProfileStatus
-  
-} from '@/api/auth'
+import { login, logout as authLogout, getProfile, checkProfileStatus } from '@/api/auth'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
 import { generateAvatar } from '@/utils/utils'

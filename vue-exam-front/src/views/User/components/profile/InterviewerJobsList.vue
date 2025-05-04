@@ -2,8 +2,8 @@
   <div class="interviewer-jobs-list">
     <!-- 标题及功能按钮 -->
     <div class="section-header">
-      <h2 class="section-title">面试官岗位</h2>
-      <router-link to="/interviewer/jobs" class="view-all-link">
+      <h2 class="section-title">发布的职位</h2>
+      <router-link v-if="isCurrentUser" to="/job-management" class="view-all-link">
         查看全部
         <el-icon><ArrowRight /></el-icon>
       </router-link>
@@ -17,11 +17,13 @@
     <!-- 面试官岗位列表 -->
     <div v-else class="jobs-list">
       <div v-if="jobs.length === 0" class="empty-data">
-        <el-empty description="暂无面试官岗位">
+        <el-empty description="暂无发布的职位">
           <template #description>
-            <p>您还没有担任面试官的岗位</p>
+            <p>{{ isCurrentUser ? '您还没有发布任何职位' : '该用户暂未发布任何职位' }}</p>
           </template>
-          <el-button type="primary" @click="navigateToJobList">查看可申请岗位</el-button>
+          <el-button v-if="isCurrentUser" type="primary" @click="navigateToJobsManagement"
+            >发布新职位</el-button
+          >
         </el-empty>
       </div>
       <div v-else>
@@ -32,96 +34,130 @@
           </div>
 
           <div class="job-company">
-            <span class="company-name">{{ job.companyName }}</span>
-            <span class="department">{{ job.department }}</span>
+            <span class="company-name">{{ job.company?.name || '未知公司' }}</span>
+            <span class="department">{{ job.subCategory?.name || '未知部门' }}</span>
           </div>
 
           <div class="job-info">
             <span class="info-item">
-              <el-icon><User /></el-icon>
-              待面试: {{ job.pendingInterviews || 0 }}人
+              <el-icon><Location /></el-icon>
+              {{ job.city || '地区不限' }}
             </span>
             <span class="info-item">
-              <el-icon><Calendar /></el-icon>
-              面试场次: {{ job.interviewSessions || 0 }}场
+              <el-icon><Money /></el-icon>
+              {{ formatSalary(job.salaryMin, job.salaryMax) }}
             </span>
           </div>
 
           <div class="job-actions">
-            <el-button type="primary" size="small" @click="viewInterviewList(job.id)">
-              查看面试列表
+            <el-button type="primary" size="small" @click="viewJobDetail(job.id)">
+              查看详情
             </el-button>
-            <el-button type="info" size="small" @click="viewJobDetail(job.id)">
-              岗位详情
+            <el-button
+              v-if="isCurrentUser"
+              type="info"
+              size="small"
+              @click="viewApplications(job.id)"
+            >
+              查看申请
             </el-button>
           </div>
         </el-card>
+      </div>
+
+      <!-- 分页 -->
+      <div v-if="jobs.length > 0" class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[5, 10, 20]"
+          layout="total, sizes, prev, pager, next"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Calendar, ArrowRight } from '@element-plus/icons-vue'
+import { ArrowRight, Location, Money } from '@element-plus/icons-vue'
+import { getJobsByInterviewer } from '@/api/job'
+import { useUserStore } from '@/stores/user'
 
+const props = defineProps({
+  userId: {
+    type: [Number, String],
+    required: true
+  }
+})
+
+const userStore = useUserStore()
 const router = useRouter()
 const loading = ref(false)
 const jobs = ref([])
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(5)
+
+// 判断是否是当前登录用户
+const isCurrentUser = computed(() => {
+  return (
+    userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.id === parseInt(props.userId)
+  )
+})
 
 // 获取面试官岗位列表
 const fetchInterviewerJobs = async () => {
   loading.value = true
   try {
-    // 这里需要实现从API获取面试官岗位的功能
-    // const response = await getInterviewerJobs()
-    // jobs.value = response.items || []
+    const params = {
+      interviewerId: props.userId,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    }
 
-    // 模拟数据，实际项目中应替换为API调用
-    setTimeout(() => {
-      jobs.value = [
-        {
-          id: 1,
-          title: '前端开发工程师',
-          companyName: '腾讯科技有限公司',
-          department: '微信事业部',
-          status: 'active',
-          pendingInterviews: 5,
-          interviewSessions: 8
-        },
-        {
-          id: 2,
-          title: '高级前端开发工程师',
-          companyName: '腾讯科技有限公司',
-          department: '腾讯云',
-          status: 'active',
-          pendingInterviews: 3,
-          interviewSessions: 6
-        },
-        {
-          id: 3,
-          title: '前端架构师',
-          companyName: '阿里巴巴集团',
-          department: '淘宝技术部',
-          status: 'inactive',
-          pendingInterviews: 0,
-          interviewSessions: 12
-        }
-      ]
-      loading.value = false
-    }, 500)
+    const response = await getJobsByInterviewer(params)
+
+    // 处理响应数据
+    if (response.data && response.data.list) {
+      jobs.value = response.data.list
+      total.value = response.data.total
+    } else if (response.list) {
+      jobs.value = response.list
+      total.value = response.total
+    } else {
+      jobs.value = []
+      total.value = 0
+    }
   } catch (error) {
     console.error('获取面试官岗位失败:', error)
     ElMessage.error('获取面试官岗位失败，请稍后再试')
+    jobs.value = []
+    total.value = 0
+  } finally {
     loading.value = false
   }
 }
 
+// 处理分页变化
+const handleSizeChange = size => {
+  pageSize.value = size
+  fetchInterviewerJobs()
+}
+
+const handleCurrentChange = page => {
+  currentPage.value = page
+  fetchInterviewerJobs()
+}
+
 // 查看面试列表
-const viewInterviewList = jobId => {
-  router.push(`/interviewer/job/${jobId}/interviews`)
+const viewApplications = jobId => {
+  router.push(`/candidate-management?jobId=${jobId}`)
 }
 
 // 查看岗位详情
@@ -129,17 +165,17 @@ const viewJobDetail = jobId => {
   router.push(`/job/${jobId}`)
 }
 
-// 导航到岗位列表
-const navigateToJobList = () => {
-  router.push('/recruitment')
+// 导航到职位管理页面
+const navigateToJobsManagement = () => {
+  router.push('/interviewer/jobs')
 }
 
 // 获取状态标签
 const getStatusLabel = status => {
   const statusMap = {
-    active: '进行中',
-    inactive: '已结束',
-    pending: '待开始'
+    ACTIVE: '招聘中',
+    FILLED: '已招满',
+    EXPIRED: '已过期'
   }
   return statusMap[status] || '未知状态'
 }
@@ -147,11 +183,19 @@ const getStatusLabel = status => {
 // 获取状态类型
 const getStatusType = status => {
   const typeMap = {
-    active: 'success',
-    inactive: 'info',
-    pending: 'warning'
+    ACTIVE: 'success',
+    FILLED: 'warning',
+    EXPIRED: 'info'
   }
   return typeMap[status] || 'info'
+}
+
+// 格式化薪资显示
+const formatSalary = (min, max) => {
+  if (min === 0 && max === 0) return '面议'
+  if (min === 0) return `${max}K以下`
+  if (max === 0) return `${min}K以上`
+  return `${min}-${max}K`
 }
 
 onMounted(() => {
@@ -248,19 +292,21 @@ onMounted(() => {
     .info-item {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       color: #666;
       font-size: 14px;
-
-      .el-icon {
-        color: #0352c9;
-      }
     }
   }
 
   .job-actions {
     display: flex;
-    gap: 12px;
+    gap: 8px;
   }
+}
+
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

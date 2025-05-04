@@ -60,15 +60,9 @@ export class JobController {
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   @Post(':jobId/apply')
-  async applyForJob(
-    @Param('jobId') jobId: string,
-    @Request() req,
-  ) {
+  async applyForJob(@Param('jobId') jobId: string, @Request() req) {
     this.logger.log(`申请职位: ${jobId}`);
-    const result = await this.jobService.applyForJob(
-      +jobId,
-      req.user.userId
-    );
+    const result = await this.jobService.applyForJob(+jobId, req.user.userId);
     return success(result, '申请成功');
   }
 

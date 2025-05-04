@@ -271,9 +271,9 @@ export class CompanyService {
     try {
       const [interviewers, total] = await Promise.all([
         this.prisma.interviewer.findMany({
-          where: { 
+          where: {
             companyId,
-            deletedAt: null 
+            deletedAt: null,
           },
           skip,
           take: pageSize,
@@ -285,15 +285,15 @@ export class CompanyService {
                 username: true,
                 email: true,
                 createdAt: true,
-              }
-            }
+              },
+            },
           },
         }),
-        this.prisma.interviewer.count({ 
-          where: { 
+        this.prisma.interviewer.count({
+          where: {
             companyId,
-            deletedAt: null 
-          } 
+            deletedAt: null,
+          },
         }),
       ]);
 
@@ -302,7 +302,10 @@ export class CompanyService {
       );
       return { interviewers, total };
     } catch (error) {
-      this.logger.error(`查询公司HR/面试官列表失败: ${error.message}`, error.stack);
+      this.logger.error(
+        `查询公司HR/面试官列表失败: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException('查询公司HR/面试官列表失败');
     }
   }

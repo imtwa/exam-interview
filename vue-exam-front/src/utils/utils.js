@@ -1,7 +1,7 @@
 /**
  * 生成头像
- * @param {*} username 
- * @returns 
+ * @param {*} username
+ * @returns
  */
 export const generateAvatar = username => {
   if (!username) return ''

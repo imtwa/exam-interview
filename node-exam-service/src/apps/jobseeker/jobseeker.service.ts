@@ -229,8 +229,12 @@ export class JobSeekerService {
               currentSalary: profileDto.jobIntention?.currentSalary,
               expectedSalary: profileDto.jobIntention?.salaryMax,
               // 添加简历URL和原始文件名 - 如果有则更新，没有则保持原值
-              ...(profileDto.resumeUrl ? { resumeUrl: profileDto.resumeUrl } : {}),
-              ...(profileDto.resumeFileName ? { resumeFileName: profileDto.resumeFileName } : {}),
+              ...(profileDto.resumeUrl
+                ? { resumeUrl: profileDto.resumeUrl }
+                : {}),
+              ...(profileDto.resumeFileName
+                ? { resumeFileName: profileDto.resumeFileName }
+                : {}),
             },
             include: {
               education: true,

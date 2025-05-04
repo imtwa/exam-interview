@@ -10,12 +10,6 @@
         </el-breadcrumb>
       </div>
 
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <h1 class="page-title">我的收藏</h1>
-        <p class="page-description">这里列出了您收藏的所有试卷，方便您随时查看和练习</p>
-      </div>
-
       <!-- 筛选区域 -->
       <div class="filter-container">
         <el-form :inline="true" class="filter-form">
@@ -58,8 +52,8 @@
       <div class="sort-container">
         <span class="sort-label">排序:</span>
         <el-radio-group v-model="queryParams.sortField" size="small" @change="fetchFavorites">
-          <el-radio-button label="createdAt">收藏时间</el-radio-button>
-          <el-radio-button label="favoriteCount">热门程度</el-radio-button>
+          <el-radio-button label="favoriteCreatedAt">收藏时间</el-radio-button>
+          <el-radio-button label="createdAt">创建时间</el-radio-button>
           <el-radio-button label="name">名称</el-radio-button>
         </el-radio-group>
 
@@ -158,7 +152,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFavorites, toggleFavorite } from '@/api/exam'
+import { getUserFavorites, toggleFavorite } from '@/api/exam'
 import { getCategoryList } from '@/api/category'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Star, Calendar } from '@element-plus/icons-vue'
@@ -177,7 +171,7 @@ const queryParams = reactive({
   categoryId: '',
   subCategoryId: '',
   keyword: '',
-  sortField: 'createdAt',
+  sortField: 'favoriteCreatedAt',
   sortOrder: 'desc'
 })
 
@@ -190,7 +184,24 @@ const total = ref(0)
 const fetchFavorites = async () => {
   loading.value = true
   try {
-    const response = await getFavorites(queryParams)
+    // 确保数值类型参数是数字
+    const params = {
+      ...queryParams,
+      page: Number(queryParams.page),
+      pageSize: Number(queryParams.pageSize)
+    }
+
+    // 将分类ID转为数字(如果存在)
+    if (params.categoryId) {
+      params.categoryId = Number(params.categoryId)
+    }
+
+    // 将子分类ID转为数字(如果存在)
+    if (params.subCategoryId) {
+      params.subCategoryId = Number(params.subCategoryId)
+    }
+
+    const response = await getUserFavorites(params)
     favorites.value = response.items || []
     total.value = response.total || 0
   } catch (error) {

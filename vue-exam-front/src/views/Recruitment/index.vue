@@ -130,7 +130,7 @@
       <div v-for="(item, index) in jobList" :key="index" class="job-item">
         <div class="job-header">
           <div class="job-title-section">
-        <div class="job-title">{{ item.title }}</div>
+            <div class="job-title">{{ item.title }}</div>
             <div class="job-company" @click.stop="viewCompanyDetail(item.companyId)">
               {{ item.company?.name }}
             </div>
@@ -149,12 +149,12 @@
           </div>
         </div>
         <div class="job-footer">
-        <div class="job-info">
+          <div class="job-info">
             <span>{{ item.views || 0 }}次浏览</span>
             <span>{{ formatDate(item.createdAt) }}</span>
-        </div>
-        <div class="job-actions">
-          <el-button type="primary" size="small" @click="viewDetail(item.id)">查看</el-button>
+          </div>
+          <div class="job-actions">
+            <el-button type="primary" size="small" @click="viewDetail(item.id)">查看</el-button>
             <el-button
               type="success"
               size="small"
@@ -213,10 +213,7 @@
                 v-for="(city, cityIndex) in province.children"
                 :key="'city-' + cityIndex"
                 :class="['city-item', { active: selectedCity === city.name.replace('市', '') }]"
-                @click="
-                  handleCityChange(city.name.replace('市', '')),
-                  showMoreCities = false
-                "
+                @click="(handleCityChange(city.name.replace('市', '')), (showMoreCities = false))"
               >
                 {{ city.name.replace('市', '') }}
               </div>
@@ -830,7 +827,7 @@ onMounted(async () => {
   }
 
   .job-title-section {
-  .job-title {
+    .job-title {
       font-size: 18px;
       color: #2c3e50;
       font-weight: 600;
@@ -853,7 +850,7 @@ onMounted(async () => {
         background-color: #0352c9;
         margin-right: 8px;
       }
-      
+
       &:hover {
         color: #0352c9;
         text-decoration: underline;

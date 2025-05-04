@@ -34,10 +34,10 @@ export function uploadExam(data) {
   return request({
     url: '/exam/upload',
     method: 'post',
-    data,
     headers: {
       'Content-Type': 'multipart/form-data'
-    }
+    },
+    data
   })
 }
 
@@ -68,38 +68,38 @@ export function getExamResult(examId) {
 
 /**
  * 检查试卷是否已收藏
- * @param {number} id 试卷ID
+ * @param {number} examId 试卷ID
  * @returns {Promise}
  */
-export function checkFavorite(id) {
+export function checkFavorite(examId) {
   return request({
-    url: `/exam/favorite/${id}`,
+    url: `/exam/favorite/${examId}`,
     method: 'get'
   })
 }
 
 /**
  * 切换试卷收藏状态
- * @param {number} id 试卷ID
+ * @param {number} examId 试卷ID
  * @returns {Promise}
  */
-export function toggleFavorite(id) {
+export function toggleFavorite(examId) {
   return request({
-    url: `/exam/favorite/${id}`,
+    url: `/exam/favorite/${examId}`,
     method: 'post'
   })
 }
 
 /**
  * 获取用户收藏的试卷列表
- * @param {Object} params 查询参数
+ * @param {Object} data 查询参数
  * @returns {Promise}
  */
-export function getFavorites(params) {
+export function getUserFavorites(data) {
   return request({
-    url: '/exam/favorites',
-    method: 'get',
-    params
+    url: '/exam/getUserFavorites',
+    method: 'post',
+    data
   })
 }
 
@@ -126,5 +126,94 @@ export function getPrivateExams(params) {
     url: '/exam/private',
     method: 'get',
     params
+  })
+}
+
+/**
+ * 创建分类
+ * @param {Object} data 分类数据
+ * @returns {Promise}
+ */
+export function createCategory(data) {
+  return request({
+    url: '/category',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 更新分类
+ * @param {number} id 分类ID
+ * @param {Object} data 分类数据
+ * @returns {Promise}
+ */
+export function updateCategory(id, data) {
+  return request({
+    url: `/category/${id}`,
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 删除分类
+ * @param {number} id 分类ID
+ * @returns {Promise}
+ */
+export function deleteCategory(id) {
+  return request({
+    url: `/category/delete/${id}`,
+    method: 'post'
+  })
+}
+
+/**
+ * 创建子分类
+ * @param {Object} data 子分类数据
+ * @returns {Promise}
+ */
+export function createSubCategory(data) {
+  return request({
+    url: '/subcategory',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 更新子分类
+ * @param {number} id 子分类ID
+ * @param {Object} data 子分类数据
+ * @returns {Promise}
+ */
+export function updateSubCategory(id, data) {
+  return request({
+    url: `/subcategory/${id}`,
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 删除子分类
+ * @param {number} id 子分类ID
+ * @returns {Promise}
+ */
+export function deleteSubCategory(id) {
+  return request({
+    url: `/subcategory/delete/${id}`,
+    method: 'post'
+  })
+}
+
+/**
+ * 获取所有分类
+ * @returns {Promise}
+ */
+export function getAllCategories() {
+  return request({
+    url: '/category/list',
+    method: 'get'
   })
 }

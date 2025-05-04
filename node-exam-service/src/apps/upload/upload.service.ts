@@ -5,7 +5,7 @@ import { PrismaClient } from '../../../prisma/generated/client';
 
 // 定义简历数据接口
 interface ResumeData {
-  path: string;       // 文件相对路径
+  path: string; // 文件相对路径
   originalName: string; // 原始文件名
 }
 
@@ -38,7 +38,7 @@ export class UploadService {
 
       const updateData = {
         resumeUrl: resumeData.path,
-        resumeFileName: resumeData.originalName
+        resumeFileName: resumeData.originalName,
       };
 
       if (!jobSeeker) {
@@ -46,7 +46,7 @@ export class UploadService {
         jobSeeker = await this.prisma.jobSeeker.create({
           data: {
             userId,
-            ...updateData
+            ...updateData,
           },
           include: {
             education: true,

@@ -84,6 +84,11 @@ const routes = [
         name: 'Profile',
         component: () => import('../views/User/Profile.vue')
       },
+      {
+        path: 'profile/:id',
+        name: 'ProfileWithId',
+        component: () => import('../views/User/Profile.vue')
+      },
       // HR相关路由
       {
         path: 'interviewer/profile-setup',

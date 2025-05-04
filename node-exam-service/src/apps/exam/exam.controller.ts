@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
   BadRequestException,
-  Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -32,12 +32,11 @@ import {
   ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { QueryUserFavoritesDto } from './dto/query-user-favorites.dto';
 
 @ApiTags('exam')
 @Controller()
 export class ExamController {
-  private readonly logger = new Logger(ExamController.name);
-
   constructor(private readonly examService: ExamService) {}
 
   // 分类相关接口
@@ -108,8 +107,6 @@ export class ExamController {
   @UseGuards(JwtAuthGuard)
   @Post('category')
   async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
-    this.logger.log(`创建分类请求: ${JSON.stringify(createCategoryDto)}`);
-
     try {
       const category = await this.examService.createCategory(createCategoryDto);
 
@@ -119,7 +116,6 @@ export class ExamController {
         data: category,
       };
     } catch (error) {
-      this.logger.error(`创建分类失败: ${error.message}`);
       throw error;
     }
   }
@@ -155,10 +151,6 @@ export class ExamController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    this.logger.log(
-      `更新分类请求: ID=${id}, 数据=${JSON.stringify(updateCategoryDto)}`,
-    );
-
     try {
       const category = await this.examService.updateCategory(
         id,
@@ -171,7 +163,6 @@ export class ExamController {
         data: category,
       };
     } catch (error) {
-      this.logger.error(`更新分类失败: ${error.message}`);
       throw error;
     }
   }
@@ -196,8 +187,6 @@ export class ExamController {
   @UseGuards(JwtAuthGuard)
   @Post('category/delete/:id')
   async deleteCategory(@Param('id', ParseIntPipe) id: number) {
-    this.logger.log(`删除分类请求: ID=${id}`);
-
     try {
       await this.examService.deleteCategory(id);
 
@@ -207,7 +196,6 @@ export class ExamController {
         data: null,
       };
     } catch (error) {
-      this.logger.error(`删除分类失败: ${error.message}`);
       throw error;
     }
   }
@@ -240,8 +228,6 @@ export class ExamController {
   @UseGuards(JwtAuthGuard)
   @Post('subcategory')
   async createSubCategory(@Body() createSubCategoryDto: CreateSubCategoryDto) {
-    this.logger.log(`创建子分类请求: ${JSON.stringify(createSubCategoryDto)}`);
-
     try {
       const subCategory =
         await this.examService.createSubCategory(createSubCategoryDto);
@@ -252,7 +238,6 @@ export class ExamController {
         data: subCategory,
       };
     } catch (error) {
-      this.logger.error(`创建子分类失败: ${error.message}`);
       throw error;
     }
   }
@@ -289,10 +274,6 @@ export class ExamController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateSubCategoryDto: UpdateSubCategoryDto,
   ) {
-    this.logger.log(
-      `更新子分类请求: ID=${id}, 数据=${JSON.stringify(updateSubCategoryDto)}`,
-    );
-
     try {
       const subCategory = await this.examService.updateSubCategory(
         id,
@@ -305,7 +286,6 @@ export class ExamController {
         data: subCategory,
       };
     } catch (error) {
-      this.logger.error(`更新子分类失败: ${error.message}`);
       throw error;
     }
   }
@@ -330,8 +310,6 @@ export class ExamController {
   @UseGuards(JwtAuthGuard)
   @Post('subcategory/delete/:id')
   async deleteSubCategory(@Param('id', ParseIntPipe) id: number) {
-    this.logger.log(`删除子分类请求: ID=${id}`);
-
     try {
       await this.examService.deleteSubCategory(id);
 
@@ -341,7 +319,6 @@ export class ExamController {
         data: null,
       };
     } catch (error) {
-      this.logger.error(`删除子分类失败: ${error.message}`);
       throw error;
     }
   }
@@ -367,12 +344,8 @@ export class ExamController {
   })
   @Get('exam/list')
   async getExamList(@Query() queryExamDto: QueryExamDto) {
-    this.logger.log(`获取试卷列表请求参数: ${JSON.stringify(queryExamDto)}`);
-
     try {
       const result = await this.examService.getExamList(queryExamDto);
-
-      this.logger.log(`获取试卷列表成功，返回 ${result.total} 条记录`);
 
       return {
         code: 200,
@@ -380,7 +353,6 @@ export class ExamController {
         data: result,
       };
     } catch (error) {
-      this.logger.error(`获取试卷列表失败: ${error.message}`);
       throw error;
     }
   }
@@ -477,7 +449,7 @@ export class ExamController {
       }
 
       // 记录文件信息
-      this.logger.log(
+      console.log(
         `接收到上传文件: ${file.originalname}, 大小: ${file.size} 字节`,
       );
 
@@ -494,7 +466,6 @@ export class ExamController {
         data: exam,
       };
     } catch (error) {
-      this.logger.error(`上传试卷失败: ${error.message}`);
       throw error;
     }
   }
@@ -524,7 +495,7 @@ export class ExamController {
   @Get('exam/favorite/:id')
   async checkFavorite(@Param('id', ParseIntPipe) examId: number, @Req() req) {
     const userId = req.user.userId;
-    this.logger.log(`检查试卷 ${examId} 是否被用户 ${userId} 收藏`);
+    console.log(`检查试卷 ${examId} 是否被用户 ${userId} 收藏`);
 
     const isFavorite = await this.examService.checkFavorite(examId, userId);
 
@@ -561,7 +532,7 @@ export class ExamController {
   @Post('exam/favorite/:id')
   async toggleFavorite(@Param('id', ParseIntPipe) examId: number, @Req() req) {
     const userId = req.user.userId;
-    this.logger.log(`切换试卷 ${examId} 的收藏状态，用户 ${userId}`);
+    console.log(`切换试卷 ${examId} 的收藏状态，用户 ${userId}`);
 
     const result = await this.examService.toggleFavorite(examId, userId);
 
@@ -572,42 +543,52 @@ export class ExamController {
     };
   }
 
-  @ApiOperation({ summary: '获取用户收藏的试卷列表' })
-  @ApiResponse({
-    status: 200,
-    description: '返回收藏列表',
-    schema: {
-      properties: {
-        code: { type: 'number', example: 200 },
-        message: { type: 'string', example: '获取收藏列表成功' },
-        data: {
-          type: 'object',
-          properties: {
-            items: { type: 'array', items: { type: 'object' } },
-            total: { type: 'number', example: 15 },
-          },
-        },
-      },
-    },
-  })
+  @ApiOperation({ summary: '获取用户收藏列表' })
+  @ApiResponse({ status: 200, description: '成功获取收藏列表' })
   @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 403, description: '无权查看其他用户的收藏列表' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Get('exam/favorites')
-  async getUserFavorites(@Req() req, @Query() queryExamDto: QueryExamDto) {
-    const userId = req.user.userId;
-    this.logger.log(`获取用户 ${userId} 的收藏列表`);
+  @Post('exam/getUserFavorites')
+  async getUserFavorites(
+    @Req() req,
+    @Body() queryUserFavoritesDto: QueryUserFavoritesDto,
+  ) {
+    // 从请求中获取当前用户ID
+    const currentUserId = req.user.userId;
 
-    const result = await this.examService.getUserFavorites(
-      userId,
-      queryExamDto,
-    );
+    // 确定要查询的用户ID
+    // 如果传入了userId参数且当前用户是管理员，则使用传入的userId
+    // 否则使用当前用户的ID
+    let targetUserId = currentUserId;
 
-    return {
-      code: 200,
-      message: '获取收藏列表成功',
-      data: result,
-    };
+    try {
+      if (queryUserFavoritesDto.userId) {
+        targetUserId = queryUserFavoritesDto.userId;
+      }
+
+      console.log(
+        `获取用户 ${targetUserId} 的收藏列表，请求用户ID: ${currentUserId}`,
+      );
+
+      const result = await this.examService.getUserFavorites(
+        targetUserId,
+        queryUserFavoritesDto,
+      );
+
+      return {
+        code: 200,
+        message: '获取收藏列表成功',
+        data: result,
+      };
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      console.error(`获取收藏列表失败: ${error.message}`);
+      throw new BadRequestException(`获取收藏列表失败: ${error.message}`);
+    }
   }
 
   // 专属试卷相关接口
@@ -638,7 +619,7 @@ export class ExamController {
     @Req() req,
   ) {
     const userId = req.user.userId;
-    this.logger.log(`创建专属试卷请求, 用户ID: ${userId}`);
+    console.log(`创建专属试卷请求, 用户ID: ${userId}`);
 
     try {
       const exam = await this.examService.createPrivateExam(
@@ -652,7 +633,6 @@ export class ExamController {
         data: exam,
       };
     } catch (error) {
-      this.logger.error(`创建专属试卷失败: ${error.message}`);
       throw error;
     }
   }
@@ -681,7 +661,7 @@ export class ExamController {
   @Get('exam/private')
   async getPrivateExams(@Req() req, @Query() queryExamDto: QueryExamDto) {
     const userId = req.user.userId;
-    this.logger.log(`获取专属试卷列表, 用户ID: ${userId}`);
+    console.log(`获取专属试卷列表, 用户ID: ${userId}`);
 
     try {
       const result = await this.examService.getPrivateExams(
@@ -695,7 +675,6 @@ export class ExamController {
         data: result,
       };
     } catch (error) {
-      this.logger.error(`获取专属试卷列表失败: ${error.message}`);
       throw error;
     }
   }

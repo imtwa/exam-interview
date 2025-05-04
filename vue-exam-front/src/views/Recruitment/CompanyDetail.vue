@@ -1,7 +1,11 @@
 <template>
   <div class="company-detail-container">
     <div v-if="loading" class="loading-wrapper">
-      <el-card shadow="never" style="background: transparent; border: none" v-loading="true"></el-card>
+      <el-card
+        shadow="never"
+        style="background: transparent; border: none"
+        v-loading="true"
+      ></el-card>
     </div>
 
     <div v-else>
@@ -59,7 +63,11 @@
 
             <div class="jobs-list">
               <div v-if="loadingJobs" class="loading-jobs">
-                <el-card shadow="never" style="background: transparent; border: none" v-loading="true"></el-card>
+                <el-card
+                  shadow="never"
+                  style="background: transparent; border: none"
+                  v-loading="true"
+                ></el-card>
               </div>
 
               <div v-else-if="jobs.length === 0" class="empty-jobs">
@@ -74,7 +82,9 @@
                       <div class="job-salary">{{ formatSalary(job.salaryMin, job.salaryMax) }}</div>
                     </div>
                     <div class="job-actions">
-                      <el-button type="primary" size="small" @click="viewJobDetail(job.id)">查看</el-button>
+                      <el-button type="primary" size="small" @click="viewJobDetail(job.id)"
+                        >查看</el-button
+                      >
                       <el-button
                         type="success"
                         size="small"
@@ -99,7 +109,10 @@
                       <span>{{ formatDate(job.createdAt) }}</span>
                     </div>
                     <div class="info-right" v-if="job.subCategory">
-                      <span>{{ job.subCategory.category?.name || '' }} / {{ job.subCategory.name }}</span>
+                      <span
+                        >{{ job.subCategory.category?.name || '' }} /
+                        {{ job.subCategory.name }}</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -123,7 +136,11 @@
           <el-tab-pane :label="`HR团队 (${totalInterviewers})`" name="hr">
             <div class="hr-list">
               <div v-if="loadingInterviewers" class="loading-interviewers">
-                <el-card shadow="never" style="background: transparent; border: none" v-loading="true"></el-card>
+                <el-card
+                  shadow="never"
+                  style="background: transparent; border: none"
+                  v-loading="true"
+                ></el-card>
               </div>
 
               <div v-else-if="interviewers.length === 0" class="empty-interviewers">
@@ -142,8 +159,12 @@
                       <span>{{ interviewer.user.username }}</span>
                     </div>
                     <div class="hr-position">{{ interviewer.position }}</div>
-                    <div class="hr-email" v-if="interviewer.user.email">{{ interviewer.user.email }}</div>
-                    <div class="hr-join-date">加入于 {{ formatDate(interviewer.user.createdAt) }}</div>
+                    <div class="hr-email" v-if="interviewer.user.email">
+                      {{ interviewer.user.email }}
+                    </div>
+                    <div class="hr-join-date">
+                      加入于 {{ formatDate(interviewer.user.createdAt) }}
+                    </div>
                   </div>
                 </div>
 
@@ -217,11 +238,7 @@ onMounted(async () => {
   }
 
   // 初始化时同时加载公司信息、职位列表和HR详细信息
-  await Promise.all([
-    fetchCompanyDetail(),
-    fetchCompanyJobs(),
-    fetchCompanyInterviewers()
-  ])
+  await Promise.all([fetchCompanyDetail(), fetchCompanyJobs(), fetchCompanyInterviewers()])
 })
 
 // 获取公司详情
@@ -257,7 +274,7 @@ const fetchCompanyJobs = async () => {
       pageSize: pageSize.value,
       keyword: jobSearchKeyword.value
     }
-    
+
     const response = await getCompanyJobs(companyId.value, params)
     // 处理API返回的数据，确保我们使用正确的格式
     if (response.list && typeof response.total === 'number') {
@@ -293,9 +310,9 @@ const fetchCompanyInterviewers = async () => {
       page: interviewersCurrentPage.value,
       pageSize: interviewersPageSize.value
     }
-    
+
     const response = await getCompanyInterviewers(companyId.value, params)
-    
+
     if (response.list && typeof response.total === 'number') {
       interviewers.value = response.list
       totalInterviewers.value = response.total
@@ -322,7 +339,7 @@ const fetchCompanyInterviewers = async () => {
 }
 
 // 跳转到用户资料页
-const viewUserProfile = (userId) => {
+const viewUserProfile = userId => {
   if (!userId) return
   router.push(`/profile/${userId}`)
 }
@@ -334,34 +351,34 @@ const handleJobSearch = () => {
 }
 
 // 职位列表分页处理
-const handleSizeChange = (size) => {
+const handleSizeChange = size => {
   pageSize.value = size
   fetchCompanyJobs()
 }
 
-const handleCurrentChange = (page) => {
+const handleCurrentChange = page => {
   currentPage.value = page
   fetchCompanyJobs()
 }
 
 // HR列表分页处理
-const handleInterviewersSizeChange = (size) => {
+const handleInterviewersSizeChange = size => {
   interviewersPageSize.value = size
   fetchCompanyInterviewers()
 }
 
-const handleInterviewersCurrentChange = (page) => {
+const handleInterviewersCurrentChange = page => {
   interviewersCurrentPage.value = page
   fetchCompanyInterviewers()
 }
 
 // 查看职位详情
-const viewJobDetail = (jobId) => {
+const viewJobDetail = jobId => {
   router.push(`/job/${jobId}`)
 }
 
 // 申请职位
-const applyJob = async (jobId) => {
+const applyJob = async jobId => {
   // 检查是否登录
   if (!userStore.isLoggedIn) {
     ElMessageBox.confirm('请先登录后再投递职位', '提示', {
@@ -424,28 +441,28 @@ const applyJob = async (jobId) => {
 }
 
 // 格式化函数
-const formatFundingStage = (stage) => {
+const formatFundingStage = stage => {
   const stageMap = {
-    'UNFUNDED': '未融资',
-    'ANGEL': '天使轮',
-    'SERIES_A': 'A轮',
-    'SERIES_B': 'B轮',
-    'SERIES_C': 'C轮',
-    'SERIES_D': 'D轮及以上',
-    'IPO': '已上市',
-    'SELF_FUNDED': '不需要融资'
+    UNFUNDED: '未融资',
+    ANGEL: '天使轮',
+    SERIES_A: 'A轮',
+    SERIES_B: 'B轮',
+    SERIES_C: 'C轮',
+    SERIES_D: 'D轮及以上',
+    IPO: '已上市',
+    SELF_FUNDED: '不需要融资'
   }
   return stageMap[stage] || '未知'
 }
 
-const formatCompanySize = (size) => {
+const formatCompanySize = size => {
   const sizeMap = {
-    'TINY': '0-20人',
-    'SMALL': '20-99人',
-    'MEDIUM': '100-499人',
-    'LARGE': '500-999人',
-    'XLARGE': '1000-9999人',
-    'XXLARGE': '10000+人'
+    TINY: '0-20人',
+    SMALL: '20-99人',
+    MEDIUM: '100-499人',
+    LARGE: '500-999人',
+    XLARGE: '1000-9999人',
+    XXLARGE: '10000+人'
   }
   return sizeMap[size] || '未知规模'
 }
@@ -457,35 +474,35 @@ const formatSalary = (min, max) => {
   return `${(min / 1000).toFixed(0)}K-${(max / 1000).toFixed(0)}K`
 }
 
-const formatExperience = (exp) => {
+const formatExperience = exp => {
   if (!exp) return '经验不限'
 
   const experienceMap = {
-    'STUDENT': '在校生',
-    'FRESH_GRADUATE': '应届生',
-    'LESS_THAN_ONE': '1年以内',
-    'ONE_TO_THREE': '1-3年',
-    'THREE_TO_FIVE': '3-5年',
-    'FIVE_TO_TEN': '5-10年',
-    'MORE_THAN_TEN': '10年以上'
+    STUDENT: '在校生',
+    FRESH_GRADUATE: '应届生',
+    LESS_THAN_ONE: '1年以内',
+    ONE_TO_THREE: '1-3年',
+    THREE_TO_FIVE: '3-5年',
+    FIVE_TO_TEN: '5-10年',
+    MORE_THAN_TEN: '10年以上'
   }
 
   return experienceMap[exp] || '经验不限'
 }
 
-const formatEducation = (edu) => {
+const formatEducation = edu => {
   const educationMap = {
-    'HIGH_SCHOOL': '高中学历',
-    'ASSOCIATE': '大专学历',
-    'BACHELOR': '本科学历',
-    'MASTER': '硕士学历',
-    'DOCTORATE': '博士学历',
-    'OTHER': '其他学历'
+    HIGH_SCHOOL: '高中学历',
+    ASSOCIATE: '大专学历',
+    BACHELOR: '本科学历',
+    MASTER: '硕士学历',
+    DOCTORATE: '博士学历',
+    OTHER: '其他学历'
   }
   return educationMap[edu] || '学历不限'
 }
 
-const formatDate = (dateStr) => {
+const formatDate = dateStr => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -589,12 +606,12 @@ const formatDate = (dateStr) => {
 // Tab样式
 .company-content-section {
   margin-bottom: 30px;
-  
+
   .company-tabs {
     :deep(.el-tabs__header) {
       margin-bottom: 20px;
     }
-    
+
     :deep(.el-tabs__item) {
       font-size: 16px;
       font-weight: 500;
@@ -620,7 +637,10 @@ const formatDate = (dateStr) => {
   }
 }
 
-.loading-jobs, .empty-jobs, .loading-interviewers, .empty-interviewers {
+.loading-jobs,
+.empty-jobs,
+.loading-interviewers,
+.empty-interviewers {
   min-height: 200px;
   display: flex;
   align-items: center;
@@ -697,7 +717,7 @@ const formatDate = (dateStr) => {
 
       span {
         &:before {
-          content: "";
+          content: '';
           display: inline-block;
           width: 4px;
           height: 4px;
@@ -716,7 +736,7 @@ const formatDate = (dateStr) => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 20px;
-  
+
   .hr-item {
     background-color: #fff;
     border-radius: 10px;
@@ -727,30 +747,30 @@ const formatDate = (dateStr) => {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    
+
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     }
-    
+
     .hr-avatar {
       margin-bottom: 15px;
       cursor: pointer;
     }
-    
-    .hr-info {      
+
+    .hr-info {
       .hr-name {
         font-size: 16px;
         font-weight: 500;
         color: #2c3e50;
         margin-bottom: 5px;
         cursor: pointer;
-        
+
         &:hover {
           color: #409eff;
         }
       }
-      
+
       .hr-position {
         font-size: 14px;
         color: #409eff;
@@ -760,8 +780,9 @@ const formatDate = (dateStr) => {
         display: inline-block;
         margin-bottom: 8px;
       }
-      
-      .hr-email, .hr-join-date {
+
+      .hr-email,
+      .hr-join-date {
         font-size: 13px;
         color: #909399;
         margin-top: 3px;
@@ -775,4 +796,4 @@ const formatDate = (dateStr) => {
   display: flex;
   justify-content: flex-end;
 }
-</style> 
+</style>

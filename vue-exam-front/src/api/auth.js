@@ -69,14 +69,6 @@ export function checkProfileStatus() {
   })
 }
 
-// 获取面试官完整资料（包含公司ID和面试官ID）
-export function checkProfile() {
-  return request({
-    url: '/auth/check-profile',
-    method: 'get'
-  })
-}
-
 // 退出登录
 export function logout() {
   // 前端仅清除本地存储的token，后端无需特殊处理

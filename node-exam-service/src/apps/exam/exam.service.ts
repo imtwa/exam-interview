@@ -15,6 +15,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as multer from 'multer';
 import * as ExcelJS from 'exceljs';
+import {
+  QueryUserFavoritesDto,
+  FavoriteSortField,
+} from './dto/query-user-favorites.dto';
 
 @Injectable()
 export class ExamService {
@@ -1296,31 +1300,32 @@ export class ExamService {
   }
 
   /**
-   * 获取用户收藏的试卷列表
+   * 获取用户收藏列表
    * @param userId 用户ID
-   * @param queryExamDto 查询参数
+   * @param queryFavoritesDto 查询参数
    * @returns 试卷列表和总数
    */
-  async getUserFavorites(userId: number, queryExamDto: QueryExamDto) {
+  async getUserFavorites(
+    userId: number,
+    queryFavoritesDto: QueryUserFavoritesDto,
+  ) {
     this.logger.log(
-      `获取用户 ${userId} 的收藏列表, 参数: ${JSON.stringify(queryExamDto)}`,
+      `获取用户 ${userId} 的收藏列表, 参数: ${JSON.stringify(queryFavoritesDto)}`,
     );
 
     try {
+      // 解构查询参数，并设置默认值
       const {
         page = 1,
         pageSize = 10,
-        categoryId,
-        subCategoryId,
-        keyword,
-        sortField = ExamSortField.CREATED_AT,
+        sortField = FavoriteSortField.FAVORITE_CREATED_AT,
         sortOrder = 'desc',
-      } = queryExamDto;
+      } = queryFavoritesDto;
 
       const skip = (page - 1) * pageSize;
 
       // 构建查询条件
-      const where: any = {
+      const where = {
         deletedAt: null,
         userId,
         examPaper: {
@@ -1328,39 +1333,20 @@ export class ExamService {
         },
       };
 
-      if (categoryId) {
-        where.examPaper.categoryId = parseInt(categoryId.toString(), 10);
-        this.logger.log(`按一级分类ID过滤: ${where.examPaper.categoryId}`);
-      }
-
-      if (subCategoryId) {
-        where.examPaper.subCategoryId = parseInt(subCategoryId.toString(), 10);
-        this.logger.log(`按二级分类ID过滤: ${where.examPaper.subCategoryId}`);
-      }
-
-      if (keyword) {
-        where.examPaper.OR = [
-          { name: { contains: keyword } },
-          { description: { contains: keyword } },
-        ];
-        this.logger.log(`按关键词过滤: ${keyword}`);
-      }
-
       this.logger.log(`执行收藏查询, 查询条件: ${JSON.stringify(where)}`);
 
       // 获取收藏数量
       const total = await this.prisma.favorite.count({ where });
 
-      // 获取收藏列表
+      // 获取收藏列表 - 根据sortField确定排序方式
       const favorites = await this.prisma.favorite.findMany({
         where,
         skip,
         take: pageSize,
-        orderBy: {
-          [sortField === 'favoriteCount'
-            ? 'examPaper.favoriteCount'
-            : sortField]: sortOrder,
-        },
+        orderBy:
+          sortField === FavoriteSortField.CREATED_AT
+            ? { examPaper: { createdAt: sortOrder } } // 按试卷创建时间排序
+            : { createdAt: sortOrder }, // 按收藏时间排序
         include: {
           examPaper: {
             include: {
@@ -1377,9 +1363,6 @@ export class ExamService {
                 where: {
                   deletedAt: null,
                 },
-                include: {
-                  question: true,
-                },
               },
             },
           },
@@ -1387,17 +1370,25 @@ export class ExamService {
       });
 
       // 处理返回数据，格式化为试卷列表
-      const exams = favorites.map((favorite) => {
-        const exam = favorite.examPaper;
-        const questionsCount = exam.examQuestions.length;
-        const { examQuestions, ...examData } = exam;
-        this.logger.log(`移除examQuestions:${examQuestions}`);
-        return {
-          ...examData,
-          questionsCount,
-          favoriteCreatedAt: favorite.createdAt,
-        };
-      });
+      const exams = favorites
+        .map((favorite) => {
+          // 确保examPaper存在
+          if (!favorite.examPaper) {
+            return null;
+          }
+
+          const questionsCount = favorite.examPaper.examQuestions?.length || 0;
+
+          // 提取考卷数据，移除examQuestions减小数据量
+          const { examQuestions, ...examData } = favorite.examPaper;
+
+          return {
+            ...examData,
+            questionsCount,
+            favoriteCreatedAt: favorite.createdAt,
+          };
+        })
+        .filter(Boolean); // 过滤掉null项
 
       this.logger.log(`查询结果: 共 ${exams.length} 条记录, 总数 ${total}`);
 
