@@ -1,339 +1,341 @@
 <template>
   <div class="candidates-page">
-    <!-- Breadcrumb -->
-    <div class="breadcrumb-container">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-        <el-breadcrumb-item :to="{ path: '/profile' }">个人中心</el-breadcrumb-item>
-        <el-breadcrumb-item>候选人管理</el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
-    <!-- Filter Section -->
-    <div class="filter-container">
-      <el-form :inline="true" class="filter-form">
-        <div class="filter-items">
-          <el-form-item label="应聘职位">
-            <el-select
-              v-model="filterForm.jobId"
-              placeholder="全部职位"
-              clearable
-              style="width: 180px"
-            >
-              <el-option v-for="job in jobs" :key="job.id" :label="job.title" :value="job.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="候选人状态">
-            <el-select
-              v-model="filterForm.status"
-              placeholder="全部状态"
-              clearable
-              style="width: 180px"
-            >
-              <el-option label="简历筛选" value="RESUME_SCREENING" />
-              <el-option label="笔试" value="WRITTEN_TEST" />
-              <el-option label="一面" value="FIRST_INTERVIEW" />
-              <el-option label="二面" value="SECOND_INTERVIEW" />
-              <el-option label="HR面试" value="HR_INTERVIEW" />
-              <el-option label="已安排" value="SCHEDULED" />
-              <el-option label="已录用" value="OFFER" />
-              <el-option label="已拒绝" value="REJECTED" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="关键词">
-            <el-input
-              v-model="filterForm.keyword"
-              placeholder="姓名/邮箱/学校"
-              clearable
-              style="width: 180px"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="fetchCandidates(1)">搜索</el-button>
-            <el-button @click="resetFilters">重置</el-button>
-          </el-form-item>
-        </div>
-      </el-form>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-container">
-      <el-skeleton :rows="6" animated />
-    </div>
-
-    <!-- Candidates Table -->
-    <div v-else class="candidates-list">
-      <div v-if="candidates.length === 0" class="empty-container">
-        <el-empty description="暂无候选人">
-          <template #description>
-            <p>暂未找到符合条件的候选人</p>
-          </template>
-        </el-empty>
+    <div class="candidates-page-container">
+      <!-- Breadcrumb -->
+      <div class="breadcrumb-container">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: '/profile' }">个人中心</el-breadcrumb-item>
+          <el-breadcrumb-item>候选人管理</el-breadcrumb-item>
+        </el-breadcrumb>
       </div>
-      <div v-else>
-        <el-table
-          :data="candidates"
-          style="width: 100%"
-          border
-          stripe
-          :default-sort="{ prop: 'appliedAt', order: 'descending' }"
-        >
-          <el-table-column label="候选人" min-width="180">
-            <template #default="{ row }">
-              <div class="candidate-info">
-                <el-avatar
-                  :size="40"
-                  :src="
-                    row.avatar ||
-                    generateAvatar(row.candidateName || row.jobSeeker?.user?.username || '未知')
+      <!-- Filter Section -->
+      <div class="filter-container">
+        <el-form :inline="true" class="filter-form">
+          <div class="filter-items">
+            <el-form-item label="应聘职位">
+              <el-select
+                v-model="filterForm.jobId"
+                placeholder="全部职位"
+                clearable
+                style="width: 180px"
+              >
+                <el-option v-for="job in jobs" :key="job.id" :label="job.title" :value="job.id" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="候选人状态">
+              <el-select
+                v-model="filterForm.status"
+                placeholder="全部状态"
+                clearable
+                style="width: 180px"
+              >
+                <el-option label="简历筛选" value="RESUME_SCREENING" />
+                <el-option label="笔试" value="WRITTEN_TEST" />
+                <el-option label="一面" value="FIRST_INTERVIEW" />
+                <el-option label="二面" value="SECOND_INTERVIEW" />
+                <el-option label="HR面试" value="HR_INTERVIEW" />
+                <el-option label="已安排" value="SCHEDULED" />
+                <el-option label="已录用" value="OFFER" />
+                <el-option label="已拒绝" value="REJECTED" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="关键词">
+              <el-input
+                v-model="filterForm.keyword"
+                placeholder="姓名/邮箱/学校"
+                clearable
+                style="width: 180px"
+              />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="fetchCandidates(1)">搜索</el-button>
+              <el-button @click="resetFilters">重置</el-button>
+            </el-form-item>
+          </div>
+        </el-form>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-container">
+        <el-skeleton :rows="6" animated />
+      </div>
+
+      <!-- Candidates Table -->
+      <div v-else class="candidates-list">
+        <div v-if="candidates.length === 0" class="empty-container">
+          <el-empty description="暂无候选人">
+            <template #description>
+              <p>暂未找到符合条件的候选人</p>
+            </template>
+          </el-empty>
+        </div>
+        <div v-else>
+          <el-table
+            :data="candidates"
+            style="width: 100%"
+            border
+            stripe
+            :default-sort="{ prop: 'appliedAt', order: 'descending' }"
+          >
+            <el-table-column label="候选人" min-width="180">
+              <template #default="{ row }">
+                <div class="candidate-info">
+                  <el-avatar
+                    :size="40"
+                    :src="
+                      row.avatar ||
+                      generateAvatar(row.candidateName || row.jobSeeker?.user?.username || '未知')
+                    "
+                  >
+                    {{ (row.candidateName || row.jobSeeker?.user?.username || '未知').charAt(0) }}
+                  </el-avatar>
+                  <div class="candidate-details">
+                    <el-tooltip placement="right" :show-after="300">
+                      <template #content>
+                        <div class="tooltip-content">
+                          <p v-if="row.jobSeeker?.user?.email">
+                            <b>邮箱:</b> {{ row.jobSeeker.user.email }}
+                          </p>
+                          <p v-if="row.jobSeeker?.gender">
+                            <b>性别:</b> {{ getGenderText(row.jobSeeker.gender) }}
+                          </p>
+                          <p v-if="row.jobSeeker?.expectedPosition">
+                            <b>期望职位:</b> {{ row.jobSeeker.expectedPosition }}
+                          </p>
+                        </div>
+                      </template>
+                      <div class="candidate-name">
+                        <el-link type="primary" @click="viewUserProfile(row.jobSeeker?.user?.id)">
+                          {{ row.candidateName || row.jobSeeker?.user?.username || '未知' }}
+                        </el-link>
+                      </div>
+                    </el-tooltip>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="job.title" label="应聘职位" min-width="140">
+              <template #default="{ row }">
+                <el-link type="primary" @click="viewJobDetail(row.job?.id)" v-if="row.job?.id">
+                  {{ row.job?.title || '未知职位' }}
+                </el-link>
+                <span v-else>{{ row.job?.title || '未知职位' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="教育背景" min-width="160">
+              <template #default="{ row }">
+                <div
+                  v-if="
+                    row.highestEducation ||
+                    (row.jobSeeker?.education && row.jobSeeker.education.length)
                   "
                 >
-                  {{ (row.candidateName || row.jobSeeker?.user?.username || '未知').charAt(0) }}
-                </el-avatar>
-                <div class="candidate-details">
-                  <el-tooltip placement="right" :show-after="300">
-                    <template #content>
-                      <div class="tooltip-content">
-                        <p v-if="row.jobSeeker?.user?.email">
-                          <b>邮箱:</b> {{ row.jobSeeker.user.email }}
-                        </p>
-                        <p v-if="row.jobSeeker?.gender">
-                          <b>性别:</b> {{ getGenderText(row.jobSeeker.gender) }}
-                        </p>
-                        <p v-if="row.jobSeeker?.expectedPosition">
-                          <b>期望职位:</b> {{ row.jobSeeker.expectedPosition }}
-                        </p>
-                      </div>
-                    </template>
-                    <div class="candidate-name">
-                      <el-link type="primary" @click="viewUserProfile(row.jobSeeker?.user?.id)">
-                        {{ row.candidateName || row.jobSeeker?.user?.username || '未知' }}
-                      </el-link>
-                    </div>
-                  </el-tooltip>
+                  <div>
+                    {{
+                      getEducationText(
+                        row.highestEducation?.degree ||
+                          (row.jobSeeker?.education && row.jobSeeker.education.length > 0
+                            ? row.jobSeeker.education[0]?.degree
+                            : null)
+                      )
+                    }}
+                  </div>
+                  <div class="text-secondary">
+                    {{
+                      row.highestEducation?.school ||
+                      (row.jobSeeker?.education && row.jobSeeker.education.length > 0
+                        ? row.jobSeeker.education[0]?.school
+                        : '')
+                    }}
+                  </div>
+                  <div
+                    v-if="row.jobSeeker?.education && row.jobSeeker.education.length > 1"
+                    class="more-info"
+                  >
+                    <el-popover placement="right" trigger="hover" width="300">
+                      <template #reference>
+                        <el-link type="info" style="font-size: 12px">更多学历信息</el-link>
+                      </template>
+                      <template #default>
+                        <div
+                          v-for="(edu, index) in row.jobSeeker.education"
+                          :key="index"
+                          class="popover-item"
+                        >
+                          <div>
+                            <strong>{{ getEducationText(edu.degree) }}</strong> / {{ edu.major }}
+                          </div>
+                          <div>{{ edu.school }}</div>
+                          <div class="text-secondary">
+                            {{ formatDate(edu.startDate) }} -
+                            {{ edu.endDate ? formatDate(edu.endDate) : '至今' }}
+                          </div>
+                        </div>
+                      </template>
+                    </el-popover>
+                  </div>
                 </div>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="job.title" label="应聘职位" min-width="140">
-            <template #default="{ row }">
-              <el-link type="primary" @click="viewJobDetail(row.job?.id)" v-if="row.job?.id">
-                {{ row.job?.title || '未知职位' }}
-              </el-link>
-              <span v-else>{{ row.job?.title || '未知职位' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="教育背景" min-width="160">
-            <template #default="{ row }">
-              <div
-                v-if="
-                  row.highestEducation ||
-                  (row.jobSeeker?.education && row.jobSeeker.education.length)
-                "
-              >
-                <div>
-                  {{
-                    getEducationText(
-                      row.highestEducation?.degree ||
-                        (row.jobSeeker?.education && row.jobSeeker.education.length > 0
-                          ? row.jobSeeker.education[0]?.degree
-                          : null)
-                    )
-                  }}
-                </div>
-                <div class="text-secondary">
-                  {{
-                    row.highestEducation?.school ||
-                    (row.jobSeeker?.education && row.jobSeeker.education.length > 0
-                      ? row.jobSeeker.education[0]?.school
-                      : '')
-                  }}
-                </div>
+                <div v-else>暂无教育信息</div>
+              </template>
+            </el-table-column>
+            <el-table-column label="工作经验" min-width="120">
+              <template #default="{ row }">
+                <span
+                  v-if="
+                    row.totalExperience ||
+                    (row.jobSeeker?.workExperience && row.jobSeeker.workExperience.length)
+                  "
+                >
+                  {{ row.totalExperience || getYearsOfExperience(row.jobSeeker.workExperience) }}年
+                </span>
                 <div
-                  v-if="row.jobSeeker?.education && row.jobSeeker.education.length > 1"
+                  v-if="row.jobSeeker?.workExperience && row.jobSeeker.workExperience.length > 0"
                   class="more-info"
                 >
                   <el-popover placement="right" trigger="hover" width="300">
                     <template #reference>
-                      <el-link type="info" style="font-size: 12px">更多学历信息</el-link>
+                      <el-link type="info" style="font-size: 12px">查看详情</el-link>
                     </template>
                     <template #default>
                       <div
-                        v-for="(edu, index) in row.jobSeeker.education"
+                        v-for="(exp, index) in row.jobSeeker.workExperience"
                         :key="index"
                         class="popover-item"
                       >
                         <div>
-                          <strong>{{ getEducationText(edu.degree) }}</strong> / {{ edu.major }}
+                          <strong>{{ exp.position }}</strong>
                         </div>
-                        <div>{{ edu.school }}</div>
+                        <div>{{ exp.company }}</div>
                         <div class="text-secondary">
-                          {{ formatDate(edu.startDate) }} -
-                          {{ edu.endDate ? formatDate(edu.endDate) : '至今' }}
+                          {{ formatDate(exp.startDate) }} -
+                          {{ exp.endDate ? formatDate(exp.endDate) : '至今' }}
+                        </div>
+                        <div v-if="exp.description" class="exp-description">
+                          {{ exp.description }}
                         </div>
                       </div>
                     </template>
                   </el-popover>
                 </div>
-              </div>
-              <div v-else>暂无教育信息</div>
-            </template>
-          </el-table-column>
-          <el-table-column label="工作经验" min-width="120">
-            <template #default="{ row }">
-              <span
-                v-if="
-                  row.totalExperience ||
-                  (row.jobSeeker?.workExperience && row.jobSeeker.workExperience.length)
-                "
-              >
-                {{ row.totalExperience || getYearsOfExperience(row.jobSeeker.workExperience) }}年
-              </span>
-              <div
-                v-if="row.jobSeeker?.workExperience && row.jobSeeker.workExperience.length > 0"
-                class="more-info"
-              >
-                <el-popover placement="right" trigger="hover" width="300">
-                  <template #reference>
-                    <el-link type="info" style="font-size: 12px">查看详情</el-link>
-                  </template>
-                  <template #default>
-                    <div
-                      v-for="(exp, index) in row.jobSeeker.workExperience"
-                      :key="index"
-                      class="popover-item"
-                    >
-                      <div>
-                        <strong>{{ exp.position }}</strong>
-                      </div>
-                      <div>{{ exp.company }}</div>
-                      <div class="text-secondary">
-                        {{ formatDate(exp.startDate) }} -
-                        {{ exp.endDate ? formatDate(exp.endDate) : '至今' }}
-                      </div>
-                      <div v-if="exp.description" class="exp-description">
-                        {{ exp.description }}
-                      </div>
-                    </div>
-                  </template>
-                </el-popover>
-              </div>
-              <span v-else>无经验</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="应聘日期" min-width="100" sortable>
-            <template #default="{ row }">
-              {{ formatDate(row.appliedAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="status" label="状态" min-width="100">
-            <template #default="{ row }">
-              <status-tag :status="row.status" />
-            </template>
-          </el-table-column>
-          <el-table-column label="简历" min-width="100">
-            <template #default="{ row }">
-              <el-button
-                v-if="row.jobSeeker?.resumeUrl"
-                type="primary"
-                link
-                @click="viewResume(row)"
-              >
-                查看简历
-              </el-button>
-              <span v-else class="text-muted">暂无简历</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="160" fixed="right">
-            <template #default="{ row }">
-              <el-dropdown trigger="click">
-                <el-button size="small" type="primary" link>
-                  管理<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                <span v-else>无经验</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="应聘日期" min-width="100" sortable>
+              <template #default="{ row }">
+                {{ formatDate(row.appliedAt) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态" min-width="100">
+              <template #default="{ row }">
+                <status-tag :status="row.status" />
+              </template>
+            </el-table-column>
+            <el-table-column label="简历" min-width="100">
+              <template #default="{ row }">
+                <el-button
+                  v-if="row.jobSeeker?.resumeUrl"
+                  type="primary"
+                  link
+                  @click="viewResume(row)"
+                >
+                  查看简历
                 </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="handleCommand('written_test', row)"
-                      >发放笔试</el-dropdown-item
-                    >
-                    <el-dropdown-item @click="handleCommand('schedule', row)"
-                      >安排面试</el-dropdown-item
-                    >
-                    <el-dropdown-item @click="handleCommand('offer', row)"
-                      >发送Offer</el-dropdown-item
-                    >
-                    <el-dropdown-item @click="handleCommand('hire', row)">录用</el-dropdown-item>
-                    <el-dropdown-item
-                      divided
-                      class="text-danger"
-                      @click="handleCommand('reject', row)"
-                      >拒绝</el-dropdown-item
-                    >
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </template>
-          </el-table-column>
-        </el-table>
+                <span v-else class="text-muted">暂无简历</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="160" fixed="right">
+              <template #default="{ row }">
+                <el-dropdown trigger="click">
+                  <el-button size="small" type="primary" link>
+                    管理<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item @click="handleCommand('written_test', row)"
+                        >发放笔试</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="handleCommand('schedule', row)"
+                        >安排面试</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="handleCommand('offer', row)"
+                        >发送Offer</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="handleCommand('hire', row)">录用</el-dropdown-item>
+                      <el-dropdown-item
+                        divided
+                        class="text-danger"
+                        @click="handleCommand('reject', row)"
+                        >拒绝</el-dropdown-item
+                      >
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </template>
+            </el-table-column>
+          </el-table>
 
-        <!-- Pagination -->
-        <div class="pagination-wrapper">
-          <el-pagination
-            background
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handlePageChange"
-          />
+          <!-- Pagination -->
+          <div class="pagination-wrapper">
+            <el-pagination
+              background
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              :total="total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="handleSizeChange"
+              @current-change="handlePageChange"
+            />
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- 面试安排对话框 -->
-    <interview-schedule
-      :visible="scheduleDialogVisible"
-      @update:visible="scheduleDialogVisible = $event"
-      :candidate="currentCandidate"
-      @success="handleScheduleSuccess"
-    />
-
-    <!-- 简历查看对话框 -->
-    <el-dialog
-      v-model="resumeDialogVisible"
-      :title="selectedCandidate?.jobSeeker?.resumeFileName || '候选人简历'"
-      :width="pdfWidth"
-      destroy-on-close
-      @close="closeResumeDialog"
-    >
-      <div
-        v-if="selectedCandidate && selectedCandidate.jobSeeker?.resumeUrl"
-        class="resume-container"
-      >
-        <iframe
-          v-if="selectedCandidate.jobSeeker.resumeUrl.endsWith('.pdf')"
-          :src="pdfViewerUrl"
-          frameborder="0"
-          width="100%"
-          height="600"
-        ></iframe>
-        <div v-else class="non-pdf-resume">
-          <p>此简历不是PDF格式，请点击以下链接下载查看：</p>
-          <el-button type="primary" @click="downloadResume"> 下载简历 </el-button>
-        </div>
-      </div>
-    </el-dialog>
-
-    <!-- 分配笔试对话框 -->
-    <el-dialog v-model="examDialogVisible" title="分配笔试试卷" width="550px">
-      <assign-exam-form
-        v-if="examDialogVisible"
-        :application-id="currentApplication?.id"
-        :job-seeker-id="currentApplication?.jobSeeker?.id"
-        @success="handleAssignExamSuccess"
-        @cancel="examDialogVisible = false"
+      <!-- 面试安排对话框 -->
+      <interview-schedule
+        :visible="scheduleDialogVisible"
+        @update:visible="scheduleDialogVisible = $event"
+        :candidate="currentCandidate"
+        @success="handleScheduleSuccess"
       />
-    </el-dialog>
+
+      <!-- 简历查看对话框 -->
+      <el-dialog
+        v-model="resumeDialogVisible"
+        :title="selectedCandidate?.jobSeeker?.resumeFileName || '候选人简历'"
+        :width="pdfWidth"
+        destroy-on-close
+        @close="closeResumeDialog"
+      >
+        <div
+          v-if="selectedCandidate && selectedCandidate.jobSeeker?.resumeUrl"
+          class="resume-container"
+        >
+          <iframe
+            v-if="selectedCandidate.jobSeeker.resumeUrl.endsWith('.pdf')"
+            :src="pdfViewerUrl"
+            frameborder="0"
+            width="100%"
+            height="600"
+          ></iframe>
+          <div v-else class="non-pdf-resume">
+            <p>此简历不是PDF格式，请点击以下链接下载查看：</p>
+            <el-button type="primary" @click="downloadResume"> 下载简历 </el-button>
+          </div>
+        </div>
+      </el-dialog>
+
+      <!-- 分配笔试对话框 -->
+      <el-dialog v-model="examDialogVisible" title="分配笔试试卷" width="550px">
+        <assign-exam-form
+          v-if="examDialogVisible"
+          :application-id="currentApplication?.id"
+          :job-seeker-id="currentApplication?.jobSeeker?.id"
+          @success="handleAssignExamSuccess"
+          @cancel="examDialogVisible = false"
+        />
+      </el-dialog>
+    </div>
   </div>
 </template>
 
@@ -771,6 +773,12 @@ watch([() => filterForm.jobId, () => filterForm.status], () => {
 
 <style scoped>
 .candidates-page {
+  background-color: #f5f9ff;
+  width: 100%;
+  min-height: calc(100vh - 72px);
+}
+
+.candidates-page-container {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;

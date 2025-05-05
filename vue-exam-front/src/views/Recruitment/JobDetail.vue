@@ -1,234 +1,236 @@
 <template>
-  <div class="job-detail-container">
-    <!-- 返回按钮和面包屑导航 -->
-    <div class="breadcrumb-section">
-      <el-button class="back-button" @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
-        返回职位列表
-      </el-button>
+  <div class="job-detail-page">
+    <div class="job-detail-container">
+      <!-- 返回按钮和面包屑导航 -->
+      <div class="breadcrumb-section">
+        <!-- <el-button class="back-button" @click="goBack">
+          <el-icon><ArrowLeft /></el-icon>
+          返回职位列表
+        </el-button> -->
 
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-        <el-breadcrumb-item :to="{ path: '/recruitment' }">招聘信息</el-breadcrumb-item>
-        <el-breadcrumb-item>职位详情</el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: '/recruitment' }">招聘信息</el-breadcrumb-item>
+          <el-breadcrumb-item>职位详情</el-breadcrumb-item>
+        </el-breadcrumb>
+      </div>
 
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <el-skeleton animated :rows="15" :loading="loading" />
-    </div>
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-container">
+        <el-skeleton animated :rows="15" :loading="loading" />
+      </div>
 
-    <!-- 职位详情内容 -->
-    <template v-else-if="job.id">
-      <div class="job-header">
-        <div class="job-header-left">
-          <h1 class="job-title">{{ job.title }}</h1>
-          <div class="company-info">
-            <span class="company-name">{{ job.company?.name }}</span>
-            <el-tag v-if="job.status" :type="getStatusType(job.status)" class="status-tag">
-              {{ getStatusLabel(job.status) }}
-            </el-tag>
+      <!-- 职位详情内容 -->
+      <template v-else-if="job.id">
+        <div class="job-header">
+          <div class="job-header-left">
+            <h1 class="job-title">{{ job.title }}</h1>
+            <div class="company-info">
+              <span class="company-name">{{ job.company?.name }}</span>
+              <el-tag v-if="job.status" :type="getStatusType(job.status)" class="status-tag">
+                {{ getStatusLabel(job.status) }}
+              </el-tag>
+            </div>
+          </div>
+          <div class="job-header-right">
+            <div class="salary">{{ formatSalary(job.salaryMin, job.salaryMax) }}</div>
+            <el-button
+              type="primary"
+              size="large"
+              class="apply-button"
+              @click="applyJobDirectly"
+              :disabled="job.status !== 'ACTIVE' || applying"
+              :loading="applying"
+              v-if="!userStore.isInterviewer"
+            >
+              {{ applying ? '投递中...' : '一键投递' }}
+            </el-button>
           </div>
         </div>
-        <div class="job-header-right">
-          <div class="salary">{{ formatSalary(job.salaryMin, job.salaryMax) }}</div>
-          <el-button
-            type="primary"
-            size="large"
-            class="apply-button"
-            @click="applyJobDirectly"
-            :disabled="job.status !== 'ACTIVE' || applying"
-            :loading="applying"
-            v-if="!userStore.isInterviewer"
-          >
-            {{ applying ? '投递中...' : '一键投递' }}
-          </el-button>
-        </div>
-      </div>
 
-      <div class="job-content">
-        <div class="job-main">
-          <el-card class="job-card">
-            <template #header>
-              <div class="card-header">
-                <h3>职位信息</h3>
-              </div>
-            </template>
+        <div class="job-content">
+          <div class="job-main">
+            <el-card class="job-card">
+              <template #header>
+                <div class="card-header">
+                  <h3>职位信息</h3>
+                </div>
+              </template>
 
-            <div class="job-meta">
-              <div class="meta-row">
-                <div class="meta-item">
-                  <div class="meta-icon">
-                    <el-icon><Location /></el-icon>
+              <div class="job-meta">
+                <div class="meta-row">
+                  <div class="meta-item">
+                    <div class="meta-icon">
+                      <el-icon><Location /></el-icon>
+                    </div>
+                    <div class="meta-content">
+                      <div class="meta-label">工作地点</div>
+                      <div class="meta-value">
+                        {{ job.city }}{{ job.address ? ' - ' + job.address : '' }}
+                      </div>
+                    </div>
                   </div>
-                  <div class="meta-content">
-                    <div class="meta-label">工作地点</div>
-                    <div class="meta-value">
-                      {{ job.city }}{{ job.address ? ' - ' + job.address : '' }}
+
+                  <div class="meta-item">
+                    <div class="meta-icon">
+                      <el-icon><Collection /></el-icon>
+                    </div>
+                    <div class="meta-content">
+                      <div class="meta-label">学历要求</div>
+                      <div class="meta-value">{{ formatEducation(job.educationReq) }}</div>
                     </div>
                   </div>
                 </div>
 
-                <div class="meta-item">
-                  <div class="meta-icon">
-                    <el-icon><Collection /></el-icon>
+                <div class="meta-row">
+                  <div class="meta-item">
+                    <div class="meta-icon">
+                      <el-icon><Timer /></el-icon>
+                    </div>
+                    <div class="meta-content">
+                      <div class="meta-label">工作经验</div>
+                      <div class="meta-value">{{ formatExperience(job.experienceReq) }}</div>
+                    </div>
                   </div>
-                  <div class="meta-content">
-                    <div class="meta-label">学历要求</div>
-                    <div class="meta-value">{{ formatEducation(job.educationReq) }}</div>
+
+                  <div class="meta-item">
+                    <div class="meta-icon">
+                      <el-icon><OfficeBuilding /></el-icon>
+                    </div>
+                    <div class="meta-content">
+                      <div class="meta-label">行业分类</div>
+                      <div class="meta-value">
+                        {{ job.subCategory?.category?.name || '-' }} /
+                        {{ job.subCategory?.name || '-' }}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="meta-row">
-                <div class="meta-item">
-                  <div class="meta-icon">
-                    <el-icon><Timer /></el-icon>
+                <div class="meta-row">
+                  <div class="meta-item">
+                    <div class="meta-icon">
+                      <el-icon><Calendar /></el-icon>
+                    </div>
+                    <div class="meta-content">
+                      <div class="meta-label">发布时间</div>
+                      <div class="meta-value">{{ formatDate(job.createdAt) }}</div>
+                    </div>
                   </div>
-                  <div class="meta-content">
-                    <div class="meta-label">工作经验</div>
-                    <div class="meta-value">{{ formatExperience(job.experienceReq) }}</div>
-                  </div>
-                </div>
 
-                <div class="meta-item">
-                  <div class="meta-icon">
-                    <el-icon><OfficeBuilding /></el-icon>
-                  </div>
-                  <div class="meta-content">
-                    <div class="meta-label">行业分类</div>
-                    <div class="meta-value">
-                      {{ job.subCategory?.category?.name || '-' }} /
-                      {{ job.subCategory?.name || '-' }}
+                  <div class="meta-item">
+                    <div class="meta-icon">
+                      <el-icon><VideoPlay /></el-icon>
+                    </div>
+                    <div class="meta-content">
+                      <div class="meta-label">远程工作</div>
+                      <div class="meta-value">{{ job.isRemote ? '支持' : '不支持' }}</div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="meta-row">
-                <div class="meta-item">
-                  <div class="meta-icon">
-                    <el-icon><Calendar /></el-icon>
+              <div class="job-description">
+                <div class="description-section">
+                  <h3 class="section-title">职位描述</h3>
+                  <div class="section-content" v-html="formattedDescription"></div>
+                </div>
+
+                <div class="description-section">
+                  <h3 class="section-title">职位要求</h3>
+                  <div class="section-content" v-html="formattedRequirements"></div>
+                </div>
+              </div>
+            </el-card>
+
+            <el-card class="job-card">
+              <template #header>
+                <div class="card-header">
+                  <h3>工作地点</h3>
+                </div>
+              </template>
+
+              <div class="location-info">
+                <div class="location-address">
+                  <el-icon><Location /></el-icon>
+                  {{ job.city }}{{ job.address ? ' - ' + job.address : '' }}
+                </div>
+                <!-- 可以添加地图组件 -->
+              </div>
+            </el-card>
+          </div>
+
+          <div class="job-sidebar">
+            <el-card class="company-card">
+              <template #header>
+                <div class="card-header">
+                  <h3>公司信息</h3>
+                </div>
+              </template>
+
+              <div class="company-content">
+                <h4 class="company-name" @click="goToCompanyDetail(job.companyId)">
+                  {{ job.company?.name }}
+                  <el-icon><ArrowRight /></el-icon>
+                </h4>
+
+                <div class="company-meta">
+                  <div class="company-meta-item">
+                    <span class="label">融资阶段：</span>
+                    <span class="value">{{ formatFundingStage(job.company?.fundingStage) }}</span>
                   </div>
-                  <div class="meta-content">
-                    <div class="meta-label">发布时间</div>
-                    <div class="meta-value">{{ formatDate(job.createdAt) }}</div>
+
+                  <div class="company-meta-item">
+                    <span class="label">公司规模：</span>
+                    <span class="value">{{ formatCompanySize(job.company?.size) }}</span>
+                  </div>
+
+                  <div class="company-meta-item">
+                    <span class="label">行业分类：</span>
+                    <span class="value">{{ job.subCategory?.category?.name || '-' }}</span>
                   </div>
                 </div>
 
-                <div class="meta-item">
-                  <div class="meta-icon">
-                    <el-icon><VideoPlay /></el-icon>
+                <div class="company-description" v-if="job.company?.description">
+                  {{ job.company.description }}
+                </div>
+              </div>
+            </el-card>
+
+            <el-card class="related-jobs-card">
+              <template #header>
+                <div class="card-header">
+                  <h3>相似职位</h3>
+                </div>
+              </template>
+
+              <div class="related-jobs-list" v-if="relatedJobs.length">
+                <div
+                  v-for="(item, index) in relatedJobs"
+                  :key="index"
+                  class="related-job-item"
+                  @click="viewJob(item.id)"
+                >
+                  <div class="related-job-info">
+                    <div class="related-job-title">{{ item.title }}</div>
+                    <div class="related-job-company">{{ item.company?.name }}</div>
                   </div>
-                  <div class="meta-content">
-                    <div class="meta-label">远程工作</div>
-                    <div class="meta-value">{{ job.isRemote ? '支持' : '不支持' }}</div>
+                  <div class="related-job-salary">
+                    {{ formatSalary(item.salaryMin, item.salaryMax) }}
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div class="job-description">
-              <div class="description-section">
-                <h3 class="section-title">职位描述</h3>
-                <div class="section-content" v-html="formattedDescription"></div>
-              </div>
-
-              <div class="description-section">
-                <h3 class="section-title">职位要求</h3>
-                <div class="section-content" v-html="formattedRequirements"></div>
-              </div>
-            </div>
-          </el-card>
-
-          <el-card class="job-card">
-            <template #header>
-              <div class="card-header">
-                <h3>工作地点</h3>
-              </div>
-            </template>
-
-            <div class="location-info">
-              <div class="location-address">
-                <el-icon><Location /></el-icon>
-                {{ job.city }}{{ job.address ? ' - ' + job.address : '' }}
-              </div>
-              <!-- 可以添加地图组件 -->
-            </div>
-          </el-card>
+              <div v-else class="no-related-jobs">暂无相似职位</div>
+            </el-card>
+          </div>
         </div>
+      </template>
 
-        <div class="job-sidebar">
-          <el-card class="company-card">
-            <template #header>
-              <div class="card-header">
-                <h3>公司信息</h3>
-              </div>
-            </template>
-
-            <div class="company-content">
-              <h4 class="company-name" @click="goToCompanyDetail(job.companyId)">
-                {{ job.company?.name }}
-                <el-icon><ArrowRight /></el-icon>
-              </h4>
-
-              <div class="company-meta">
-                <div class="company-meta-item">
-                  <span class="label">融资阶段：</span>
-                  <span class="value">{{ formatFundingStage(job.company?.fundingStage) }}</span>
-                </div>
-
-                <div class="company-meta-item">
-                  <span class="label">公司规模：</span>
-                  <span class="value">{{ formatCompanySize(job.company?.size) }}</span>
-                </div>
-
-                <div class="company-meta-item">
-                  <span class="label">行业分类：</span>
-                  <span class="value">{{ job.subCategory?.category?.name || '-' }}</span>
-                </div>
-              </div>
-
-              <div class="company-description" v-if="job.company?.description">
-                {{ job.company.description }}
-              </div>
-            </div>
-          </el-card>
-
-          <el-card class="related-jobs-card">
-            <template #header>
-              <div class="card-header">
-                <h3>相似职位</h3>
-              </div>
-            </template>
-
-            <div class="related-jobs-list" v-if="relatedJobs.length">
-              <div
-                v-for="(item, index) in relatedJobs"
-                :key="index"
-                class="related-job-item"
-                @click="viewJob(item.id)"
-              >
-                <div class="related-job-info">
-                  <div class="related-job-title">{{ item.title }}</div>
-                  <div class="related-job-company">{{ item.company?.name }}</div>
-                </div>
-                <div class="related-job-salary">
-                  {{ formatSalary(item.salaryMin, item.salaryMax) }}
-                </div>
-              </div>
-            </div>
-            <div v-else class="no-related-jobs">暂无相似职位</div>
-          </el-card>
-        </div>
+      <!-- 无数据状态 -->
+      <div v-else class="empty-container">
+        <el-empty description="职位不存在或已下线" />
+        <el-button class="back-to-list" @click="goBack">返回职位列表</el-button>
       </div>
-    </template>
-
-    <!-- 无数据状态 -->
-    <div v-else class="empty-container">
-      <el-empty description="职位不存在或已下线" />
-      <el-button class="back-to-list" @click="goBack">返回职位列表</el-button>
     </div>
   </div>
 </template>
@@ -249,7 +251,6 @@ import {
 } from '@element-plus/icons-vue'
 import { getJob, getJobList, applyForJob } from '@/api/job'
 import { useUserStore } from '@/stores/user'
-import { ElLoading } from 'element-plus'
 import {
   formatSalary,
   formatDate,
@@ -414,6 +415,11 @@ onMounted(() => {
 </script>
 
 <style lang="less" scoped>
+.job-detail-page {
+  background-color: #f5f9ff;
+  width: 100%;
+}
+
 .job-detail-container {
   max-width: 1200px;
   margin: 0 auto;

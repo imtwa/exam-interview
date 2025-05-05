@@ -238,10 +238,19 @@ export function getJobById(id) {
  * @returns {Promise}
  */
 export function getJobsByInterviewer(params) {
+  // 确保params.page是数字类型
+  const queryParams = { ...params }
+  if (queryParams.page) {
+    queryParams.page = Number(queryParams.page)
+  }
+  if (queryParams.pageSize) {
+    queryParams.pageSize = Number(queryParams.pageSize)
+  }
+
   return request({
     url: '/job/interviewer/jobs',
     method: 'get',
-    params
+    params: queryParams
   })
 }
 

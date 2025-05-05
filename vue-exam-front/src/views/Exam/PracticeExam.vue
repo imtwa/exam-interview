@@ -1228,7 +1228,7 @@ const goBackToExam = () => {
 <style lang="less" scoped>
 .practice-exam-page {
   width: 100%;
-  background-color: #f5f7fa;
+  background-color: #f5f9ff;
 }
 
 .practice-exam-container {

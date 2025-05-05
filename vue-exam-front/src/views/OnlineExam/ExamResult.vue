@@ -778,7 +778,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .exam-result-page {
-  background-color: #f5f7fa;
+  background-color: #f5f9ff;
   width: 100%;
 }
 .exam-result-container {

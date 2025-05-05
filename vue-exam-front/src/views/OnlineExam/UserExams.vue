@@ -316,16 +316,15 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .user-exams-page {
-  background-color: #f5f7fa;
+  background-color: #f5f9ff;
   width: 100%;
-  min-height: calc(100vh - 60px);
-  padding: 20px 0;
+  min-height: calc(100vh - 72px);
 }
 
 .user-exams-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 20px;
 
   @media (max-width: 768px) {
     padding: 0 15px;

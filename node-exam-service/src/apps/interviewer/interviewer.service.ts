@@ -17,6 +17,8 @@ import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
 import { AssignExamDto } from './dto/assign-exam.dto';
+import { ExamStatus } from '../../common/enums/exam-status.enum';
+import { NotificationType } from '../../common/enums/notification-type.enum';
 
 @Injectable()
 export class InterviewerService {
@@ -25,10 +27,11 @@ export class InterviewerService {
   constructor(
     @Inject('PRISMA_CLIENT') private prisma: PrismaClient,
     private configService: ConfigService,
-    loggerService: LoggerService,
+    private emailService: EmailService,
+    private loggerService: LoggerService,
   ) {
     this.logger = loggerService;
-    this.logger.setContext(InterviewerService.name);
+    this.logger.setContext('InterviewerService');
   }
 
   /**
@@ -822,8 +825,7 @@ export class InterviewerService {
           : '无限制';
 
         // 使用 EmailService 发送邮件通知
-        const emailService = new EmailService(this.configService);
-        await emailService.sendMail({
+        await this.emailService.sendMail({
           to: candidateEmail,
           subject: `[笔试通知] ${companyName}邀请您参加"${jobTitle}"职位的在线笔试`,
           html: `
@@ -865,5 +867,435 @@ export class InterviewerService {
       ...examAssignment,
       examUrl,
     };
+  }
+
+  /**
+   * 获取面试官管理的考试列表
+   * @param userId 面试官用户ID
+   * @param queryDto 查询参数
+   */
+  async getInterviewerExams(userId: number, queryDto: any) {
+    // 查找面试官信息
+    const interviewer = await this.getInterviewerByUserId(userId);
+    if (!interviewer) {
+      throw new ForbiddenException('只有面试官可以查看考试列表');
+    }
+
+    const {
+      page = 1,
+      pageSize = 10,
+      jobId,
+      candidateName,
+      status,
+      keyword,
+    } = queryDto;
+
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
+
+    // 构建查询条件
+    const where: any = {
+      application: {
+        job: {
+          interviewerId: interviewer.id,
+        },
+      },
+    };
+
+    // 添加条件过滤
+    if (jobId) {
+      where.application.jobId = Number(jobId);
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (candidateName) {
+      where.application.jobSeeker = {
+        user: {
+          username: {
+            contains: candidateName,
+            mode: 'insensitive',
+          },
+        },
+      };
+    }
+
+    if (keyword) {
+      where.examPaper = {
+        name: {
+          contains: keyword,
+          mode: 'insensitive',
+        },
+      };
+    }
+
+    try {
+      // 查询考试分配记录
+      const [assignments, total] = await Promise.all([
+        this.prisma.examAssignment.findMany({
+          where,
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            examPaper: true,
+            application: {
+              include: {
+                jobSeeker: {
+                  include: {
+                    user: true,
+                  },
+                },
+                job: true,
+              },
+            },
+          },
+        }),
+        this.prisma.examAssignment.count({ where }),
+      ]);
+
+      // 格式化返回数据
+      const items = assignments.map((assignment) => {
+        const job = assignment.application.job;
+        const jobSeeker = assignment.application.jobSeeker;
+        const user = jobSeeker.user;
+
+        // 判断考试状态 - 如果超过了截止时间但未完成，标记为过期
+        let status = assignment.status;
+        if (
+          status === ExamStatus.PENDING &&
+          new Date() > assignment.examEndTime
+        ) {
+          status = ExamStatus.EXPIRED;
+        }
+
+        return {
+          id: assignment.id,
+          examId: assignment.examId,
+          examTitle: assignment.examPaper?.name || '未命名考试',
+          duration: assignment.duration,
+          startTime: assignment.examStartTime,
+          endTime: assignment.examEndTime,
+          status,
+          score: assignment.score,
+          submittedAt: assignment.completed ? assignment.updatedAt : null,
+          invitationCode: assignment.invitationCode,
+          positionId: job.id,
+          positionName: job.title,
+          candidateId: jobSeeker.id,
+          candidateName: user.username || user.email,
+          candidateEmail: user.email,
+        };
+      });
+
+      return { items, total };
+    } catch (error) {
+      this.logger.error(
+        `获取面试官考试列表失败: ${error.message}`,
+        error.stack,
+      );
+      throw new Error('获取考试列表失败');
+    }
+  }
+
+  /**
+   * 延长考试截止时间
+   * @param userId 面试官用户ID
+   * @param examAssignmentId 考试分配ID
+   * @param newEndTime 新截止时间
+   */
+  async extendExamDeadline(
+    userId: number,
+    examAssignmentId: number,
+    newEndTime: Date,
+  ) {
+    // 查找面试官信息
+    const interviewer = await this.getInterviewerByUserId(userId);
+    if (!interviewer) {
+      throw new ForbiddenException('只有面试官可以延长考试时间');
+    }
+
+    // 查找考试分配记录
+    const assignment = await this.prisma.examAssignment.findUnique({
+      where: { id: examAssignmentId },
+      include: {
+        examPaper: true,
+        application: {
+          include: {
+            job: true,
+            jobSeeker: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('考试记录不存在');
+    }
+
+    // 验证面试官权限
+    if (assignment.application.job.interviewerId !== interviewer.id) {
+      throw new ForbiddenException('您无权操作此考试');
+    }
+
+    // 验证考试状态（不能修改已完成的考试）
+    if (assignment.status === ExamStatus.COMPLETED) {
+      throw new BadRequestException('已完成的考试不能延长时间');
+    }
+
+    // 验证新截止时间
+    if (newEndTime <= new Date()) {
+      throw new BadRequestException('新截止时间必须在当前时间之后');
+    }
+
+    // 更新截止时间
+    const updatedAssignment = await this.prisma.examAssignment.update({
+      where: { id: examAssignmentId },
+      data: {
+        examEndTime: newEndTime,
+        // 如果之前状态为过期，且现在时间小于新截止时间，则恢复为待完成状态
+        status:
+          assignment.status === ExamStatus.EXPIRED
+            ? ExamStatus.PENDING
+            : assignment.status,
+      },
+    });
+
+    // 发送邮件通知考生
+    try {
+      const candidate = assignment.application.jobSeeker.user;
+      const examTitle = assignment.examPaper?.name || '考试';
+
+      await this.emailService.sendMail({
+        to: candidate.email,
+        subject: `[考试时间延长] ${examTitle}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>您的考试时间已延长</h2>
+            <p>尊敬的 ${candidate.username || '考生'}，</p>
+            <p>您的考试 "${examTitle}" 截止时间已调整：</p>
+            <ul>
+              <li>原截止时间：${new Date(assignment.examEndTime).toLocaleString('zh-CN')}</li>
+              <li>新截止时间：${new Date(newEndTime).toLocaleString('zh-CN')}</li>
+            </ul>
+            <p>请在新的截止时间前完成考试。</p>
+            <p>点击下方链接进入考试：</p>
+            <p>
+              <a href="${this.configService.get('FRONTEND_URL')}/online-exam/session/${assignment.invitationCode}" 
+                 style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+                 进入考试
+              </a>
+            </p>
+            <p>祝您考试顺利！</p>
+          </div>
+        `,
+      });
+    } catch (emailError) {
+      this.logger.error(
+        `发送延期邮件失败: ${emailError.message}`,
+        emailError.stack,
+      );
+      // 不因邮件发送失败而影响主流程
+    }
+
+    return updatedAssignment;
+  }
+
+  /**
+   * 发送考试提醒邮件
+   * @param userId 面试官用户ID
+   * @param examAssignmentId 考试分配ID
+   */
+  async sendExamReminder(userId: number, examAssignmentId: number) {
+    // 查找面试官信息
+    const interviewer = await this.getInterviewerByUserId(userId);
+    if (!interviewer) {
+      throw new ForbiddenException('只有面试官可以发送提醒');
+    }
+
+    // 查找考试分配记录
+    const assignment = await this.prisma.examAssignment.findUnique({
+      where: { id: examAssignmentId },
+      include: {
+        examPaper: true,
+        application: {
+          include: {
+            job: true,
+            jobSeeker: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('考试记录不存在');
+    }
+
+    // 验证面试官权限
+    if (assignment.application.job.interviewerId !== interviewer.id) {
+      throw new ForbiddenException('您无权操作此考试');
+    }
+
+    // 验证考试状态
+    if (assignment.status !== ExamStatus.PENDING) {
+      throw new BadRequestException('只能为待完成的考试发送提醒');
+    }
+
+    // 验证考试时间有效
+    if (new Date() > assignment.examEndTime) {
+      throw new BadRequestException('考试已过期，无法发送提醒');
+    }
+
+    // 获取考生信息
+    const candidate = assignment.application.jobSeeker.user;
+    const examTitle = assignment.examPaper?.name || '考试';
+    const jobTitle = assignment.application.job.title || '职位';
+    const companyName = interviewer.company?.name || '公司';
+
+    // 发送提醒邮件
+    await this.emailService.sendMail({
+      to: candidate.email,
+      subject: `[考试提醒] ${companyName}邀请您完成"${jobTitle}"职位的笔试`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>考试提醒</h2>
+          <p>尊敬的 ${candidate.username || '考生'}，</p>
+          <p>您有一份待完成的考试："${examTitle}"，请及时完成。</p>
+          <ul>
+            <li>开始时间：${new Date(assignment.examStartTime).toLocaleString('zh-CN')}</li>
+            <li>截止时间：${new Date(assignment.examEndTime).toLocaleString('zh-CN')}</li>
+            <li>考试时长：${assignment.duration}分钟</li>
+          </ul>
+          <p>点击下方链接进入考试：</p>
+          <p>
+            <a href="${this.configService.get('FRONTEND_URL')}/online-exam/session/${assignment.invitationCode}" 
+               style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+               开始考试
+            </a>
+          </p>
+          <p>祝您考试顺利！</p>
+        </div>
+      `,
+    });
+
+    // 记录提醒操作
+    await this.prisma.notification.create({
+      data: {
+        userId: candidate.id,
+        type: NotificationType.SYSTEM_MESSAGE,
+        title: `考试提醒: ${examTitle}`,
+        content: `您有一个考试需要完成，请在截止时间前完成。`,
+        targetId: examAssignmentId,
+        isRead: false,
+      },
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * 取消考试
+   * @param userId 面试官用户ID
+   * @param examAssignmentId 考试分配ID
+   */
+  async cancelExam(userId: number, examAssignmentId: number) {
+    // 查找面试官信息
+    const interviewer = await this.getInterviewerByUserId(userId);
+    if (!interviewer) {
+      throw new ForbiddenException('只有面试官可以取消考试');
+    }
+
+    // 查找考试分配记录
+    const assignment = await this.prisma.examAssignment.findUnique({
+      where: { id: examAssignmentId },
+      include: {
+        examPaper: true,
+        application: {
+          include: {
+            job: true,
+            jobSeeker: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('考试记录不存在');
+    }
+
+    // 验证面试官权限
+    if (assignment.application.job.interviewerId !== interviewer.id) {
+      throw new ForbiddenException('您无权操作此考试');
+    }
+
+    // 验证考试状态
+    if (assignment.status === ExamStatus.COMPLETED) {
+      throw new BadRequestException('已完成的考试不能取消');
+    }
+
+    // 获取考生信息
+    const candidate = assignment.application.jobSeeker.user;
+    const examTitle = assignment.examPaper?.name || '考试';
+
+    // 更新考试状态为过期
+    const updatedAssignment = await this.prisma.examAssignment.update({
+      where: { id: examAssignmentId },
+      data: {
+        status: ExamStatus.EXPIRED,
+        note: assignment.note ? `${assignment.note} [已取消]` : '已取消',
+      },
+    });
+
+    // 发送邮件通知考生
+    try {
+      await this.emailService.sendMail({
+        to: candidate.email,
+        subject: `[考试取消] ${examTitle}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>考试已取消</h2>
+            <p>尊敬的 ${candidate.username || '考生'}，</p>
+            <p>您的考试 "${examTitle}" 已被取消。</p>
+            <p>职位：${assignment.application.job.title || '职位'}</p>
+            <p>公司：${interviewer.company?.name || '公司'}</p>
+            <p>如有疑问，请联系招聘方。</p>
+          </div>
+        `,
+      });
+    } catch (emailError) {
+      this.logger.error(
+        `发送取消邮件失败: ${emailError.message}`,
+        emailError.stack,
+      );
+      // 不因邮件发送失败而影响主流程
+    }
+
+    // 记录取消操作
+    await this.prisma.notification.create({
+      data: {
+        userId: candidate.id,
+        type: NotificationType.SYSTEM_MESSAGE,
+        title: `考试取消: ${examTitle}`,
+        content: `您的考试已被取消。`,
+        targetId: examAssignmentId,
+        isRead: false,
+      },
+    });
+
+    return updatedAssignment;
   }
 }

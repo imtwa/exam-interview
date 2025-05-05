@@ -95,7 +95,7 @@ const goToUserExams = () => {
 .online-exam-page {
   width: 100%;
   background-color: #f5f9ff;
-  min-height: calc(100vh - 60px);
+  min-height: calc(100vh - 72px);
   padding: 20px 0;
 }
 

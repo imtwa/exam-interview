@@ -5,6 +5,7 @@ import { PrismaClient } from '../../../prisma/generated/client';
 import { LoggerService } from '../../common/logger/logger.service';
 import { InterviewerController } from './interviewer.controller';
 import { InterviewerService } from './interviewer.service';
+import { EmailModule } from '../email/email.module';
 
 /**
  * 面试官模块
@@ -12,7 +13,7 @@ import { InterviewerService } from './interviewer.service';
  * 处理面试官相关的功能，包括面试官资料管理、职位管理等
  */
 @Module({
-  imports: [LoggerModule, ConfigModule],
+  imports: [LoggerModule, ConfigModule, EmailModule],
   controllers: [InterviewerController],
   providers: [
     InterviewerService,

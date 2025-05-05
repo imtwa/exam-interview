@@ -274,6 +274,12 @@ export class JobController {
     required: false,
     type: Number,
   })
+  @ApiQuery({
+    name: 'status',
+    description: '职位状态',
+    required: false,
+    enum: ['ACTIVE', 'FILLED', 'EXPIRED'],
+  })
   @ApiResponse({ status: 200, description: '返回职位列表及分页信息' })
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiResponse({ status: 403, description: '用户不是面试官' })
@@ -282,7 +288,7 @@ export class JobController {
   @Get('interviewer/jobs')
   async getInterviewerJobs(@Request() req, @Query() query) {
     const userId = req.user.userId;
-    const { page = 1, pageSize = 10, interviewerId } = query;
+    const { page = 1, pageSize = 10, interviewerId, status } = query;
 
     // 如果提供了interviewerId参数，则使用参数值；否则使用当前登录用户
     const targetInterviewerId = interviewerId
@@ -294,6 +300,7 @@ export class JobController {
       targetInterviewerId,
       parseInt(page as string),
       parseInt(pageSize as string),
+      status,
     );
 
     return pagination(

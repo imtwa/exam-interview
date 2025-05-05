@@ -9,55 +9,62 @@
         </el-breadcrumb>
       </div>
 
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <div class="title-section">
-          <h1 class="page-title">考试管理</h1>
-          <p class="page-description">管理针对候选人的考试和测评</p>
-        </div>
-        <div class="actions-section">
-          <el-button type="primary" @click="createExam">
-            <el-icon><Plus /></el-icon>
-            创建考试
-          </el-button>
-        </div>
-      </div>
-
       <!-- 筛选区域 -->
       <div class="filter-container">
         <el-form :inline="true" class="filter-form">
-          <el-form-item label="职位">
-            <el-select
-              v-model="queryParams.jobId"
-              placeholder="选择职位"
-              clearable
-              @change="fetchExams"
-            >
-              <el-option v-for="job in jobs" :key="job.id" :label="job.title" :value="job.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="状态">
-            <el-select
-              v-model="queryParams.status"
-              placeholder="选择状态"
-              clearable
-              @change="fetchExams"
-            >
-              <el-option
-                v-for="item in statusOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+          <div class="filter-items">
+            <el-form-item label="职位" label-width="60px">
+              <el-select
+                v-model="queryParams.jobId"
+                placeholder="选择职位"
+                clearable
+                style="width: 180px"
+              >
+                <el-option v-for="job in jobs" :key="job.id" :label="job.title" :value="job.id" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="求职者" label-width="60px">
+              <el-input
+                v-model="queryParams.candidateName"
+                placeholder="求职者姓名"
+                clearable
+                style="width: 180px"
               />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="关键词">
-            <el-input v-model="queryParams.keyword" placeholder="考试名称" clearable />
-          </el-form-item>
-          <el-form-item>
+            </el-form-item>
+            <el-form-item label="状态" label-width="60px">
+              <el-select
+                v-model="queryParams.status"
+                placeholder="选择状态"
+                clearable
+                style="width: 180px"
+              >
+                <el-option
+                  v-for="item in statusOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="关键词" label-width="60px">
+              <el-input
+                v-model="queryParams.keyword"
+                placeholder="考试名称"
+                clearable
+                style="width: 180px"
+              />
+            </el-form-item>
+          </div>
+          <div class="filter-actions">
             <el-button type="primary" @click="fetchExams">搜索</el-button>
             <el-button @click="resetFilters">重置</el-button>
-          </el-form-item>
+            <div class="actions-section">
+              <el-button type="primary" @click="createExam">
+                <el-icon><Plus /></el-icon>
+                创建考试
+              </el-button>
+            </div>
+          </div>
         </el-form>
       </div>
 
@@ -78,50 +85,69 @@
         </div>
         <div v-else>
           <el-table :data="exams" style="width: 100%" stripe>
-            <el-table-column prop="title" label="考试名称" min-width="160">
+            <el-table-column
+              prop="examTitle"
+              label="试卷名称"
+              min-width="150"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
-                <span class="exam-title" @click="viewExamDetail(row.id)">{{ row.title }}</span>
+                <span class="exam-title" @click="viewExamDetail(row.examId)">{{
+                  row.examTitle
+                }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="jobTitle" label="关联职位" min-width="140">
+            <el-table-column
+              prop="positionName"
+              label="关联职位"
+              min-width="120"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
-                {{ row.jobTitle || '未关联' }}
+                <span class="job-name" @click="viewJobDetail(row.positionId)">
+                  {{ row.positionName || '未关联' }}
+                </span>
               </template>
             </el-table-column>
-            <el-table-column prop="duration" label="时长" width="80">
+            <el-table-column prop="candidateName" label="考生姓名" min-width="120">
+              <template #default="{ row }">
+                <span class="candidate-name" @click="viewCandidateProfile(row.candidateId)">
+                  {{ row.candidateName }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="duration" label="时长" width="80" align="center">
               <template #default="{ row }"> {{ row.duration }}分钟 </template>
             </el-table-column>
-            <el-table-column prop="questionsCount" label="题目数" width="90" align="center">
+            <el-table-column prop="examTime" label="考试时间" min-width="180">
               <template #default="{ row }">
-                {{ row.questionsCount || 0 }}
+                <div class="time-range">
+                  <div>开始：{{ formatDate(row.startTime) }}</div>
+                  <div>截止：{{ formatDate(row.endTime) }}</div>
+                </div>
               </template>
             </el-table-column>
-            <el-table-column prop="candidatesCount" label="应试人数" width="100" align="center">
+            <el-table-column prop="score" label="得分" width="90" align="center">
               <template #default="{ row }">
-                <el-button type="primary" link @click="viewCandidates(row.id)">
-                  {{ row.candidatesCount || 0 }}
-                </el-button>
+                <span v-if="row.status === 'COMPLETED'">{{ row.score }}</span>
+                <span v-else>-</span>
               </template>
             </el-table-column>
-            <el-table-column prop="averageScore" label="平均分" width="100" align="center">
-              <template #default="{ row }">
-                {{ row.candidatesCount ? row.averageScore : '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="createdAt" label="创建日期" width="120">
-              <template #default="{ row }">
-                {{ formatDate(row.createdAt) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column prop="status" label="状态" width="100" align="center">
               <template #default="{ row }">
                 <el-tag :type="getStatusType(row.status)">{{ getStatusLabel(row.status) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column fixed="right" label="操作" width="200">
+            <el-table-column fixed="right" label="操作" width="150" align="center">
               <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="editExam(row.id)">
-                  编辑
+                <el-button
+                  link
+                  type="primary"
+                  size="small"
+                  @click="viewExamResult(row)"
+                  :disabled="row.status !== 'COMPLETED'"
+                >
+                  查看结果
                 </el-button>
                 <el-dropdown trigger="click">
                   <el-button link type="primary" size="small">
@@ -129,16 +155,20 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item @click="viewExamDetail(row.id)">查看详情</el-dropdown-item>
-                      <el-dropdown-item @click="duplicateExam(row.id)">复制考试</el-dropdown-item>
-                      <el-dropdown-item @click="assignCandidates(row.id)"
-                        >分配考生</el-dropdown-item
+                      <el-dropdown-item
+                        @click="sendReminder(row)"
+                        :disabled="row.status !== 'PENDING'"
                       >
-                      <el-dropdown-item @click="toggleExamStatus(row.id, row.status)">
-                        {{ row.status === 'ACTIVE' ? '暂停考试' : '重新启用' }}
+                        发送提醒
                       </el-dropdown-item>
-                      <el-dropdown-item divided class="text-danger" @click="deleteExam(row.id)">
-                        删除考试
+                      <el-dropdown-item
+                        @click="extendDeadline(row)"
+                        :disabled="row.status === 'COMPLETED'"
+                      >
+                        延长截止时间
+                      </el-dropdown-item>
+                      <el-dropdown-item divided class="text-danger" @click="cancelExam(row.id)">
+                        取消考试
                       </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -161,55 +191,92 @@
           </div>
         </div>
       </div>
+
+      <!-- 延长截止时间对话框 -->
+      <el-dialog v-model="extendDeadlineDialogVisible" title="延长考试截止时间" width="500px">
+        <el-form :model="extendForm" label-width="100px">
+          <el-form-item label="考试名称">
+            <span>{{ extendForm.examTitle }}</span>
+          </el-form-item>
+          <el-form-item label="考生">
+            <span>{{ extendForm.candidateName }}</span>
+          </el-form-item>
+          <el-form-item label="当前截止时间">
+            <span>{{ formatDate(extendForm.currentEndTime) }}</span>
+          </el-form-item>
+          <el-form-item label="新截止时间">
+            <el-date-picker
+              v-model="extendForm.newEndTime"
+              type="datetime"
+              placeholder="选择新的截止时间"
+              format="YYYY-MM-DD HH:mm"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              :disabled-date="disabledDate"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button @click="extendDeadlineDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="submitExtendDeadline" :loading="submitLoading">
+              确认延长
+            </el-button>
+          </div>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
-import { formatDate } from '@/utils/formatDate'
+import {
+  getInterviewerExams,
+  extendExamDeadline,
+  sendExamReminder,
+  cancelExam as cancelExamAPI
+} from '@/api/interviewer'
+import { getJobsByInterviewer } from '@/api/job'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
-const route = useRoute()
+const userStore = useUserStore()
 const loading = ref(false)
 const exams = ref([])
 const total = ref(0)
 const jobs = ref([])
-
-// 获取URL中的jobId
-const jobId = computed(() => (route.query.jobId ? parseInt(route.query.jobId) : null))
+const submitLoading = ref(false)
 
 // 查询参数
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
   jobId: null,
+  candidateName: '',
   status: '',
   keyword: ''
 })
 
 // 状态选项
 const statusOptions = [
-  { label: '启用中', value: 'ACTIVE' },
-  { label: '已暂停', value: 'PAUSED' },
-  { label: '已结束', value: 'ENDED' },
-  { label: '草稿', value: 'DRAFT' }
+  { label: '待完成', value: 'PENDING' },
+  { label: '已完成', value: 'COMPLETED' },
+  { label: '已过期', value: 'EXPIRED' }
 ]
 
 // 获取状态显示类型
 const getStatusType = status => {
   switch (status) {
-    case 'ACTIVE':
+    case 'COMPLETED':
       return 'success'
-    case 'PAUSED':
+    case 'PENDING':
       return 'warning'
-    case 'ENDED':
+    case 'EXPIRED':
       return 'info'
-    case 'DRAFT':
-      return ''
     default:
       return ''
   }
@@ -221,25 +288,38 @@ const getStatusLabel = status => {
   return found ? found.label : '未知'
 }
 
+// 格式化日期
+const formatDate = date => {
+  if (!date) return '-'
+  const d = new Date(date)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 // 获取考试列表
-const fetchExams = async (page = currentPage.value) => {
+const fetchExams = async () => {
+  if (!userStore.isLoggedIn || !userStore.isInterviewer) {
+    ElMessage.warning('请先登录面试官账号')
+    router.push('/login')
+    return
+  }
+
   loading.value = true
-  currentPage.value = page
 
   try {
-    const response = await getExams({
-      page: currentPage.value,
-      size: pageSize.value,
-      jobId: filterForm.jobId,
-      status: filterForm.status,
-      keyword: filterForm.keyword
-    })
+    const response = await getInterviewerExams(queryParams)
 
-    exams.value = response.list
-    total.value = response.total
+    if (response) {
+      exams.value = response.items || []
+      total.value = response.total || 0
+    } else {
+      exams.value = []
+      total.value = 0
+    }
   } catch (error) {
     console.error('获取考试列表失败:', error)
     ElMessage.error('获取考试列表失败')
+    exams.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
@@ -248,24 +328,24 @@ const fetchExams = async (page = currentPage.value) => {
 // 获取职位列表
 const fetchJobs = async () => {
   try {
-    const response = await getJobs()
-    jobs.value = response.list
+    const response = await getJobsByInterviewer()
+    if (response) {
+      jobs.value = response.list || []
+    } else {
+      jobs.value = []
+    }
   } catch (error) {
-    console.error('获取职位列表失败:', error)
+    jobs.value = []
   }
 }
 
 // 重置筛选条件
 const resetFilters = () => {
+  queryParams.jobId = null
+  queryParams.candidateName = ''
   queryParams.status = ''
   queryParams.keyword = ''
   queryParams.page = 1
-
-  // 如果是从职位详情页进入，保留jobId筛选
-  if (!jobId.value) {
-    queryParams.jobId = null
-  }
-
   fetchExams()
 }
 
@@ -282,104 +362,132 @@ const handleCurrentChange = page => {
 
 // 创建考试
 const createExam = () => {
-  router.push('/exam-management/create')
+  router.push('/private-exams/create')
 }
 
 // 查看考试详情
 const viewExamDetail = id => {
-  router.push(`/exam-management/detail/${id}`)
+  router.push(`/exam/${id}`)
 }
 
-// 编辑考试
-const editExam = id => {
-  router.push(`/exam-management/edit/${id}`)
+// 查看职位详情
+const viewJobDetail = id => {
+  if (id) {
+    router.push(`/job/${id}`)
+  }
 }
 
-// 复制考试
-const duplicateExam = async id => {
+// 查看求职者档案
+const viewCandidateProfile = candidateId => {
+  if (candidateId) {
+    router.push(`/profile/${candidateId}`)
+  }
+}
+
+// 查看考试结果
+const viewExamResult = exam => {
+  if (exam.status === 'COMPLETED') {
+    router.push(`/online-exam/result/${exam.invitationCode}`)
+  } else {
+    ElMessage.warning('考生尚未完成考试')
+  }
+}
+
+// 延长截止时间对话框
+const extendDeadlineDialogVisible = ref(false)
+const extendForm = reactive({
+  id: null,
+  examTitle: '',
+  candidateName: '',
+  currentEndTime: null,
+  newEndTime: null
+})
+
+// 打开延长截止时间对话框
+const extendDeadline = exam => {
+  extendForm.id = exam.id
+  extendForm.examTitle = exam.examTitle
+  extendForm.candidateName = exam.candidateName
+  extendForm.currentEndTime = new Date(exam.endTime)
+  extendForm.newEndTime = new Date(new Date(exam.endTime).getTime() + 24 * 60 * 60 * 1000) // 默认延长一天
+  extendDeadlineDialogVisible.value = true
+}
+
+// 禁用今天之前的日期
+const disabledDate = time => {
+  return time.getTime() < Date.now()
+}
+
+// 提交延长截止时间
+const submitExtendDeadline = async () => {
+  if (!extendForm.newEndTime) {
+    ElMessage.warning('请选择新的截止时间')
+    return
+  }
+
+  if (new Date(extendForm.newEndTime) <= extendForm.currentEndTime) {
+    ElMessage.warning('新截止时间必须晚于当前截止时间')
+    return
+  }
+
+  submitLoading.value = true
   try {
-    await ElMessageBox.confirm('确定要复制该考试吗？将创建一个包含相同题目的新考试。', '提示', {
+    await extendExamDeadline({
+      examAssignmentId: extendForm.id,
+      newEndTime: extendForm.newEndTime
+    })
+
+    ElMessage.success('已成功延长截止时间')
+    extendDeadlineDialogVisible.value = false
+    fetchExams() // 刷新列表
+  } catch (error) {
+    console.error('延长截止时间失败:', error)
+    ElMessage.error('延长截止时间失败')
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+// 发送提醒
+const sendReminder = async exam => {
+  try {
+    await ElMessageBox.confirm(`确定要向 ${exam.candidateName} 发送考试提醒邮件吗？`, '发送提醒', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'info'
     })
 
-    const response = await copyExam(id)
-
-    ElMessage.success('复制考试成功')
-    router.push(`/exam-management/edit/${response.id}`)
+    await sendExamReminder(exam.id)
+    ElMessage.success('提醒邮件已发送')
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('复制考试失败:', error)
-      ElMessage.error('复制考试失败')
+      console.error('发送提醒失败:', error)
+      ElMessage.error('发送提醒失败')
     }
   }
 }
 
-// 分配考试给候选人
-const assignCandidates = async examId => {
+// 取消考试
+const cancelExam = async examId => {
   try {
-    const candidatesForm = {
-      examId: examId,
-      candidateIds: [1, 2, 3] // 示例数据，实际应从弹窗中获取
-    }
-
-    const response = await assignExamToCandidates(candidatesForm)
-
-    ElMessage.success('已成功分配考试给候选人')
-    await fetchExams()
-  } catch (error) {
-    console.error('分配考试失败:', error)
-    ElMessage.error('分配考试失败')
-  }
-}
-
-// 查看考生
-const viewCandidates = id => {
-  router.push(`/exam-management/candidates/${id}`)
-}
-
-// 更改考试状态
-const toggleExamStatus = async exam => {
-  try {
-    const newStatus = exam.status === 'active' ? 'inactive' : 'active'
-    const response = await updateExamStatus(exam.id, newStatus)
-
-    ElMessage.success(`考试已${newStatus === 'active' ? '启用' : '停用'}`)
-    await fetchExams()
-  } catch (error) {
-    console.error('更新考试状态失败:', error)
-    ElMessage.error('更新考试状态失败')
-  }
-}
-
-// 删除考试
-const deleteExam = async exam => {
-  try {
-    await ElMessageBox.confirm(`确定要删除考试 "${exam.title}" 吗？此操作不可逆`, '警告', {
+    await ElMessageBox.confirm('确定要取消此考试吗？此操作不可逆', '警告', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
 
-    const response = await removeExam(exam.id)
-
-    ElMessage.success('考试已删除')
-    await fetchExams()
+    await cancelExamAPI(examId)
+    ElMessage.success('考试已取消')
+    fetchExams() // 刷新列表
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('删除考试失败:', error)
-      ElMessage.error('删除考试失败')
+      console.error('取消考试失败:', error)
+      ElMessage.error('取消考试失败')
     }
   }
 }
 
 onMounted(() => {
-  // 如果有URL参数，更新查询条件
-  if (jobId.value) {
-    queryParams.jobId = jobId.value
-  }
-
   fetchJobs()
   fetchExams()
 })
@@ -389,7 +497,7 @@ onMounted(() => {
 .exam-management-page {
   width: 100%;
   background-color: #f5f9ff;
-  min-height: calc(100vh - 60px);
+  min-height: calc(100vh - 72px);
 }
 
 .exam-management-container {
@@ -408,20 +516,20 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+}
 
-  .title-section {
-    .page-title {
-      font-size: 24px;
-      font-weight: 600;
-      color: #333;
-      margin: 0 0 8px 0;
-    }
+.title-section {
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 8px 0;
+  }
 
-    .page-description {
-      color: #666;
-      font-size: 14px;
-      margin: 0;
-    }
+  .page-description {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
   }
 }
 
@@ -431,6 +539,26 @@ onMounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   padding: 20px;
   margin-bottom: 20px;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.filter-items {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1;
+  gap: 10px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .loading-container {
@@ -450,21 +578,25 @@ onMounted(() => {
 .empty-container {
   padding: 40px;
   text-align: center;
-
-  p {
-    color: #666;
-    margin-bottom: 16px;
-  }
 }
 
-.exam-title {
+.exam-title,
+.job-name,
+.candidate-name {
   color: #0352c9;
   cursor: pointer;
   font-weight: 500;
+}
 
-  &:hover {
-    text-decoration: underline;
-  }
+.exam-title:hover,
+.job-name:hover,
+.candidate-name:hover {
+  text-decoration: underline;
+}
+
+.time-range {
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .pagination-wrapper {
@@ -474,5 +606,16 @@ onMounted(() => {
 
 .text-danger {
   color: #f56c6c;
+}
+
+@media (max-width: 768px) {
+  .filter-form {
+    flex-direction: column;
+  }
+
+  .filter-actions {
+    margin-top: 15px;
+    justify-content: flex-end;
+  }
 }
 </style>

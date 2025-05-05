@@ -1,189 +1,193 @@
 <template>
-  <div class="company-detail-container">
-    <div v-if="loading" class="loading-wrapper">
-      <el-card
-        shadow="never"
-        style="background: transparent; border: none"
-        v-loading="true"
-      ></el-card>
-    </div>
+  <div class="company-detail-page">
+    <div class="company-detail-container">
+      <div v-if="loading" class="loading-wrapper">
+        <el-card
+          shadow="never"
+          style="background: transparent; border: none"
+          v-loading="true"
+        ></el-card>
+      </div>
 
-    <div v-else>
-      <!-- 公司基本信息卡片 -->
-      <el-card class="company-info-card">
-        <div class="company-header">
-          <h1 class="company-name">{{ company.name }}</h1>
-          <div class="company-badges">
-            <span class="badge">{{ formatFundingStage(company.fundingStage) }}</span>
-            <span class="badge">{{ formatCompanySize(company.size) }}</span>
-            <span class="badge" v-if="company.industry">{{ company.industry.name }}</span>
-          </div>
-        </div>
-
-        <div class="company-meta">
-          <div class="meta-item">
-            <span class="label">公司地址：</span>
-            <span class="value">{{ company.address || '未提供地址' }}</span>
-          </div>
-          <div class="meta-item" v-if="company.foundedYear">
-            <span class="label">成立年份：</span>
-            <span class="value">{{ company.foundedYear }}年</span>
-          </div>
-          <div class="meta-item" v-if="company.website">
-            <span class="label">公司官网：</span>
-            <a :href="company.website" target="_blank" class="value">{{ company.website }}</a>
-          </div>
-        </div>
-
-        <div class="company-description" v-if="company.description">
-          <h3>公司简介</h3>
-          <p>{{ company.description }}</p>
-        </div>
-      </el-card>
-
-      <!-- 职位和HR团队切换Tab -->
-      <div class="company-content-section">
-        <el-tabs v-model="activeTab" class="company-tabs">
-          <el-tab-pane :label="`在招职位 (${totalJobs})`" name="jobs">
-            <div class="section-header">
-              <div class="filter-tools">
-                <el-input
-                  v-model="jobSearchKeyword"
-                  placeholder="搜索职位"
-                  class="search-input"
-                  clearable
-                  @keyup.enter="handleJobSearch"
-                >
-                  <template #prefix>
-                    <el-icon><Search /></el-icon>
-                  </template>
-                </el-input>
-              </div>
+      <div v-else>
+        <!-- 公司基本信息卡片 -->
+        <el-card class="company-info-card">
+          <div class="company-header">
+            <h1 class="company-name">{{ company.name }}</h1>
+            <div class="company-badges">
+              <span class="badge">{{ formatFundingStage(company.fundingStage) }}</span>
+              <span class="badge">{{ formatCompanySize(company.size) }}</span>
+              <span class="badge" v-if="company.industry">{{ company.industry.name }}</span>
             </div>
+          </div>
 
-            <div class="jobs-list">
-              <div v-if="loadingJobs" class="loading-jobs">
-                <el-card
-                  shadow="never"
-                  style="background: transparent; border: none"
-                  v-loading="true"
-                ></el-card>
-              </div>
-
-              <div v-else-if="jobs.length === 0" class="empty-jobs">
-                <el-empty description="暂无在招职位" />
-              </div>
-
-              <div v-else>
-                <div v-for="job in jobs" :key="job.id" class="job-item">
-                  <div class="job-header">
-                    <div class="job-title-section">
-                      <h3 class="job-title">{{ job.title }}</h3>
-                      <div class="job-salary">{{ formatSalary(job.salaryMin, job.salaryMax) }}</div>
-                    </div>
-                    <div class="job-actions">
-                      <el-button type="primary" size="small" @click="viewJobDetail(job.id)"
-                        >查看</el-button
-                      >
-                      <el-button
-                        type="success"
-                        size="small"
-                        @click="applyJob(job.id)"
-                        :loading="job.applying"
-                      >
-                        一键投递
-                      </el-button>
-                    </div>
-                  </div>
-
-                  <div class="job-tags">
-                    <span class="job-tag">{{ job.city }}</span>
-                    <span class="job-tag">{{ formatExperience(job.experienceReq) }}经验</span>
-                    <span class="job-tag">{{ formatEducation(job.educationReq) }}</span>
-                    <span class="job-tag" v-if="job.isRemote">远程工作</span>
-                  </div>
-
-                  <div class="job-info">
-                    <div class="info-left">
-                      <span>{{ job.applicationsCount || 0 }}人已投递</span>
-                      <span>{{ formatDate(job.createdAt) }}</span>
-                    </div>
-                    <div class="info-right" v-if="job.subCategory">
-                      <span
-                        >{{ job.subCategory.category?.name || '' }} /
-                        {{ job.subCategory.name }}</span
-                      >
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 分页 -->
-                <div class="pagination-wrapper">
-                  <el-pagination
-                    v-model:current-page="currentPage"
-                    v-model:page-size="pageSize"
-                    :page-sizes="[5, 10, 20, 50]"
-                    layout="total, sizes, prev, pager, next, jumper"
-                    :total="totalJobs"
-                    @size-change="handleSizeChange"
-                    @current-change="handleCurrentChange"
-                  />
-                </div>
-              </div>
+          <div class="company-meta">
+            <div class="meta-item">
+              <span class="label">公司地址：</span>
+              <span class="value">{{ company.address || '未提供地址' }}</span>
             </div>
-          </el-tab-pane>
-
-          <el-tab-pane :label="`HR团队 (${totalInterviewers})`" name="hr">
-            <div class="hr-list">
-              <div v-if="loadingInterviewers" class="loading-interviewers">
-                <el-card
-                  shadow="never"
-                  style="background: transparent; border: none"
-                  v-loading="true"
-                ></el-card>
-              </div>
-
-              <div v-else-if="interviewers.length === 0" class="empty-interviewers">
-                <el-empty description="暂无HR信息" />
-              </div>
-
-              <div v-else class="hr-grid">
-                <div v-for="interviewer in interviewers" :key="interviewer.id" class="hr-item">
-                  <div class="hr-avatar" @click="viewUserProfile(interviewer.user.id)">
-                    <el-avatar :size="64" :src="generateAvatar(interviewer.user.username)">
-                      {{ interviewer.user.username?.charAt(0).toUpperCase() }}
-                    </el-avatar>
-                  </div>
-                  <div class="hr-info">
-                    <div class="hr-name" @click="viewUserProfile(interviewer.user.id)">
-                      <span>{{ interviewer.user.username }}</span>
-                    </div>
-                    <div class="hr-position">{{ interviewer.position }}</div>
-                    <div class="hr-email" v-if="interviewer.user.email">
-                      {{ interviewer.user.email }}
-                    </div>
-                    <div class="hr-join-date">
-                      加入于 {{ formatDate(interviewer.user.createdAt) }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 分页 -->
-                <div class="pagination-wrapper" v-if="totalInterviewers > 10">
-                  <el-pagination
-                    v-model:current-page="interviewersCurrentPage"
-                    v-model:page-size="interviewersPageSize"
-                    :page-sizes="[6, 12, 24]"
-                    layout="total, sizes, prev, pager, next"
-                    :total="totalInterviewers"
-                    @size-change="handleInterviewersSizeChange"
-                    @current-change="handleInterviewersCurrentChange"
-                  />
-                </div>
-              </div>
+            <div class="meta-item" v-if="company.foundedYear">
+              <span class="label">成立年份：</span>
+              <span class="value">{{ company.foundedYear }}年</span>
             </div>
-          </el-tab-pane>
-        </el-tabs>
+            <div class="meta-item" v-if="company.website">
+              <span class="label">公司官网：</span>
+              <a :href="company.website" target="_blank" class="value">{{ company.website }}</a>
+            </div>
+          </div>
+
+          <div class="company-description" v-if="company.description">
+            <h3>公司简介</h3>
+            <p>{{ company.description }}</p>
+          </div>
+        </el-card>
+
+        <!-- 职位和HR团队切换Tab -->
+        <div class="company-content-section">
+          <el-tabs v-model="activeTab" class="company-tabs">
+            <el-tab-pane :label="`在招职位 (${totalJobs})`" name="jobs">
+              <div class="section-header">
+                <div class="filter-tools">
+                  <el-input
+                    v-model="jobSearchKeyword"
+                    placeholder="搜索职位"
+                    class="search-input"
+                    clearable
+                    @keyup.enter="handleJobSearch"
+                  >
+                    <template #prefix>
+                      <el-icon><Search /></el-icon>
+                    </template>
+                  </el-input>
+                </div>
+              </div>
+
+              <div class="jobs-list">
+                <div v-if="loadingJobs" class="loading-jobs">
+                  <el-card
+                    shadow="never"
+                    style="background: transparent; border: none"
+                    v-loading="true"
+                  ></el-card>
+                </div>
+
+                <div v-else-if="jobs.length === 0" class="empty-jobs">
+                  <el-empty description="暂无在招职位" />
+                </div>
+
+                <div v-else>
+                  <div v-for="job in jobs" :key="job.id" class="job-item">
+                    <div class="job-header">
+                      <div class="job-title-section">
+                        <h3 class="job-title">{{ job.title }}</h3>
+                        <div class="job-salary">
+                          {{ formatSalary(job.salaryMin, job.salaryMax) }}
+                        </div>
+                      </div>
+                      <div class="job-actions">
+                        <el-button type="primary" size="small" @click="viewJobDetail(job.id)"
+                          >查看</el-button
+                        >
+                        <el-button
+                          type="success"
+                          size="small"
+                          @click="applyJob(job.id)"
+                          :loading="job.applying"
+                        >
+                          一键投递
+                        </el-button>
+                      </div>
+                    </div>
+
+                    <div class="job-tags">
+                      <span class="job-tag">{{ job.city }}</span>
+                      <span class="job-tag">{{ formatExperience(job.experienceReq) }}经验</span>
+                      <span class="job-tag">{{ formatEducation(job.educationReq) }}</span>
+                      <span class="job-tag" v-if="job.isRemote">远程工作</span>
+                    </div>
+
+                    <div class="job-info">
+                      <div class="info-left">
+                        <span>{{ job.applicationsCount || 0 }}人已投递</span>
+                        <span>{{ formatDate(job.createdAt) }}</span>
+                      </div>
+                      <div class="info-right" v-if="job.subCategory">
+                        <span
+                          >{{ job.subCategory.category?.name || '' }} /
+                          {{ job.subCategory.name }}</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 分页 -->
+                  <div class="pagination-wrapper">
+                    <el-pagination
+                      v-model:current-page="currentPage"
+                      v-model:page-size="pageSize"
+                      :page-sizes="[5, 10, 20, 50]"
+                      layout="total, sizes, prev, pager, next, jumper"
+                      :total="totalJobs"
+                      @size-change="handleSizeChange"
+                      @current-change="handleCurrentChange"
+                    />
+                  </div>
+                </div>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane :label="`HR团队 (${totalInterviewers})`" name="hr">
+              <div class="hr-list">
+                <div v-if="loadingInterviewers" class="loading-interviewers">
+                  <el-card
+                    shadow="never"
+                    style="background: transparent; border: none"
+                    v-loading="true"
+                  ></el-card>
+                </div>
+
+                <div v-else-if="interviewers.length === 0" class="empty-interviewers">
+                  <el-empty description="暂无HR信息" />
+                </div>
+
+                <div v-else class="hr-grid">
+                  <div v-for="interviewer in interviewers" :key="interviewer.id" class="hr-item">
+                    <div class="hr-avatar" @click="viewUserProfile(interviewer.user.id)">
+                      <el-avatar :size="64" :src="generateAvatar(interviewer.user.username)">
+                        {{ interviewer.user.username?.charAt(0).toUpperCase() }}
+                      </el-avatar>
+                    </div>
+                    <div class="hr-info">
+                      <div class="hr-name" @click="viewUserProfile(interviewer.user.id)">
+                        <span>{{ interviewer.user.username }}</span>
+                      </div>
+                      <div class="hr-position">{{ interviewer.position }}</div>
+                      <div class="hr-email" v-if="interviewer.user.email">
+                        {{ interviewer.user.email }}
+                      </div>
+                      <div class="hr-join-date">
+                        加入于 {{ formatDate(interviewer.user.createdAt) }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 分页 -->
+                  <div class="pagination-wrapper" v-if="totalInterviewers > 10">
+                    <el-pagination
+                      v-model:current-page="interviewersCurrentPage"
+                      v-model:page-size="interviewersPageSize"
+                      :page-sizes="[6, 12, 24]"
+                      layout="total, sizes, prev, pager, next"
+                      :total="totalInterviewers"
+                      @size-change="handleInterviewersSizeChange"
+                      @current-change="handleInterviewersCurrentChange"
+                    />
+                  </div>
+                </div>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
+        </div>
       </div>
     </div>
   </div>
@@ -197,7 +201,15 @@ import { getCompanyJobs, applyForJob } from '@/api/job'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { generateAvatar } from '@/utils/utils'
+import {
+  generateAvatar,
+  formatSalary,
+  formatDate,
+  formatExperience,
+  formatEducation,
+  formatFundingStage,
+  formatCompanySize
+} from '@/utils/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -276,17 +288,8 @@ const fetchCompanyJobs = async () => {
     }
 
     const response = await getCompanyJobs(companyId.value, params)
-    // 处理API返回的数据，确保我们使用正确的格式
     if (response.list && typeof response.total === 'number') {
       jobs.value = response.list
-      totalJobs.value = response.total
-    } else if (response.data) {
-      // 如果数据在data属性中
-      jobs.value = response.data.list || []
-      totalJobs.value = response.data.total || 0
-    } else if (response.jobs && typeof response.total === 'number') {
-      // 或者可能是这种格式
-      jobs.value = response.jobs
       totalJobs.value = response.total
     } else {
       jobs.value = []
@@ -315,14 +318,6 @@ const fetchCompanyInterviewers = async () => {
 
     if (response.list && typeof response.total === 'number') {
       interviewers.value = response.list
-      totalInterviewers.value = response.total
-    } else if (response.data) {
-      // 如果数据在data属性中
-      interviewers.value = response.data.interviewers || []
-      totalInterviewers.value = response.data.total || 0
-    } else if (response.interviewers && typeof response.total === 'number') {
-      // 或者可能是这种格式
-      interviewers.value = response.interviewers
       totalInterviewers.value = response.total
     } else {
       interviewers.value = []
@@ -439,77 +434,14 @@ const applyJob = async jobId => {
     }
   }
 }
-
-// 格式化函数
-const formatFundingStage = stage => {
-  const stageMap = {
-    UNFUNDED: '未融资',
-    ANGEL: '天使轮',
-    SERIES_A: 'A轮',
-    SERIES_B: 'B轮',
-    SERIES_C: 'C轮',
-    SERIES_D: 'D轮及以上',
-    IPO: '已上市',
-    SELF_FUNDED: '不需要融资'
-  }
-  return stageMap[stage] || '未知'
-}
-
-const formatCompanySize = size => {
-  const sizeMap = {
-    TINY: '0-20人',
-    SMALL: '20-99人',
-    MEDIUM: '100-499人',
-    LARGE: '500-999人',
-    XLARGE: '1000-9999人',
-    XXLARGE: '10000+人'
-  }
-  return sizeMap[size] || '未知规模'
-}
-
-const formatSalary = (min, max) => {
-  if (!min && !max) return '薪资面议'
-  if (min && !max) return `${(min / 1000).toFixed(0)}K以上`
-  if (!min && max) return `${(max / 1000).toFixed(0)}K以下`
-  return `${(min / 1000).toFixed(0)}K-${(max / 1000).toFixed(0)}K`
-}
-
-const formatExperience = exp => {
-  if (!exp) return '经验不限'
-
-  const experienceMap = {
-    STUDENT: '在校生',
-    FRESH_GRADUATE: '应届生',
-    LESS_THAN_ONE: '1年以内',
-    ONE_TO_THREE: '1-3年',
-    THREE_TO_FIVE: '3-5年',
-    FIVE_TO_TEN: '5-10年',
-    MORE_THAN_TEN: '10年以上'
-  }
-
-  return experienceMap[exp] || '经验不限'
-}
-
-const formatEducation = edu => {
-  const educationMap = {
-    HIGH_SCHOOL: '高中学历',
-    ASSOCIATE: '大专学历',
-    BACHELOR: '本科学历',
-    MASTER: '硕士学历',
-    DOCTORATE: '博士学历',
-    OTHER: '其他学历'
-  }
-  return educationMap[edu] || '学历不限'
-}
-
-const formatDate = dateStr => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
 </script>
 
 <style lang="less" scoped>
+.company-detail-page {
+  background-color: #f5f9ff;
+  width: 100%;
+}
+
 .company-detail-container {
   max-width: 1200px;
   margin: 0 auto;

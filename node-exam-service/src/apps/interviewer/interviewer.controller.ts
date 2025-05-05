@@ -448,4 +448,119 @@ export class InterviewerController {
       throw error;
     }
   }
+
+  /**
+   * 获取面试官管理的考试列表
+   */
+  @ApiOperation({ summary: '获取面试官管理的考试列表' })
+  @ApiResponse({ status: 200, description: '获取成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('exams')
+  async getInterviewerExams(@Body() queryDto: any, @Req() req) {
+    const userId = req.user.userId;
+    this.logger.log(`获取面试官 ${userId} 管理的考试列表`);
+
+    try {
+      const result = await this.interviewerService.getInterviewerExams(
+        userId,
+        queryDto,
+      );
+      return success(result, '获取考试列表成功');
+    } catch (error) {
+      this.logger.error(`获取考试列表失败: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 延长考试截止时间
+   */
+  @ApiOperation({ summary: '延长考试截止时间' })
+  @ApiResponse({ status: 200, description: '延长成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 403, description: '无权操作此考试' })
+  @ApiResponse({ status: 404, description: '考试不存在' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('exams/extend-deadline')
+  async extendExamDeadline(@Body() data: any, @Req() req) {
+    const userId = req.user.userId;
+    const { examAssignmentId, newEndTime } = data;
+
+    this.logger.log(
+      `面试官 ${userId} 延长考试 ${examAssignmentId} 截止时间至 ${newEndTime}`,
+    );
+
+    try {
+      const result = await this.interviewerService.extendExamDeadline(
+        userId,
+        examAssignmentId,
+        new Date(newEndTime),
+      );
+      return success(result, '延长截止时间成功');
+    } catch (error) {
+      this.logger.error(`延长截止时间失败: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 发送考试提醒邮件
+   */
+  @ApiOperation({ summary: '发送考试提醒邮件' })
+  @ApiResponse({ status: 200, description: '发送成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 403, description: '无权操作此考试' })
+  @ApiResponse({ status: 404, description: '考试不存在' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('exams/send-reminder')
+  async sendExamReminder(@Body() data: any, @Req() req) {
+    const userId = req.user.userId;
+    const { examAssignmentId } = data;
+
+    this.logger.log(`面试官 ${userId} 发送考试 ${examAssignmentId} 提醒邮件`);
+
+    try {
+      const result = await this.interviewerService.sendExamReminder(
+        userId,
+        examAssignmentId,
+      );
+      return success(result, '提醒邮件发送成功');
+    } catch (error) {
+      this.logger.error(`发送提醒邮件失败: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 取消考试
+   */
+  @ApiOperation({ summary: '取消考试' })
+  @ApiResponse({ status: 200, description: '取消成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 403, description: '无权操作此考试' })
+  @ApiResponse({ status: 404, description: '考试不存在' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('exams/cancel')
+  async cancelExam(@Body() data: any, @Req() req) {
+    const userId = req.user.userId;
+    const { examAssignmentId } = data;
+
+    this.logger.log(`面试官 ${userId} 取消考试 ${examAssignmentId}`);
+
+    try {
+      const result = await this.interviewerService.cancelExam(
+        userId,
+        examAssignmentId,
+      );
+      return success(result, '取消考试成功');
+    } catch (error) {
+      this.logger.error(`取消考试失败: ${error.message}`, error);
+      throw error;
+    }
+  }
 }

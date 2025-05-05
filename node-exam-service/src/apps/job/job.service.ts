@@ -554,56 +554,51 @@ export class JobService {
 
   /**
    * 获取面试官发布的职位列表
-   * @param userId 用户ID或面试官ID
-   * @param page 页码
-   * @param pageSize 每页数量
-   * @returns 职位列表
+   * @param interviewerId 面试官ID
+   * @param page 当前页码
+   * @param pageSize 每页条数
    */
-  async getInterviewerJobs(userId: number, page: number, pageSize: number) {
+  async getInterviewerJobs(
+    interviewerId: number,
+    page = 1,
+    pageSize = 10,
+    status?: string,
+  ) {
+    // 首先获取面试官信息
+    const interviewer = await this.prisma.interviewer.findUnique({
+      where: { id: interviewerId },
+      include: { company: true },
+    });
+
+    if (!interviewer) {
+      throw new NotFoundException('面试官不存在');
+    }
+
+    const where: any = {
+      interviewerId,
+      deletedAt: null,
+    };
+
+    // 添加状态过滤条件
+    if (status) {
+      where.status = status;
+    }
+
+    // 计算分页
+    const skip = (page - 1) * pageSize;
+
     try {
-      // 确保page和pageSize是数字
-      const pageNum = typeof page === 'string' ? parseInt(page) : page;
-      const pageSizeNum =
-        typeof pageSize === 'string' ? parseInt(pageSize) : pageSize;
-      const skip = (pageNum - 1) * pageSizeNum;
-
-      // 首先尝试查找是否是面试官ID
-      let interviewerId = userId;
-      let interviewer = await this.prisma.interviewer.findUnique({
-        where: { id: userId, deletedAt: null },
-      });
-
-      // 如果不是面试官ID，则尝试通过用户ID查找
-      if (!interviewer) {
-        interviewer = await this.prisma.interviewer.findUnique({
-          where: { userId, deletedAt: null },
-        });
-
-        if (!interviewer) {
-          throw new ForbiddenException('未找到对应的面试官信息');
-        }
-
-        interviewerId = interviewer.id;
-      }
-
+      // 使用Promise.all并行查询工作岗位列表和总数
       const [jobs, total] = await Promise.all([
         this.prisma.jobPosting.findMany({
-          where: {
-            interviewerId,
-            deletedAt: null,
-          },
+          where,
           skip,
-          take: pageSizeNum,
+          take: pageSize,
           orderBy: { createdAt: 'desc' },
           include: {
-            company: {
-              select: {
-                name: true,
-              },
-            },
             subCategory: {
-              select: {
-                name: true,
+              include: {
+                category: true,
               },
             },
             _count: {
@@ -613,29 +608,27 @@ export class JobService {
             },
           },
         }),
-        this.prisma.jobPosting.count({
-          where: {
-            interviewerId,
-            deletedAt: null,
-          },
-        }),
+        this.prisma.jobPosting.count({ where }),
       ]);
 
-      // 处理结果
-      const jobList = jobs.map((job) => {
+      // 处理工作岗位数据，添加申请数统计
+      const items = jobs.map((job) => {
         return {
           ...job,
+          category: job.subCategory?.category?.name || '未分类',
+          subCategory: job.subCategory?.name || '未分类',
           applicationsCount: job._count?.applications || 0,
+          companyName: interviewer.company?.name || '未知公司',
         };
       });
 
-      return { items: jobList, total };
+      return { items, total };
     } catch (error) {
       this.logger.error(
-        `获取面试官发布的职位列表失败: ${error.message}`,
-        error,
+        `获取面试官工作列表失败: ${error.message}`,
+        error.stack,
       );
-      throw error;
+      throw new Error('获取工作岗位列表失败');
     }
   }
 

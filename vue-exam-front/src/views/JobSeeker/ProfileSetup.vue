@@ -802,15 +802,14 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .profile-setup-page {
-  background-color: #f5f7fa;
-  min-height: calc(100vh - 72px);
-  padding: 40px 0;
+  background-color: #f5f9ff;
+  width: 100%;
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 20px;
 }
 
 .page-header {

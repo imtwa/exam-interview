@@ -1,243 +1,245 @@
 <template>
-  <div class="private-exams-container">
-    <div class="header">
-      <!-- 面包屑导航 -->
-      <div class="breadcrumb-container">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item>专属试卷</el-breadcrumb-item>
-        </el-breadcrumb>
+  <div class="private-exams-page">
+    <div class="private-exams-container">
+      <div class="header">
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb-container">
+          <el-breadcrumb separator="/">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>专属试卷</el-breadcrumb-item>
+          </el-breadcrumb>
+        </div>
+        <el-button type="primary" @click="openCreateDialog">创建专属试卷</el-button>
       </div>
-      <el-button type="primary" @click="openCreateDialog">创建专属试卷</el-button>
-    </div>
 
-    <div class="filters">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="搜索试卷名称或描述"
-        clearable
-        @clear="handleSearch"
-        @keyup.enter="handleSearch"
-        style="width: 300px"
+      <div class="filters">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索试卷名称或描述"
+          clearable
+          @clear="handleSearch"
+          @keyup.enter="handleSearch"
+          style="width: 300px"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-button type="primary" @click="handleSearch">搜索</el-button>
+      </div>
+
+      <!-- 试卷列表 -->
+      <el-card shadow="never" class="exam-list-card">
+        <div v-if="loading" class="loading-container">
+          <el-skeleton :rows="6" animated />
+        </div>
+        <div v-else-if="examList.length === 0" class="empty-container">
+          <el-empty description="暂无专属试卷">
+            <template #description>
+              <p>您还没有创建任何专属试卷</p>
+            </template>
+            <el-button type="primary" @click="openCreateDialog">立即创建</el-button>
+          </el-empty>
+        </div>
+        <el-table v-else :data="examList" style="width: 100%" border>
+          <el-table-column prop="name" label="试卷名称" min-width="180">
+            <template #default="scope">
+              <router-link :to="`/exam/detail/${scope.row.id}`" class="exam-name-link">
+                {{ scope.row.name }}
+              </router-link>
+            </template>
+          </el-table-column>
+          <el-table-column prop="category.name" label="分类" width="120"></el-table-column>
+          <el-table-column prop="subCategory.name" label="二级分类" width="120">
+            <template #default="scope">
+              {{ scope.row.subCategory?.name || '无' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="examQuestions.length" label="题目数量" width="100" align="center">
+            <template #default="scope">
+              {{ scope.row.examQuestions?.length || scope.row.questionsCount || 0 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="创建时间" width="180">
+            <template #default="scope">
+              {{ formatDate(scope.row.createdAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="scope">
+              <router-link :to="`/exam/${scope.row.id}`">
+                <el-button link type="primary" size="small">查看</el-button>
+              </router-link>
+              <el-button link type="primary" size="small" @click="copyExamLink(scope.row.id)"
+                >复制链接</el-button
+              >
+              <el-button link type="danger" size="small" @click="confirmDelete(scope.row)"
+                >删除</el-button
+              >
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="pagination">
+          <el-pagination
+            background
+            layout="total, prev, pager, next, sizes"
+            :total="total"
+            :page-size="pageSize"
+            :current-page="currentPage"
+            :page-sizes="[10, 20, 50]"
+            @current-change="handlePageChange"
+            @size-change="handleSizeChange"
+          ></el-pagination>
+        </div>
+      </el-card>
+
+      <!-- 创建专属试卷对话框 -->
+      <el-dialog
+        v-model="showCreateDialog"
+        title="创建专属试卷"
+        width="700px"
+        @close="resetForm"
+        destroy-on-close
       >
-        <template #prefix>
-          <el-icon><Search /></el-icon>
-        </template>
-      </el-input>
-      <el-button type="primary" @click="handleSearch">搜索</el-button>
-    </div>
-
-    <!-- 试卷列表 -->
-    <el-card shadow="never" class="exam-list-card">
-      <div v-if="loading" class="loading-container">
-        <el-skeleton :rows="6" animated />
-      </div>
-      <div v-else-if="examList.length === 0" class="empty-container">
-        <el-empty description="暂无专属试卷">
-          <template #description>
-            <p>您还没有创建任何专属试卷</p>
-          </template>
-          <el-button type="primary" @click="openCreateDialog">立即创建</el-button>
-        </el-empty>
-      </div>
-      <el-table v-else :data="examList" style="width: 100%" border>
-        <el-table-column prop="name" label="试卷名称" min-width="180">
-          <template #default="scope">
-            <router-link :to="`/exam/detail/${scope.row.id}`" class="exam-name-link">
-              {{ scope.row.name }}
-            </router-link>
-          </template>
-        </el-table-column>
-        <el-table-column prop="category.name" label="分类" width="120"></el-table-column>
-        <el-table-column prop="subCategory.name" label="二级分类" width="120">
-          <template #default="scope">
-            {{ scope.row.subCategory?.name || '无' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="examQuestions.length" label="题目数量" width="100" align="center">
-          <template #default="scope">
-            {{ scope.row.examQuestions?.length || scope.row.questionsCount || 0 }}
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" width="180">
-          <template #default="scope">
-            {{ formatDate(scope.row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="scope">
-            <router-link :to="`/exam/${scope.row.id}`">
-              <el-button link type="primary" size="small">查看</el-button>
-            </router-link>
-            <el-button link type="primary" size="small" @click="copyExamLink(scope.row.id)"
-              >复制链接</el-button
-            >
-            <el-button link type="danger" size="small" @click="confirmDelete(scope.row)"
-              >删除</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination">
-        <el-pagination
-          background
-          layout="total, prev, pager, next, sizes"
-          :total="total"
-          :page-size="pageSize"
-          :current-page="currentPage"
-          :page-sizes="[10, 20, 50]"
-          @current-change="handlePageChange"
-          @size-change="handleSizeChange"
-        ></el-pagination>
-      </div>
-    </el-card>
-
-    <!-- 创建专属试卷对话框 -->
-    <el-dialog
-      v-model="showCreateDialog"
-      title="创建专属试卷"
-      width="700px"
-      @close="resetForm"
-      destroy-on-close
-    >
-      <el-form :model="examForm" :rules="rules" ref="examFormRef" label-width="120px">
-        <el-form-item label="试卷名称" prop="name">
-          <el-input v-model="examForm.name" placeholder="请输入专属试卷名称"></el-input>
-        </el-form-item>
-        <el-form-item label="试卷简介" prop="description">
-          <el-input
-            v-model="examForm.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入专属试卷简介"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="分类" prop="categoryId">
-          <el-select
-            v-model="examForm.categoryId"
-            placeholder="请选择分类"
-            @change="handleCategoryChange"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in categories"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="二级分类" prop="subCategoryId">
-          <el-select
-            v-model="examForm.subCategoryId"
-            placeholder="请选择二级分类"
-            style="width: 100%"
-            :disabled="!examForm.categoryId || !subCategories.length"
-            clearable
-          >
-            <el-option
-              v-for="item in subCategories"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-
-        <!-- 收藏试卷选择区域 -->
-        <el-form-item label="收藏试卷" prop="favoriteExamIds">
-          <div v-if="loadingFavorites" class="loading-favorites">
-            <el-skeleton :rows="3" />
-          </div>
-          <div v-else-if="favorites.length === 0" class="no-favorites">
-            <el-alert
-              title="您还未收藏任何试卷"
-              type="warning"
-              description="请先收藏一些试卷，才能创建专属试卷"
-              show-icon
-            />
-          </div>
-          <div v-else>
+        <el-form :model="examForm" :rules="rules" ref="examFormRef" label-width="120px">
+          <el-form-item label="试卷名称" prop="name">
+            <el-input v-model="examForm.name" placeholder="请输入专属试卷名称"></el-input>
+          </el-form-item>
+          <el-form-item label="试卷简介" prop="description">
+            <el-input
+              v-model="examForm.description"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入专属试卷简介"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="分类" prop="categoryId">
             <el-select
-              v-model="examForm.favoriteExamIds"
-              multiple
-              filterable
-              placeholder="请选择收藏的试卷"
+              v-model="examForm.categoryId"
+              placeholder="请选择分类"
+              @change="handleCategoryChange"
               style="width: 100%"
-              @change="updateSelectedFavorites"
             >
               <el-option
-                v-for="item in favorites"
+                v-for="item in categories"
                 :key="item.id"
                 :label="item.name"
                 :value="item.id"
-              >
-                <div class="favorite-option">
-                  <div class="favorite-name">{{ item.name }}</div>
-                  <div class="favorite-info">
-                    <span>分类: {{ item.category?.name || '未分类' }}</span>
-                    <span>{{ item.questionsCount || 0 }}题</span>
-                  </div>
-                </div>
-              </el-option>
+              ></el-option>
             </el-select>
+          </el-form-item>
+          <el-form-item label="二级分类" prop="subCategoryId">
+            <el-select
+              v-model="examForm.subCategoryId"
+              placeholder="请选择二级分类"
+              style="width: 100%"
+              :disabled="!examForm.categoryId || !subCategories.length"
+              clearable
+            >
+              <el-option
+                v-for="item in subCategories"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              ></el-option>
+            </el-select>
+          </el-form-item>
 
-            <!-- 显示已选择的试卷信息 -->
-            <div class="selected-favorites" v-if="examForm.favoriteExamIds.length > 0">
-              <div class="section-title">已选择{{ examForm.favoriteExamIds.length }}份试卷：</div>
-              <el-table :data="selectedFavorites" size="small" style="width: 100%">
-                <el-table-column prop="name" label="试卷名称" min-width="150" />
-                <el-table-column
-                  prop="questionsCount"
-                  label="题目数量"
-                  width="100"
-                  align="center"
-                />
-                <el-table-column label="可抽题数" width="100" align="center">
-                  <template #default="scope">
-                    最多{{ Math.min(examForm.questionsPerExam, scope.row.questionsCount || 0) }}题
-                  </template>
-                </el-table-column>
-              </el-table>
+          <!-- 收藏试卷选择区域 -->
+          <el-form-item label="收藏试卷" prop="favoriteExamIds">
+            <div v-if="loadingFavorites" class="loading-favorites">
+              <el-skeleton :rows="3" />
             </div>
+            <div v-else-if="favorites.length === 0" class="no-favorites">
+              <el-alert
+                title="您还未收藏任何试卷"
+                type="warning"
+                description="请先收藏一些试卷，才能创建专属试卷"
+                show-icon
+              />
+            </div>
+            <div v-else>
+              <el-select
+                v-model="examForm.favoriteExamIds"
+                multiple
+                filterable
+                placeholder="请选择收藏的试卷"
+                style="width: 100%"
+                @change="updateSelectedFavorites"
+              >
+                <el-option
+                  v-for="item in favorites"
+                  :key="item.id"
+                  :label="item.name"
+                  :value="item.id"
+                >
+                  <div class="favorite-option">
+                    <div class="favorite-name">{{ item.name }}</div>
+                    <div class="favorite-info">
+                      <span>分类: {{ item.category?.name || '未分类' }}</span>
+                      <span>{{ item.questionsCount || 0 }}题</span>
+                    </div>
+                  </div>
+                </el-option>
+              </el-select>
+
+              <!-- 显示已选择的试卷信息 -->
+              <div class="selected-favorites" v-if="examForm.favoriteExamIds.length > 0">
+                <div class="section-title">已选择{{ examForm.favoriteExamIds.length }}份试卷：</div>
+                <el-table :data="selectedFavorites" size="small" style="width: 100%">
+                  <el-table-column prop="name" label="试卷名称" min-width="150" />
+                  <el-table-column
+                    prop="questionsCount"
+                    label="题目数量"
+                    width="100"
+                    align="center"
+                  />
+                  <el-table-column label="可抽题数" width="100" align="center">
+                    <template #default="scope">
+                      最多{{ Math.min(examForm.questionsPerExam, scope.row.questionsCount || 0) }}题
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </div>
+          </el-form-item>
+
+          <el-form-item label="每卷抽题数量" prop="questionsPerExam">
+            <el-input-number
+              v-model="examForm.questionsPerExam"
+              :min="1"
+              :max="50"
+              controls-position="right"
+            ></el-input-number>
+            <span class="hint">每个试卷抽取的题目数量，建议5-20题</span>
+          </el-form-item>
+
+          <div class="dialog-summary" v-if="examForm.favoriteExamIds.length > 0">
+            <el-alert type="info" :closable="false">
+              <template #title>
+                将从{{ examForm.favoriteExamIds.length }}份试卷中随机抽取约{{
+                  getTotalQuestions()
+                }}道题组成新试卷
+              </template>
+            </el-alert>
           </div>
-        </el-form-item>
-
-        <el-form-item label="每卷抽题数量" prop="questionsPerExam">
-          <el-input-number
-            v-model="examForm.questionsPerExam"
-            :min="1"
-            :max="50"
-            controls-position="right"
-          ></el-input-number>
-          <span class="hint">每个试卷抽取的题目数量，建议5-20题</span>
-        </el-form-item>
-
-        <div class="dialog-summary" v-if="examForm.favoriteExamIds.length > 0">
-          <el-alert type="info" :closable="false">
-            <template #title>
-              将从{{ examForm.favoriteExamIds.length }}份试卷中随机抽取约{{
-                getTotalQuestions()
-              }}道题组成新试卷
-            </template>
-          </el-alert>
-        </div>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showCreateDialog = false">取 消</el-button>
-          <el-button
-            type="primary"
-            @click="submitForm"
-            :loading="submitting"
-            :disabled="favorites.length === 0"
-          >
-            创 建
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
+        </el-form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="showCreateDialog = false">取 消</el-button>
+            <el-button
+              type="primary"
+              @click="submitForm"
+              :loading="submitting"
+              :disabled="favorites.length === 0"
+            >
+              创 建
+            </el-button>
+          </span>
+        </template>
+      </el-dialog>
+    </div>
   </div>
 </template>
 
@@ -507,6 +509,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.private-exams-page {
+  background-color: #f5f9ff;
+  width: 100%;
+  min-height: calc(100vh - 72px);
+}
+
 .private-exams-container {
   padding: 20px;
   max-width: 1200px;

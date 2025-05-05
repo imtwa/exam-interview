@@ -103,6 +103,58 @@ export function getInterviewers(params) {
 }
 
 /**
+ * 获取面试官管理的考试列表
+ * @param {Object} params 查询参数
+ * @returns {Promise} 返回考试列表
+ */
+export function getInterviewerExams(params) {
+  return request({
+    url: '/interviewer/exams',
+    method: 'post',
+    data: params
+  })
+}
+
+/**
+ * 延长考试截止时间
+ * @param {Object} data 包含考试ID和新截止时间的数据
+ * @returns {Promise} 返回操作结果
+ */
+export function extendExamDeadline(data) {
+  return request({
+    url: '/interviewer/exams/extend-deadline',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 向考生发送考试提醒邮件
+ * @param {number} examAssignmentId 考试分配ID
+ * @returns {Promise} 返回操作结果
+ */
+export function sendExamReminder(examAssignmentId) {
+  return request({
+    url: '/interviewer/exams/send-reminder',
+    method: 'post',
+    data: { examAssignmentId }
+  })
+}
+
+/**
+ * 取消考试
+ * @param {number} examAssignmentId 考试分配ID
+ * @returns {Promise} 返回操作结果
+ */
+export function cancelExam(examAssignmentId) {
+  return request({
+    url: '/interviewer/exams/cancel',
+    method: 'post',
+    data: { examAssignmentId }
+  })
+}
+
+/**
  * 分配笔试试卷并发送邮件通知
  * @param {Object} data 包含试卷ID和笔试说明的数据
  * @returns {Promise} 返回分配结果

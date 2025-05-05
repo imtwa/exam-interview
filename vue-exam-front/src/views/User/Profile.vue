@@ -275,7 +275,7 @@ onMounted(() => {
 .profile-page {
   width: 100%;
   background-color: #f5f9ff;
-  min-height: calc(100vh - 60px);
+  min-height: calc(100vh - 72px);
 }
 
 .profile-container {

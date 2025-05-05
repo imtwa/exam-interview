@@ -54,7 +54,7 @@
             </el-form-item>
           </div>
           <div class="filter-actions">
-            <el-button type="primary" @click="fetchJobs" size="default">搜索</el-button>
+            <el-button type="primary" @click="handleSearch" size="default">搜索</el-button>
             <el-button @click="resetFilters" size="default">重置</el-button>
             <el-button type="primary" @click="createJob">
               <el-icon><Plus /></el-icon>
@@ -438,6 +438,13 @@ const fetchOptions = async () => {
     industryCategories.value = []
     regionData.value = []
   }
+}
+
+// 搜索职位
+const handleSearch = () => {
+  // 搜索时重置页码为1
+  queryParams.page = 1
+  fetchJobs()
 }
 
 // 重置筛选条件
@@ -884,7 +891,7 @@ onMounted(async () => {
 .hr-jobs-page {
   width: 100%;
   background-color: #f5f9ff;
-  min-height: calc(100vh - 60px);
+  min-height: calc(100vh - 72px);
 }
 
 .hr-jobs-container {
