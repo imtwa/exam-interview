@@ -561,7 +561,10 @@ export class JobService {
    */
   async getInterviewerJobs(userId: number, page: number, pageSize: number) {
     try {
-      const skip = (page - 1) * pageSize;
+      // 确保page和pageSize是数字
+      const pageNum = typeof page === 'string' ? parseInt(page) : page;
+      const pageSizeNum = typeof pageSize === 'string' ? parseInt(pageSize) : pageSize;
+      const skip = (pageNum - 1) * pageSizeNum;
 
       // 首先尝试查找是否是面试官ID
       let interviewerId = userId;
@@ -589,7 +592,7 @@ export class JobService {
             deletedAt: null,
           },
           skip,
-          take: pageSize,
+          take: pageSizeNum,
           orderBy: { createdAt: 'desc' },
           include: {
             company: {

@@ -50,6 +50,8 @@
             <ul class="notice-list">
               <li>考试邀请码通常由招聘方或教育机构通过邮件发送给您。</li>
               <li>邀请码是唯一的，请勿泄露给他人。</li>
+              <li>请确保在考试有效期内完成考试，过期将无法进入。</li>
+              <li>考试开始后，计时将立即开始，中途退出不会暂停计时。</li>
               <li>如果您尚未收到邀请码，请联系相关负责人。</li>
             </ul>
           </div>
@@ -90,16 +92,39 @@ const handleSubmit = async () => {
 
     loading.value = true
     try {
+      console.log('提交邀请码:', formData.invitationCode)
       const response = await verifyInvitationCode({
         invitationCode: formData.invitationCode
       })
       
-      if (response && response.data) {
+      console.log('验证结果:', response)
+      if (response) {
+        // 获取考试信息
+        const examId = response.examId
+        const canStart = response.canStart
+        
+        if (!canStart) {
+          ElMessage.warning(`该考试还未开始或已结束，考试有效期为：${new Date(response.examStartTime).toLocaleString()} 至 ${new Date(response.examEndTime).toLocaleString()}`)
+          loading.value = false
+          return
+        }
+        
         ElMessage.success('邀请码验证成功，正在进入考试...')
-        router.push(`/online-exam/session/${response.data.examId}`)
+        router.push(`/online-exam/exam-session/${examId}`)
+      } else {
+        ElMessage.warning('验证成功但未返回考试信息，请联系管理员')
       }
     } catch (error) {
-      ElMessage.error(error.message || '邀请码验证失败，请检查后重试')
+      console.error('邀请码验证失败:', error)
+      let errorMsg = '邀请码验证失败，请检查后重试'
+      
+      if (error.response && error.response.data && error.response.data.message) {
+        errorMsg = error.response.data.message
+      } else if (error.message) {
+        errorMsg = error.message
+      }
+      
+      ElMessage.error(errorMsg)
     } finally {
       loading.value = false
     }

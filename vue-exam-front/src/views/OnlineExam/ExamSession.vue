@@ -155,6 +155,7 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer } from '@element-plus/icons-vue'
+import { startExam, saveExamAnswers, submitExamAnswers } from '@/api/exam'
 
 const route = useRoute()
 const router = useRouter()
@@ -178,80 +179,54 @@ const fetchExamData = async () => {
   loading.value = true
 
   try {
-    // TODO: 替换为实际API调用
-    // const response = await getExamById(examId)
-    // exam.value = response.data
-
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    // 模拟考试数据
+    // 使用实际API调用，从邀请码获取考试详情
+    const response = await startExam(route.params.id)
+    console.log('获取到的考试数据:', response)
+    
+    // 设置考试数据
+    if (!response) {
+      throw new Error('无法获取考试数据')
+    }
+    
     exam.value = {
-      id: examId,
-      title: '前端工程师笔试题',
-      totalScore: 100,
-      totalQuestions: 15,
-      duration: 90, // 分钟
+      id: response.examId,
+      title: response.examTitle,
+      totalScore: 100, // 总分默认100分
+      totalQuestions: response.questions.length,
+      duration: response.duration,
       sections: [
         {
-          title: '基础知识',
-          description: '本部分测试前端基础知识，包括HTML、CSS和JavaScript基础。',
-          questions: [
-            {
-              id: 'q1',
-              type: 'single_choice',
-              content: '以下哪个不是JavaScript基本数据类型？',
-              score: 5,
-              options: [
-                { label: 'A. String', value: 'A' },
-                { label: 'B. Number', value: 'B' },
-                { label: 'C. Array', value: 'C' },
-                { label: 'D. Boolean', value: 'D' }
-              ]
-            },
-            {
-              id: 'q2',
-              type: 'multiple_choice',
-              content: '以下哪些是CSS盒模型的组成部分？',
-              score: 5,
-              options: [
-                { label: 'A. Margin', value: 'A' },
-                { label: 'B. Border', value: 'B' },
-                { label: 'C. Padding', value: 'C' },
-                { label: 'D. Content', value: 'D' }
-              ]
-            },
-            {
-              id: 'q3',
-              type: 'fill_blank',
-              content: '在CSS中，使用______属性可以控制元素的不透明度。',
-              score: 5
+          title: '考试内容',
+          description: response.note || '请认真作答，诚信考试',
+          questions: response.questions.map((q, index) => {
+            // 格式转换
+            let type = 'single_choice'
+            if (q.qtype === 1) type = 'single_choice'
+            else if (q.qtype === 2) type = 'multiple_choice'
+            else if (q.qtype === 3) type = 'fill_blank'
+            else if (q.qtype === 4) type = 'short_answer'
+            
+            let options = []
+            if (q.options) {
+              try {
+                const parsedOptions = JSON.parse(q.options)
+                options = parsedOptions.map(opt => ({
+                  label: `${opt.Key}. ${opt.Value}`,
+                  value: opt.Key
+                }))
+              } catch (err) {
+                console.error('解析选项错误:', err)
+              }
             }
-          ]
-        },
-        {
-          title: '进阶内容',
-          description: '本部分测试前端进阶知识，包括框架使用和性能优化。',
-          questions: [
-            {
-              id: 'q4',
-              type: 'single_choice',
-              content: 'Vue.js中，哪个生命周期钩子会在组件挂载到DOM后被调用？',
-              score: 5,
-              options: [
-                { label: 'A. created', value: 'A' },
-                { label: 'B. mounted', value: 'B' },
-                { label: 'C. updated', value: 'C' },
-                { label: 'D. beforeDestroy', value: 'D' }
-              ]
-            },
-            {
-              id: 'q5',
-              type: 'short_answer',
-              content: '简述前端性能优化的三种方法及其原理。',
-              score: 10
+            
+            return {
+              id: q.id.toString(),
+              type,
+              content: q.question,
+              score: q.score || 5,
+              options
             }
-          ]
+          })
         }
       ]
     }
@@ -264,7 +239,7 @@ const fetchExamData = async () => {
     initializeAnswers()
   } catch (error) {
     console.error('获取考试数据失败:', error)
-    ElMessage.error('获取考试数据失败，请稍后重试')
+    ElMessage.error('获取考试数据失败: ' + (error.message || '请稍后重试'))
     exam.value = null
   } finally {
     loading.value = false
@@ -385,16 +360,19 @@ const saveAnswers = async () => {
   saving.value = true
 
   try {
-    // TODO: 替换为实际API调用
-    // await saveExamAnswers(examId, answers)
-
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 800))
-
+    // 准备提交的答案数据
+    const formattedAnswers = {}
+    Object.keys(answers).forEach(key => {
+      formattedAnswers[key] = answers[key]
+    })
+    
+    // 调用API保存答案
+    await saveExamAnswers(route.params.id, formattedAnswers)
+    
     ElMessage.success('答案已保存')
   } catch (error) {
     console.error('保存答案失败:', error)
-    ElMessage.error('保存答案失败，请稍后重试')
+    ElMessage.error('保存答案失败: ' + (error.message || '请稍后重试'))
   } finally {
     saving.value = false
   }
@@ -405,24 +383,40 @@ const confirmSubmit = () => {
   submitConfirmVisible.value = true
 }
 
-// 提交试卷
+// 提交考试
 const submitExam = async () => {
   submitting.value = true
 
   try {
-    // TODO: 替换为实际API调用
-    // await submitExamAnswers(examId, answers)
-
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    submitConfirmVisible.value = false
-
-    // 跳转到结果页面
-    router.push(`/online-exam/result/${examId}`)
+    // 准备提交的答案数据
+    const formattedAnswers = {}
+    Object.keys(answers).forEach(key => {
+      formattedAnswers[key] = answers[key]
+    })
+    
+    // 调用API提交答案
+    const response = await submitExamAnswers(route.params.id, formattedAnswers)
+    
+    // 处理提交结果
+    if (response) {
+      ElMessage.success('试卷提交成功')
+      // 清除计时器
+      if (timerInterval.value) {
+        clearInterval(timerInterval.value)
+      }
+      
+      // 跳转到结果页面
+      router.push(`/online-exam/result/${route.params.id}`)
+    } else {
+      throw new Error('提交失败，未收到服务器响应')
+    }
   } catch (error) {
     console.error('提交试卷失败:', error)
-    ElMessage.error('提交试卷失败，请稍后重试')
+    ElMessage.error('提交试卷失败: ' + (error.message || '请稍后重试'))
+    
+    // 关闭提交确认对话框，但不跳转
+    submitConfirmVisible.value = false
+  } finally {
     submitting.value = false
   }
 }

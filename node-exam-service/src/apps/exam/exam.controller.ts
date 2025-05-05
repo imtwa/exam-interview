@@ -27,7 +27,7 @@ import { CreateSubCategoryDto } from './dto/create-subcategory.dto';
 import { UpdateSubCategoryDto } from './dto/update-subcategory.dto';
 import { VerifyInvitationDto } from './dto/verify-invitation.dto';
 import { SubmitExamDto } from './dto/submit-exam.dto';
-import { AssignExamDto } from './dto/assign-exam.dto';
+
 import {
   ApiTags,
   ApiOperation,

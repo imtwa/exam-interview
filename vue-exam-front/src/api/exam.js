@@ -246,14 +246,19 @@ export function getPrivateExamDetail(id) {
 // 在线考试相关接口
 /**
  * 验证考试邀请码
- * @param {string} invitationCode 邀请码
+ * @param {Object|string} params 邀请码对象或字符串
  * @returns {Promise}
  */
-export function verifyInvitationCode(invitationCode) {
+export function verifyInvitationCode(params) {
+  // 确保将参数格式化为对象格式
+  const data = typeof params === 'string' 
+    ? { invitationCode: params } 
+    : params;
+  
   return request({
-    url: '/exam/invitation/verify',
+    url: '/invitation/verify',
     method: 'post',
-    data: { invitationCode }
+    data
   })
 }
 
@@ -288,7 +293,7 @@ export function startExam(invitationCode) {
  * @param {Object} answers 答案
  * @returns {Promise}
  */
-export function submitExam(invitationCode, answers) {
+export function submitExamAnswers(invitationCode, answers) {
   return request({
     url: '/online-exam/submit',
     method: 'post',
@@ -336,15 +341,14 @@ export function saveExamAnswers(examId, answers) {
 }
 
 /**
- * 提交考试答案（完成）
- * @param {string} examId 试卷ID
- * @param {Object} answers 答案
+ * 生成考试邀请码（仅限面试官/HR使用）
+ * @param {Object} data 生成邀请码所需数据，包含examId, duration等
  * @returns {Promise}
  */
-export function submitExamAnswers(examId, answers) {
+export function generateInvitationCode(data) {
   return request({
-    url: `/exam/online/${examId}/submit`,
+    url: '/exam/invitation/generate',
     method: 'post',
-    data: { answers }
+    data
   })
 }
