@@ -71,25 +71,25 @@
         <div class="stats-grid">
           <div class="stat-box">
             <div class="stat-title">平均每题用时</div>
-            <div class="stat-value">{{ result.averageTimePerQuestion }}秒</div>
+            <div class="stat-value">{{ averageTimePerQuestion }}秒</div>
           </div>
 
           <div class="stat-box">
             <div class="stat-title">最高分题型</div>
-            <div class="stat-value">{{ result.bestQuestionType }}</div>
+            <div class="stat-value">{{ bestQuestionType }}</div>
           </div>
 
           <div class="stat-box">
             <div class="stat-title">最低分题型</div>
-            <div class="stat-value">{{ result.worstQuestionType }}</div>
+            <div class="stat-value">{{ worstQuestionType }}</div>
           </div>
 
           <div class="stat-box">
             <div class="stat-title">知识点掌握</div>
             <div class="stat-value">
               <el-progress
-                :percentage="result.knowledgeMastery"
-                :color="getProgressColor(result.knowledgeMastery)"
+                :percentage="knowledgeMastery"
+                :color="getProgressColor(knowledgeMastery)"
               />
             </div>
           </div>
@@ -139,12 +139,28 @@
                   :key="optionIndex"
                   class="option-item"
                   :class="{
-                    'option-correct': option.isCorrect,
-                    'option-selected': isOptionSelected(question, option.value),
-                    'option-wrong': isOptionSelected(question, option.value) && !option.isCorrect
+                    'option-correct': option.isCorrect || option.label === question.correctAnswer,
+                    'option-selected': isOptionSelected(question, option.value) || option.label === question.userAnswer,
+                    'option-wrong': (isOptionSelected(question, option.value) || option.label === question.userAnswer) && 
+                                     !option.isCorrect && option.label !== question.correctAnswer
                   }"
                 >
                   <span class="option-label">{{ option.label }}</span>
+                  <span class="option-content">{{ option.content }}</span>
+                </div>
+              </div>
+              
+              <!-- 选择题答案总结 -->
+              <div v-if="question.type === 'single_choice' || question.type === 'multiple_choice'" class="answer-summary">
+                <div class="user-choice">
+                  <span class="answer-label">你的选择：</span>
+                  <span :class="{ 'correct-text': question.isCorrect, 'wrong-text': !question.isCorrect }">
+                    {{ formatUserAnswer(question) }}
+                  </span>
+                </div>
+                <div class="correct-choice">
+                  <span class="answer-label">正确答案：</span>
+                  <span class="correct-text">{{ question.correctAnswer }}</span>
                 </div>
               </div>
 
@@ -181,7 +197,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts/core'
@@ -193,8 +209,10 @@ import {
   LegendComponent
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+import { getOnlineExamResult } from '@/api/exam'
+import { formatDate } from '@/utils/formatDate'
 
-// 注册必需的组件
+// 注册必需的组件formatDate
 echarts.use([
   BarChart,
   PieChart,
@@ -208,6 +226,7 @@ echarts.use([
 const route = useRoute()
 const router = useRouter()
 const examId = route.params.id
+const invitationCode = route.params.id
 
 // 页面状态
 const loading = ref(true)
@@ -218,119 +237,135 @@ const result = ref(null)
 const questionTypeChart = ref(null)
 const timeDistributionChart = ref(null)
 
+// 计算题型得分
+const questionTypeScores = computed(() => {
+  if (!result.value || !result.value.questions || result.value.questions.length === 0) {
+    return [];
+  }
+  
+  // 分类统计题目
+  const typeStats = {};
+  
+  result.value.questions.forEach(question => {
+    const type = getQuestionTypeName(question.type);
+    if (!typeStats[type]) {
+      typeStats[type] = { score: 0, total: 0, count: 0 };
+    }
+    
+    typeStats[type].score += Number(question.score) || 0;
+    typeStats[type].total += Number(question.totalScore) || 0;
+    typeStats[type].count += 1;
+  });
+  
+  // 转换为数组格式
+  return Object.keys(typeStats).map(type => {
+    const score = typeStats[type].score || 0;
+    const total = typeStats[type].total || 1; // 避免除以0
+    const percentage = Math.round((score / total) * 100);
+    
+    return {
+      name: type,
+      score: score,
+      total: total,
+      count: typeStats[type].count,
+      percentage: percentage
+    };
+  });
+});
+
+// 计算最佳和最差题型
+const bestQuestionType = computed(() => {
+  if (!questionTypeScores.value || questionTypeScores.value.length === 0) {
+    return '未知';
+  }
+  
+  const sorted = [...questionTypeScores.value].sort((a, b) => b.percentage - a.percentage);
+  return sorted[0].name;
+});
+
+const worstQuestionType = computed(() => {
+  if (!questionTypeScores.value || questionTypeScores.value.length === 0) {
+    return '未知';
+  }
+  
+  const sorted = [...questionTypeScores.value].sort((a, b) => a.percentage - b.percentage);
+  return sorted[0].name;
+});
+
+// 计算平均每题用时
+const averageTimePerQuestion = computed(() => {
+  if (!result.value || !result.value.duration || !result.value.totalQuestions) {
+    return 0;
+  }
+  
+  return Math.round(result.value.duration / result.value.totalQuestions);
+});
+
+// 计算知识点掌握度（使用得分百分比）
+const knowledgeMastery = computed(() => {
+  if (!result.value || !result.value.scorePercent) {
+    return 0;
+  }
+  
+  return result.value.scorePercent;
+});
+
+// 计算用时分布
+const timeDistribution = computed(() => {
+  if (!result.value || !result.value.questions || result.value.questions.length === 0) {
+    return [];
+  }
+  
+  // 用时区间定义
+  const timeRanges = [
+    { name: '0-30秒', min: 0, max: 30, count: 0 },
+    { name: '30-60秒', min: 30, max: 60, count: 0 },
+    { name: '1-2分钟', min: 60, max: 120, count: 0 },
+    { name: '2分钟以上', min: 120, max: Infinity, count: 0 }
+  ];
+  
+  // 假设每道题目平均耗时相同
+  const avgTimePerQuestion = result.value.duration / result.value.totalQuestions;
+  
+  // 根据平均用时对题目进行分类
+  timeRanges.forEach(range => {
+    if (avgTimePerQuestion >= range.min && avgTimePerQuestion < range.max) {
+      range.count = result.value.totalQuestions;
+    }
+  });
+  
+  return timeRanges;
+});
+
 // 获取考试结果
 const fetchExamResult = async () => {
   loading.value = true
 
   try {
-    // TODO: 替换为实际API调用
-    // const response = await getExamResult(examId)
-    // result.value = response.data
+    // 使用真实API调用获取考试结果
+    const response = await getOnlineExamResult(invitationCode)
+    console.log('获取到的考试结果:', response)
 
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    if (!response) {
+      throw new Error('未获取到考试结果数据')
+    }
 
-    // 模拟考试结果数据
+    // 获取返回的结果数据
+    const resultData = response
+
+    // 构建结果对象
     result.value = {
       examId: examId,
-      examTitle: '前端工程师笔试题',
-      submittedAt: new Date(),
-      score: 85,
-      totalScore: 100,
-      scorePercent: 85,
-      duration: 35 * 60, // 35分钟（以秒为单位）
-      correctCount: 12,
-      totalQuestions: 15,
-
-      // 分析数据
-      averageTimePerQuestion: 140, // 秒
-      bestQuestionType: '单选题',
-      worstQuestionType: '简答题',
-      knowledgeMastery: 82, // 百分比
-
-      // 图表数据
-      questionTypeScores: [
-        { name: '单选题', score: 25, total: 25 },
-        { name: '多选题', score: 20, total: 25 },
-        { name: '填空题', score: 15, total: 20 },
-        { name: '简答题', score: 25, total: 30 }
-      ],
-
-      timeDistribution: [
-        { name: '0-30秒', count: 5 },
-        { name: '30-60秒', count: 4 },
-        { name: '60-120秒', count: 3 },
-        { name: '120秒以上', count: 3 }
-      ],
-
-      // 试题详情
-      questions: [
-        {
-          id: 'q1',
-          content: '以下哪个不是JavaScript的基本数据类型？',
-          type: 'single_choice',
-          score: 5,
-          totalScore: 5,
-          isCorrect: true,
-          options: [
-            { label: 'A. String', value: 'A', isCorrect: false },
-            { label: 'B. Number', value: 'B', isCorrect: false },
-            { label: 'C. Boolean', value: 'C', isCorrect: false },
-            { label: 'D. Array', value: 'D', isCorrect: true }
-          ],
-          userAnswer: 'D',
-          correctAnswer: 'D',
-          explanation:
-            'JavaScript的基本数据类型包括String、Number、Boolean、Null、Undefined和Symbol（ES6新增）。Array是引用类型，不是基本数据类型。'
-        },
-        {
-          id: 'q2',
-          content: '以下关于Vue.js生命周期的说法，哪些是正确的？',
-          type: 'multiple_choice',
-          score: 10,
-          totalScore: 10,
-          isCorrect: true,
-          options: [
-            { label: 'A. created钩子可以访问到数据', value: 'A', isCorrect: true },
-            { label: 'B. mounted钩子中DOM已经更新完成', value: 'B', isCorrect: true },
-            { label: 'C. beforeDestroy钩子中无法访问实例', value: 'C', isCorrect: false },
-            {
-              label: 'D. updated钩子在数据变化导致的虚拟DOM重新渲染后调用',
-              value: 'D',
-              isCorrect: true
-            }
-          ],
-          userAnswer: ['A', 'B', 'D'],
-          correctAnswer: ['A', 'B', 'D'],
-          explanation:
-            'Vue生命周期中，created钩子可以访问到数据，但DOM还未挂载；mounted钩子中DOM已经挂载完成；beforeDestroy钩子中仍然可以访问到实例；updated钩子在数据变化导致的虚拟DOM重新渲染和打补丁后调用。'
-        },
-        {
-          id: 'q3',
-          content: '在CSS中，使用______属性可以控制元素的不透明度。',
-          type: 'fill_blank',
-          score: 5,
-          totalScore: 5,
-          isCorrect: true,
-          userAnswer: 'opacity',
-          correctAnswer: 'opacity',
-          explanation:
-            'CSS中使用opacity属性控制元素的不透明度，值的范围为0-1，其中0表示完全透明，1表示完全不透明。'
-        },
-        {
-          id: 'q5',
-          content: '简述前端性能优化的三种方法及其原理。',
-          type: 'short_answer',
-          score: 20,
-          totalScore: 30,
-          isCorrect: false,
-          userAnswer: '1. 资源压缩：减小文件体积，加快加载速度。\n2. 使用CDN：分发资源，减少延迟。',
-          correctAnswer:
-            '1. 资源压缩与合并：减小文件体积和HTTP请求数量，加快加载速度。\n2. 使用CDN：利用分布式服务器网络，减少资源获取的延迟时间。\n3. 图片优化：使用适当的图片格式和大小，减少带宽占用。\n4. 懒加载：按需加载资源，提高首屏加载速度。\n5. 缓存策略：合理利用浏览器缓存，减少重复请求。',
-          explanation:
-            '前端性能优化涉及多个方面，包括但不限于以上几点。评分标准考虑：是否能够覆盖资源加载优化、代码执行优化和用户体验优化三个维度；是否能够准确解释各种优化方法的原理；是否能够结合实际场景分析。'
-        }
-      ]
+      examTitle: resultData.examTitle || '在线考试',
+      submittedAt: new Date(resultData.submittedAt) || new Date(),
+      score: resultData.score || 0,
+      totalScore: resultData.totalScore || 0,
+      scorePercent:
+        resultData.percentage || Math.round((resultData.score / resultData.totalScore) * 100) || 0,
+      duration: resultData.duration || 0,
+      correctCount: resultData.correctCount || 0,
+      totalQuestions: resultData.totalQuestions || 0,
+      questions: resultData.questions || []
     }
   } catch (error) {
     console.error('获取考试结果失败:', error)
@@ -343,159 +378,277 @@ const fetchExamResult = async () => {
 
 // 初始化图表
 const initCharts = () => {
-  if (!result.value) return
-
   nextTick(() => {
     // 题型得分图表
     if (questionTypeChart.value) {
-      const chart = echarts.init(questionTypeChart.value)
-      const { questionTypeScores } = result.value
-
-      const option = {
+      const chartInstance = echarts.init(questionTypeChart.value);
+      
+      // 获取单选题的得分情况
+      const singleChoiceData = {
+        name: '单选题',
+        score: 0,
+        total: 0,
+        percentage: 0
+      };
+      
+      // 手动计算单选题的得分率
+      if (result.value && result.value.questions) {
+        let correctCount = 0;
+        let totalCount = 0;
+        
+        result.value.questions.forEach(q => {
+          if (q.type === 'single_choice') {
+            totalCount++;
+            if (q.isCorrect) {
+              correctCount++;
+            }
+          }
+        });
+        
+        singleChoiceData.score = correctCount;
+        singleChoiceData.total = totalCount;
+        singleChoiceData.percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+      }
+      
+      // 简单的柱状图，只显示单选题的得分率
+      const typeOptions = {
+        color: ['#FF6B6B'],
+        title: {
+          text: '题型得分率',
+          textStyle: {
+            fontSize: 16,
+            fontWeight: 'normal'
+          },
+          left: 'center',
+          top: 10
+        },
         tooltip: {
           trigger: 'axis',
-          axisPointer: {
-            type: 'shadow'
+          formatter: function (params) {
+            const data = params[0].data;
+            return `单选题: ${data.score}/${data.total} (${data.percentage}%)`;
           },
-          formatter: params => {
-            const data = params[0].data
-            return `${params[0].name}<br/>得分：${data.score}/${data.total}分<br/>得分率：${Math.round((data.score / data.total) * 100)}%`
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderColor: '#ddd',
+          borderWidth: 1,
+          padding: 10,
+          textStyle: {
+            color: '#333'
           }
         },
         grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
+          left: '10%',
+          right: '10%',
+          bottom: '15%',
+          top: '25%',
           containLabel: true
         },
         xAxis: {
           type: 'category',
-          data: questionTypeScores.map(item => item.name)
+          data: ['单选题'],
+          axisLine: {
+            lineStyle: {
+              color: '#ccc'
+            }
+          },
+          axisLabel: {
+            fontSize: 14,
+            color: '#333'
+          }
         },
         yAxis: {
           type: 'value',
-          max: Math.max(...questionTypeScores.map(item => item.total))
+          max: 100,
+          axisLabel: {
+            formatter: '{value}%',
+            color: '#666'
+          },
+          splitLine: {
+            lineStyle: {
+              type: 'dashed',
+              color: '#eee'
+            }
+          }
         },
         series: [
           {
-            name: '得分',
+            name: '得分率',
             type: 'bar',
-            data: questionTypeScores.map(item => ({
-              value: item.score,
-              score: item.score,
-              total: item.total
-            })),
-            itemStyle: {
-              color: function (params) {
-                const scoreRate = params.data.score / params.data.total
-                if (scoreRate >= 0.8) return '#67C23A'
-                if (scoreRate >= 0.6) return '#E6A23C'
-                return '#F56C6C'
-              }
-            },
+            barWidth: '40%',
             label: {
               show: true,
               position: 'top',
-              formatter: '{c}/{@total}'
-            }
+              formatter: '{c}%',
+              fontSize: 14,
+              color: '#333'
+            },
+            itemStyle: {
+              borderRadius: [4, 4, 0, 0]
+            },
+            data: [{
+              value: singleChoiceData.percentage,
+              score: singleChoiceData.score,
+              total: singleChoiceData.total,
+              percentage: singleChoiceData.percentage,
+              itemStyle: {
+                color: singleChoiceData.percentage >= 60 ? '#67C23A' : '#F56C6C'
+              }
+            }]
           }
         ]
-      }
+      };
 
-      chart.setOption(option)
-      window.addEventListener('resize', () => chart.resize())
+      chartInstance.setOption(typeOptions);
+      window.addEventListener('resize', () => chartInstance.resize());
     }
 
-    // 答题用时分布图
+    // 用时统计，使用环形图而不是文本
     if (timeDistributionChart.value) {
-      const chart = echarts.init(timeDistributionChart.value)
-      const { timeDistribution } = result.value
+      const timeChartInstance = echarts.init(timeDistributionChart.value);
+      
+      // 计算关键时间数据
+      const totalSeconds = result.value?.duration || 0;
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const totalQuestions = result.value?.totalQuestions || 1;
+      const avgTimePerQuestion = Math.round(totalSeconds / totalQuestions);
 
-      const option = {
+      // 构建图表数据 - 使用数字类型的值
+      const pieData = [
+        {
+          value: totalSeconds,
+          name: '总用时(秒)',
+          itemStyle: { color: '#FF6B6B' }
+        },
+        {
+          value: avgTimePerQuestion,
+          name: '平均每题用时(秒)',
+          itemStyle: { color: '#4FC08D' }
+        }
+      ];
+      
+      // 为了更好的可视化，如果题目数量很小时，使用乘数调整显示比例
+      const multiplier = totalQuestions < 10 ? 100 : 10;
+      
+      pieData.push({
+        value: totalQuestions * multiplier,
+        name: `题目数量: ${totalQuestions}`,
+        itemStyle: { color: '#5C7BD9' }
+      });
+      
+      // 简洁的环形图，优化了显示效果
+      const timeOptions = {
         tooltip: {
           trigger: 'item',
-          formatter: '{b}: {c}题 ({d}%)'
+          formatter: function(params) {
+            if (params.name === '总用时(秒)') {
+              const mins = Math.floor(params.value / 60);
+              const secs = params.value % 60;
+              return `总用时: ${mins}分${secs}秒`;
+            } else if (params.name === '平均每题用时(秒)') {
+              return `平均每题用时: ${params.value}秒`;
+            } else if (params.name.startsWith('题目数量')) {
+              return `题目数量: ${totalQuestions}`;
+            }
+            return `${params.name}: ${params.value}`;
+          },
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderColor: '#eee',
+          borderWidth: 1,
+          padding: 10,
+          textStyle: {
+            color: '#333',
+            fontSize: 13
+          }
         },
         legend: {
           orient: 'vertical',
-          left: 10,
-          data: timeDistribution.map(item => item.name)
+          right: 10,
+          top: 'center',
+          itemWidth: 12,
+          itemHeight: 12,
+          icon: 'circle',
+          formatter: function(name) {
+            if (name === '总用时(秒)') {
+              return `总用时: ${minutes}分${seconds}秒`;
+            } else if (name === '平均每题用时(秒)') {
+              return `平均每题: ${avgTimePerQuestion}秒`;
+            } else if (name.startsWith('题目数量')) {
+              return `题目数量: ${totalQuestions}`;
+            }
+            return name;
+          },
+          textStyle: {
+            fontSize: 12,
+            color: '#666'
+          }
         },
         series: [
           {
-            name: '答题用时',
             type: 'pie',
             radius: ['40%', '70%'],
-            avoidLabelOverlap: false,
-            itemStyle: {
-              borderRadius: 10,
-              borderColor: '#fff',
-              borderWidth: 2
-            },
+            center: ['40%', '50%'],
+            avoidLabelOverlap: true,
             label: {
-              show: false,
-              position: 'center'
+              show: false
             },
             emphasis: {
               label: {
-                show: true,
-                fontSize: '18',
-                fontWeight: 'bold'
+                show: false
+              },
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.2)'
               }
             },
             labelLine: {
               show: false
             },
-            data: timeDistribution.map(item => ({
-              name: item.name,
-              value: item.count
-            }))
+            data: pieData
           }
         ]
-      }
+      };
 
-      chart.setOption(option)
-      window.addEventListener('resize', () => chart.resize())
+      timeChartInstance.setOption(timeOptions);
+      window.addEventListener('resize', () => timeChartInstance.resize());
+    }
+  });
+};
+
+// 返回首页
+const goHome = () => {
+  router.push('/')
+}
+
+// 查看答案解析
+const viewAnswers = () => {
+  showAnswers.value = true
+
+  // 等待DOM更新后滚动到答题详情部分
+  nextTick(() => {
+    const answersCard = document.querySelector('.answers-card')
+    if (answersCard) {
+      answersCard.scrollIntoView({ behavior: 'smooth' })
     }
   })
 }
 
-// 显示答题详情
-const viewAnswers = () => {
-  showAnswers.value = !showAnswers.value
-  if (showAnswers.value) {
-    nextTick(() => {
-      document.querySelector('.answers-card').scrollIntoView({ behavior: 'smooth' })
-    })
-  }
-}
-
-// 返回首页
-const goHome = () => {
-  router.push('/online-exam')
-}
-
-// 格式化日期
-const formatDate = date => {
-  if (!date) return '-'
-  const d = new Date(date)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
 // 格式化时长
-const formatDuration = seconds => {
-  if (!seconds) return '-'
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-
-  let result = ''
-  if (hours > 0) result += `${hours}小时`
-  if (minutes > 0) result += `${minutes}分钟`
-  if (secs > 0 && hours === 0) result += `${secs}秒`
-
-  return result
-}
+const formatDuration = (seconds) => {
+  if (!seconds) return '0秒';
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  
+  if (minutes === 0) {
+    return `${remainingSeconds}秒`;
+  } else if (remainingSeconds === 0) {
+    return `${minutes}分钟`;
+  } else {
+    return `${minutes}分钟${remainingSeconds}秒`;
+  }
+};
 
 // 获取得分等级样式
 const getScoreClass = scorePercent => {
@@ -533,19 +686,75 @@ const getQuestionTypeName = type => {
 
 // 检查选项是否被选中
 const isOptionSelected = (question, optionValue) => {
-  if (Array.isArray(question.userAnswer)) {
-    return question.userAnswer.includes(optionValue)
+  if (!question.userAnswer) return false;
+  
+  // 处理选项值可能是字母形式的情况（例如 "C", "D"）
+  if (typeof question.userAnswer === 'string') {
+    // 直接比较选项的label（例如"A", "B", "C", "D"）
+    if (question.options && question.options.length > 0) {
+      for (const option of question.options) {
+        if (option.label === question.userAnswer && option.value === optionValue) {
+          return true;
+        }
+      }
+    }
+    
+    // 如果用户答案是C，而选项value是2，那么也匹配
+    const letterMap = { 'A': '0', 'B': '1', 'C': '2', 'D': '3', 'E': '4', 'F': '5' };
+    if (letterMap[question.userAnswer] === optionValue) {
+      return true;
+    }
   }
-  return question.userAnswer === optionValue
-}
+  
+  // 处理数组形式的答案（多选题）
+  if (Array.isArray(question.userAnswer)) {
+    return question.userAnswer.includes(optionValue);
+  }
+  
+  // 直接比较
+  return question.userAnswer === optionValue;
+};
+
+// 获取选项标签 (将数字转为字母 0->A, 1->B)
+const getOptionLabel = (value) => {
+  if (value === null || value === undefined) return '';
+  
+  const numericValue = parseInt(value, 10);
+  if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 25) {
+    return String.fromCharCode(65 + numericValue); // A的ASCII码是65
+  }
+  
+  return value;
+};
+
+// 格式化用户答案为可读形式
+const formatUserAnswer = (question) => {
+  if (!question.userAnswer) return '未作答';
+  
+  // 如果答案是字母形式，直接返回
+  if (typeof question.userAnswer === 'string' && 
+      question.userAnswer.length === 1 && 
+      /[A-Za-z]/.test(question.userAnswer)) {
+    return question.userAnswer.toUpperCase();
+  }
+  
+  // 如果是数组（多选题），转换为字母序列
+  if (Array.isArray(question.userAnswer)) {
+    return question.userAnswer.map(value => getOptionLabel(value)).join(', ');
+  }
+  
+  // 如果是数字，转换为字母
+  return getOptionLabel(question.userAnswer);
+};
 
 onMounted(() => {
   fetchExamResult().then(() => {
     if (result.value) {
-      initCharts()
+      initCharts();
     }
-  })
-})
+  });
+});
+
 </script>
 
 <style lang="less" scoped>
@@ -713,9 +922,33 @@ onMounted(() => {
 
 .analysis-card {
   margin-bottom: 30px;
+  border-radius: 8px;
+  overflow: hidden;
 
-  @media (max-width: 576px) {
-    margin-bottom: 20px;
+  .el-card__header {
+    background-color: #f8f9fa;
+    padding: 15px;
+  }
+  
+  .chart {
+    height: 300px;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  
+  .stats-grid {
+    margin-top: 15px;
+  }
+  
+  .stat-box {
+    border-radius: 6px;
+    padding: 15px;
+    transition: all 0.3s;
+    
+    &:hover {
+      box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+    }
   }
 }
 
@@ -782,16 +1015,6 @@ onMounted(() => {
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 15px;
-  }
-}
-
-.stat-box {
-  background-color: #f5f7fa;
-  border-radius: 4px;
-  padding: 15px;
-
-  @media (max-width: 576px) {
-    padding: 12px;
   }
 }
 
@@ -914,6 +1137,8 @@ onMounted(() => {
     padding: 10px 15px;
     border-radius: 4px;
     background-color: #f5f7fa;
+    display: flex;
+    align-items: flex-start;
 
     @media (max-width: 576px) {
       padding: 8px 12px;
@@ -932,6 +1157,16 @@ onMounted(() => {
     &.option-wrong {
       background-color: #fef0f0;
       border: 1px solid #fde2e2;
+    }
+    
+    .option-label {
+      font-weight: bold;
+      margin-right: 8px;
+      min-width: 20px;
+    }
+    
+    .option-content {
+      font-size: 14px;
     }
   }
 }
@@ -1001,10 +1236,99 @@ onMounted(() => {
   }
 }
 
+.answer-summary {
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+
+  .user-choice,
+  .correct-choice {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+
+    @media (max-width: 576px) {
+      margin-bottom: 8px;
+    }
+  }
+
+  .answer-label {
+    font-weight: bold;
+    margin-right: 8px;
+    min-width: 70px;
+  }
+
+  .correct-text {
+    color: #67c23a;
+    font-weight: bold;
+  }
+
+  .wrong-text {
+    color: #f56c6c;
+    font-weight: bold;
+  }
+}
+
 .error-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 400px;
+}
+
+// 添加时间统计卡片样式
+.time-stats-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  box-sizing: border-box;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.time-stats-header {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.time-stats-body {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+}
+
+.time-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f5f7fa;
+  min-width: 120px;
+  
+  &.highlight {
+    background-color: #ecf5ff;
+    border: 1px solid #d9ecff;
+  }
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
 }
 </style>

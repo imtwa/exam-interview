@@ -350,3 +350,15 @@ export function generateInvitationCode(data) {
     data
   })
 }
+
+/**
+ * 获取在线考试结果
+ * @param {string} invitationCode 考试邀请码
+ * @returns {Promise}
+ */
+export function getOnlineExamResult(invitationCode) {
+  return request({
+    url: `/online-exam/result/${invitationCode}`,
+    method: 'get'
+  })
+}

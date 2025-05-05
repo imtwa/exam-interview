@@ -592,8 +592,8 @@ const submitExam = async () => {
         clearInterval(timerInterval.value)
       }
 
-      // 跳转到结果页面
-      router.push(`/online-exam/result/${route.params.id}`)
+      // 跳转到结果页面，使用邀请码路径
+      router.push(`/online-exam/result/code/${route.params.id}`)
     } else {
       throw new Error('提交失败，未收到服务器响应')
     }

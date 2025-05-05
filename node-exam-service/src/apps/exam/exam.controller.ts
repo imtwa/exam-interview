@@ -900,6 +900,46 @@ export class ExamController {
     }
   }
 
+  @ApiOperation({ summary: '获取在线考试结果' })
+  @ApiResponse({
+    status: 200,
+    description: '获取考试结果成功',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        message: { type: 'string', example: '获取考试结果成功' },
+        data: {
+          type: 'object',
+          properties: {
+            examTitle: { type: 'string', example: 'JavaScript基础测试' },
+            submittedAt: { type: 'string', example: '2023-05-15T08:30:00Z' },
+            score: { type: 'number', example: 85 },
+            totalScore: { type: 'number', example: 100 },
+            percentage: { type: 'number', example: 85 },
+            duration: { type: 'number', example: 3600 },
+            correctCount: { type: 'number', example: 17 },
+            totalQuestions: { type: 'number', example: 20 },
+            questions: { type: 'array', items: { type: 'object' } },
+          },
+        },
+      },
+    },
+  })
+  @Get('online-exam/result/:invitationCode')
+  async getOnlineExamResult(@Param('invitationCode') invitationCode: string) {
+    try {
+      const result = await this.examService.getExamResult(invitationCode);
+
+      return {
+        code: 200,
+        message: '获取考试结果成功',
+        data: result,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // 获取用户的考试列表
   @Post('user-exams')
   @UseGuards(JwtAuthGuard)

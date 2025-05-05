@@ -1984,7 +1984,7 @@ export class ExamService {
               isCorrect = userAnswers === correctAnswers;
               break;
             case 3: // 判断题
-              isCorrect = userAnswer.toString() === question.answer;
+              isCorrect = userAnswer?.toString() === question.answer;
               break;
             case 4: // 填空题
               isCorrect = userAnswer === question.answer;
@@ -2129,6 +2129,178 @@ export class ExamService {
     } catch (error) {
       this.logger.error(`获取用户考试列表失败: ${error.message}`, error.stack);
       throw new Error('获取用户考试列表失败');
+    }
+  }
+
+  /**
+   * 获取考试结果
+   * @param invitationCode 邀请码
+   */
+  async getExamResult(invitationCode: string) {
+    this.logger.log(`获取考试结果: ${invitationCode}`);
+
+    // 查询邀请码对应的考试分配记录
+    const assignment = await this.prisma.examAssignment.findFirst({
+      where: {
+        invitationCode,
+        completed: true,
+      },
+      include: {
+        examPaper: true,
+        application: {
+          include: {
+            job: true,
+          },
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('未找到考试结果或考试尚未完成');
+    }
+
+    // 获取试卷所有题目
+    const examQuestions = await this.prisma.examQuestion.findMany({
+      where: {
+        examId: assignment.examId,
+        deletedAt: null,
+      },
+      include: {
+        question: true,
+      },
+      orderBy: {
+        order: 'asc',
+      },
+    });
+
+    // 获取考生答案
+    const userAnswers = assignment.answers as Record<string, any>;
+    if (!userAnswers) {
+      throw new BadRequestException('未找到考生答案');
+    }
+
+    // 统计正确题目数量和总分
+    let correctCount = 0;
+    let totalScore = 0;
+    const questions = [];
+
+    // 处理每个题目
+    for (const examQuestion of examQuestions) {
+      const questionId = examQuestion.questionId.toString();
+      const question = examQuestion.question;
+      const userAnswer = userAnswers[questionId];
+      
+      // 累加总分
+      totalScore += examQuestion.score;
+      
+      let isCorrect = false;
+
+      // 根据题目类型判断答案是否正确
+      switch (question.qtype) {
+        case 1: // 单选题
+          isCorrect = userAnswer === question.answer;
+          break;
+        case 2: // 多选题
+          // 将答案排序后比较
+          const correctAnswers = question.answer.split(',').sort().join(',');
+          const userAnswers = Array.isArray(userAnswer)
+            ? [...userAnswer].sort().join(',')
+            : userAnswer;
+          isCorrect = userAnswers === correctAnswers;
+          break;
+        case 3: // 判断题
+          isCorrect = userAnswer?.toString() === question.answer;
+          break;
+        case 4: // 填空题
+          isCorrect = userAnswer === question.answer;
+          break;
+        default:
+          break;
+      }
+
+      if (isCorrect) {
+        correctCount++;
+      }
+
+      // 格式化选项
+      const options = [];
+      if (question.options) {
+        try {
+          const parsedOptions = JSON.parse(question.options);
+          if (Array.isArray(parsedOptions)) {
+            parsedOptions.forEach((opt, index) => {
+              const isOptionCorrect = 
+                (question.qtype === 1 || question.qtype === 2)
+                ? question.answer.includes(index.toString()) 
+                : false;
+              
+              options.push({
+                label: String.fromCharCode(65 + index), // A, B, C...
+                value: index.toString(),
+                content: opt.Value || opt,
+                isCorrect: isOptionCorrect,
+              });
+            });
+          }
+        } catch (error) {
+          this.logger.error(`解析选项失败: ${error.message}`);
+        }
+      }
+
+      // 构建题目对象
+      questions.push({
+        id: question.id,
+        content: question.question,
+        type: this.getQuestionType(question.qtype),
+        options: options,
+        userAnswer: userAnswer,
+        correctAnswer: question.answer,
+        explanation: question.ai_analysis || '暂无解析',
+        score: isCorrect ? examQuestion.score : 0,
+        totalScore: examQuestion.score,
+        isCorrect: isCorrect,
+      });
+    }
+
+    // 计算考试持续时间（秒）
+    const duration = Math.floor(
+      (assignment.updatedAt.getTime() - assignment.examStartTime.getTime()) / 1000,
+    );
+
+    // 返回考试结果
+    return {
+      examTitle: assignment.examPaper.name,
+      submittedAt: assignment.updatedAt,
+      score: assignment.score,
+      totalScore: totalScore,
+      percentage: Math.round(
+        (assignment.score / totalScore) * 100,
+      ),
+      duration: duration,
+      correctCount: correctCount,
+      totalQuestions: examQuestions.length,
+      questions: questions,
+    };
+  }
+
+  /**
+   * 获取题目类型
+   * @param qtype 题目类型代码
+   */
+  private getQuestionType(qtype: number): string {
+    switch (qtype) {
+      case 1:
+        return 'single_choice';
+      case 2:
+        return 'multiple_choice';
+      case 3:
+        return 'boolean';
+      case 4:
+        return 'fill_blank';
+      case 5:
+        return 'short_answer';
+      default:
+        return 'unknown';
     }
   }
 }
