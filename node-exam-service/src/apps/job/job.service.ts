@@ -563,7 +563,8 @@ export class JobService {
     try {
       // 确保page和pageSize是数字
       const pageNum = typeof page === 'string' ? parseInt(page) : page;
-      const pageSizeNum = typeof pageSize === 'string' ? parseInt(pageSize) : pageSize;
+      const pageSizeNum =
+        typeof pageSize === 'string' ? parseInt(pageSize) : pageSize;
       const skip = (pageNum - 1) * pageSizeNum;
 
       // 首先尝试查找是否是面试官ID

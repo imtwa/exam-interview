@@ -377,7 +377,7 @@ model ExamAssignment {
   examPaper       ExamPaper @relation(fields: [examId], references: [id]) /// 关联的试卷
   note            String?   @db.Text /// 笔试说明
   assignedBy      Int /// 分配人ID（面试官/HR）
-  status          String    @default("PENDING") /// 状态：待完成/已完成/已过期
+  status          ExamStatus @default(PENDING) /// 考试状态：待完成/已完成/已过期
   score           Float     @default(0) /// 考试得分
   invitationCode  String    @unique @default(uuid()) /// 邀请码，用于考试验证
   examStartTime   DateTime  @default(now()) /// 考试可开始时间
@@ -475,6 +475,13 @@ enum JobStatus {
   ACTIVE   /// 招聘中：职位正在招聘，接受申请
   FILLED   /// 停止招聘：职位已招聘到合适人选
   EXPIRED  /// 已过期
+}
+
+/// 考试状态枚举：定义考试分配的不同状态
+enum ExamStatus {
+  PENDING   /// 待完成：考试已分配但尚未开始
+  COMPLETED /// 已完成：考试已完成并提交
+  EXPIRED   /// 已过期：考试时间已过期且未完成
 }
 
 /// 面试状态枚举：定义求职过程中的各个阶段

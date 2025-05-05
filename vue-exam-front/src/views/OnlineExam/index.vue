@@ -17,10 +17,10 @@
                 <el-icon><Ticket /></el-icon>
               </div>
               <div class="option-title">输入邀请码</div>
-              <div class="option-desc">
-                如果您已收到考试邀请码，请点击此处输入邀请码开始考试。
-              </div>
-              <el-button type="primary" class="option-button" @click.stop="goToInvitationPage">开始考试</el-button>
+              <div class="option-desc">如果您已收到考试邀请码，请点击此处输入邀请码开始考试。</div>
+              <el-button type="primary" class="option-button" @click.stop="goToInvitationPage"
+                >开始考试</el-button
+              >
             </div>
 
             <div class="option-item" @click="goToUserExams">
@@ -28,10 +28,10 @@
                 <el-icon><List /></el-icon>
               </div>
               <div class="option-title">我的笔试</div>
-              <div class="option-desc">
-                查看您的所有笔试记录，包括未完成的和已完成的笔试。
-              </div>
-              <el-button type="success" class="option-button" @click.stop="goToUserExams">查看笔试列表</el-button>
+              <div class="option-desc">查看您的所有笔试记录，包括未完成的和已完成的笔试。</div>
+              <el-button type="success" class="option-button" @click.stop="goToUserExams"
+                >查看笔试列表</el-button
+              >
             </div>
 
             <div class="option-item" @click="goToExamList">
@@ -39,10 +39,10 @@
                 <el-icon><Collection /></el-icon>
               </div>
               <div class="option-title">查看试卷列表</div>
-              <div class="option-desc">
-                查看所有可用的公开试卷，进行练习和自我评估。
-              </div>
-              <el-button type="success" class="option-button" @click.stop="goToExamList">浏览试卷</el-button>
+              <div class="option-desc">查看所有可用的公开试卷，进行练习和自我评估。</div>
+              <el-button type="success" class="option-button" @click.stop="goToExamList"
+                >浏览试卷</el-button
+              >
             </div>
           </div>
         </div>
@@ -106,7 +106,8 @@ const goToUserExams = () => {
   padding: 0 20px;
 }
 
-.welcome-card, .info-card {
+.welcome-card,
+.info-card {
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   margin-bottom: 20px;
@@ -157,7 +158,9 @@ const goToUserExams = () => {
   padding: 20px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -216,7 +219,7 @@ const goToUserExams = () => {
 }
 
 .notice-list li:before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: 10px;

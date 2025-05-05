@@ -14,7 +14,7 @@
               <el-icon><Ticket /></el-icon>
             </div>
           </div>
-          
+
           <p class="guide-text">如果您已收到考试邀请码，请在此处输入以开始考试。</p>
 
           <div class="invitation-form">
@@ -96,19 +96,21 @@ const handleSubmit = async () => {
       const response = await verifyInvitationCode({
         invitationCode: formData.invitationCode
       })
-      
+
       console.log('验证结果:', response)
       if (response) {
         // 获取考试信息
         const examId = response.examId
         const canStart = response.canStart
-        
+
         if (!canStart) {
-          ElMessage.warning(`该考试还未开始或已结束，考试有效期为：${new Date(response.examStartTime).toLocaleString()} 至 ${new Date(response.examEndTime).toLocaleString()}`)
+          ElMessage.warning(
+            `该考试还未开始或已结束，考试有效期为：${new Date(response.examStartTime).toLocaleString()} 至 ${new Date(response.examEndTime).toLocaleString()}`
+          )
           loading.value = false
           return
         }
-        
+
         ElMessage.success('邀请码验证成功，正在进入考试...')
         router.push(`/online-exam/session/${formData.invitationCode}`)
       } else {
@@ -117,13 +119,13 @@ const handleSubmit = async () => {
     } catch (error) {
       console.error('邀请码验证失败:', error)
       let errorMsg = '邀请码验证失败，请检查后重试'
-      
+
       if (error.response && error.response.data && error.response.data.message) {
         errorMsg = error.response.data.message
       } else if (error.message) {
         errorMsg = error.message
       }
-      
+
       ElMessage.error(errorMsg)
     } finally {
       loading.value = false
@@ -246,7 +248,7 @@ const goBack = () => {
 }
 
 .notice-list li:before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: 10px;

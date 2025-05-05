@@ -19,6 +19,7 @@ import {
   QueryUserFavoritesDto,
   FavoriteSortField,
 } from './dto/query-user-favorites.dto';
+import { ExamStatus } from '../../common/enums/exam-status.enum';
 
 @Injectable()
 export class ExamService {
@@ -2007,7 +2008,7 @@ export class ExamService {
       where: { id: assignment.id },
       data: {
         score: earnedScore,
-        status: 'COMPLETED',
+        status: ExamStatus.COMPLETED,
         completed: true,
         answers: answers as any,
       },
@@ -2097,8 +2098,11 @@ export class ExamService {
 
         // 判断考试状态
         let status = assignment.status;
-        if (status === 'PENDING' && new Date() > assignment.examEndTime) {
-          status = 'EXPIRED'; // 如果超过了考试截止时间，则标记为过期
+        if (
+          status === ExamStatus.PENDING &&
+          new Date() > assignment.examEndTime
+        ) {
+          status = ExamStatus.EXPIRED; // 如果超过了考试截止时间，则标记为过期
         }
 
         return {

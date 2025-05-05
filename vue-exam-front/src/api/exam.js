@@ -251,10 +251,8 @@ export function getPrivateExamDetail(id) {
  */
 export function verifyInvitationCode(params) {
   // 确保将参数格式化为对象格式
-  const data = typeof params === 'string' 
-    ? { invitationCode: params } 
-    : params;
-  
+  const data = typeof params === 'string' ? { invitationCode: params } : params
+
   return request({
     url: '/invitation/verify',
     method: 'post',
