@@ -1,50 +1,61 @@
 <template>
-  <div class="invitation-container">
-    <el-card class="invitation-card">
-      <template #header>
-        <div class="card-header">
-          <h2>输入考试邀请码</h2>
+  <div class="invitation-page">
+    <div class="invitation-container">
+      <el-card class="invitation-card">
+        <template #header>
+          <div class="card-header">
+            <h2>输入考试邀请码</h2>
+          </div>
+        </template>
+
+        <div class="card-content">
+          <div class="icon-container">
+            <div class="large-icon">
+              <el-icon><Ticket /></el-icon>
+            </div>
+          </div>
+          
+          <p class="guide-text">如果您已收到考试邀请码，请在此处输入以开始考试。</p>
+
+          <div class="invitation-form">
+            <el-form ref="formRef" :model="formData" :rules="rules">
+              <el-form-item prop="invitationCode">
+                <div class="code-input-container">
+                  <el-input
+                    v-model="formData.invitationCode"
+                    placeholder="请输入邀请码"
+                    maxlength="20"
+                    :prefix-icon="Ticket"
+                    size="large"
+                    @keyup.enter="handleSubmit"
+                  />
+                </div>
+              </el-form-item>
+
+              <el-form-item>
+                <div class="actions">
+                  <el-button @click="goBack" size="large">返回</el-button>
+                  <el-button type="primary" @click="handleSubmit" :loading="loading" size="large">
+                    开始考试
+                  </el-button>
+                </div>
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <div class="info-section">
+            <h4>
+              <el-icon><InfoFilled /></el-icon> 请注意
+            </h4>
+            <ul class="notice-list">
+              <li>考试邀请码通常由招聘方或教育机构通过邮件发送给您。</li>
+              <li>邀请码是唯一的，请勿泄露给他人。</li>
+              <li>如果您尚未收到邀请码，请联系相关负责人。</li>
+            </ul>
+          </div>
         </div>
-      </template>
-
-      <div class="card-content">
-        <p class="guide-text">请输入您收到的考试邀请码以开始考试。</p>
-
-        <div class="invitation-form">
-          <el-form ref="formRef" :model="formData" :rules="rules">
-            <el-form-item prop="invitationCode">
-              <div class="code-input-container">
-                <el-input
-                  v-model="formData.invitationCode"
-                  placeholder="请输入邀请码"
-                  maxlength="20"
-                  :prefix-icon="Ticket"
-                  @keyup.enter="handleSubmit"
-                />
-              </div>
-            </el-form-item>
-
-            <el-form-item>
-              <div class="actions">
-                <el-button @click="goBack">返回</el-button>
-                <el-button type="primary" @click="handleSubmit" :loading="loading">
-                  确认邀请码
-                </el-button>
-              </div>
-            </el-form-item>
-          </el-form>
-        </div>
-
-        <div class="info-section">
-          <h4>
-            <el-icon><InfoFilled /></el-icon> 如何获取邀请码？
-          </h4>
-          <p>
-            考试邀请码通常由招聘方或教育机构通过邮件发送给您。如果您尚未收到邀请码，请联系相关负责人。
-          </p>
-        </div>
-      </div>
-    </el-card>
+      </el-card>
+    </div>
   </div>
 </template>
 
@@ -79,23 +90,17 @@ const handleSubmit = async () => {
 
     loading.value = true
     try {
-      // TODO: 替换为实际API调用
-      // const response = await verifyInvitationCode(formData.invitationCode)
-      // if (response && response.data) {
-      //   router.push(`/online-exam/session/${response.data.examId}`)
-      // }
-
-      // 模拟API调用
-      setTimeout(() => {
-        // 假设验证成功
-        const mockExamId = 'exam123'
+      const response = await verifyInvitationCode({
+        invitationCode: formData.invitationCode
+      })
+      
+      if (response && response.data) {
         ElMessage.success('邀请码验证成功，正在进入考试...')
-        router.push(`/online-exam/session/${mockExamId}`)
-
-        loading.value = false
-      }, 1500)
+        router.push(`/online-exam/session/${response.data.examId}`)
+      }
     } catch (error) {
       ElMessage.error(error.message || '邀请码验证失败，请检查后重试')
+    } finally {
       loading.value = false
     }
   })
@@ -108,14 +113,20 @@ const goBack = () => {
 </script>
 
 <style scoped>
+.invitation-page {
+  width: 100%;
+  background-color: #f5f9ff;
+}
+
 .invitation-container {
   max-width: 600px;
-  margin: 50px auto;
-  padding: 0 20px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .invitation-card {
-  margin-bottom: 30px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
 }
 
 .card-header {
@@ -126,6 +137,28 @@ const goBack = () => {
 
 .card-header h2 {
   margin: 0;
+  color: #409eff;
+  font-weight: 600;
+}
+
+.icon-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0 30px;
+}
+
+.large-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #ecf5ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.large-icon .el-icon {
+  font-size: 40px;
   color: #409eff;
 }
 
@@ -155,7 +188,7 @@ const goBack = () => {
 .info-section {
   background-color: #f0f9eb;
   border-radius: 4px;
-  padding: 15px;
+  padding: 20px;
   margin-top: 20px;
 }
 
@@ -164,13 +197,37 @@ const goBack = () => {
   align-items: center;
   gap: 8px;
   margin-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   color: #67c23a;
+  font-weight: 600;
 }
 
-.info-section p {
+.notice-list {
+  list-style-type: none;
+  padding: 0;
   margin: 0;
+}
+
+.notice-list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 10px;
   color: #606266;
   line-height: 1.6;
+}
+
+.notice-list li:last-child {
+  margin-bottom: 0;
+}
+
+.notice-list li:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #67c23a;
 }
 </style>

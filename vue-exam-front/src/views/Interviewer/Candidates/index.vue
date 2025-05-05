@@ -301,7 +301,7 @@
     <!-- 简历查看对话框 -->
     <el-dialog
       v-model="resumeDialogVisible"
-      title="候选人简历"
+      :title="selectedCandidate?.jobSeeker?.resumeFileName || '候选人简历'"
       :width="pdfWidth"
       destroy-on-close
       @close="closeResumeDialog"

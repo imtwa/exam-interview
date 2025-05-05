@@ -1,221 +1,223 @@
 <template>
-  <div class="recruitment-container">
-    <!-- 招聘筛选区域 -->
-    <div class="filter-section">
-      <div class="filter-wrapper">
-        <!-- 一级行业筛选 -->
-        <div class="filter-group">
-          <div class="filter-label">一级行业：</div>
-          <div class="filter-options">
-            <div
-              v-for="(item, index) in industryCategories"
-              :key="index"
-              :class="['filter-option', { active: selectedIndustry === item.id }]"
-              @click="handleIndustryChange(item.id)"
-            >
-              {{ item.name }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 二级行业筛选 -->
-        <div class="filter-group">
-          <div class="filter-label">二级行业：</div>
-          <div class="filter-options">
-            <div
-              v-for="(item, index) in industrySubCategories"
-              :key="index"
-              :class="['filter-option', { active: selectedSubIndustry === item.id }]"
-              @click="handleSubIndustryChange(item.id)"
-            >
-              {{ item.name }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 工作城市筛选 -->
-        <div class="filter-group">
-          <div class="filter-label">工作城市：</div>
-          <div class="filter-options">
-            <div
-              :class="['filter-option', { active: selectedCity === 'all' }]"
-              @click="handleCityChange('all')"
-            >
-              全部
-            </div>
-            <!-- 热门城市 - 只显示少量热门城市 -->
-            <div
-              v-for="(item, index) in hotCities"
-              :key="'hot-' + index"
-              :class="['filter-option', { active: selectedCity === item.value }]"
-              @click="handleCityChange(item.value)"
-            >
-              {{ item.label }}
-            </div>
-            <!-- 更多城市按钮 -->
-            <div class="filter-option more-btn" @click="showMoreCities = !showMoreCities">
-              {{ showMoreCities ? '收起' : '更多' }}
-              <el-icon class="icon-arrow">
-                <component :is="showMoreCities ? ArrowUp : ArrowDown" />
-              </el-icon>
-            </div>
-          </div>
-        </div>
-
-        <!-- 薪资范围筛选 -->
-        <div class="filter-group">
-          <div class="filter-label">薪资范围：</div>
-          <div class="filter-options">
-            <div
-              v-for="(item, index) in salaryRanges"
-              :key="index"
-              :class="['filter-option', { active: selectedSalary === item.value }]"
-              @click="handleSalaryChange(item.value)"
-            >
-              {{ item.label }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 工作经验筛选 -->
-        <div class="filter-group">
-          <div class="filter-label">工作经验：</div>
-          <div class="filter-options">
-            <div
-              v-for="(item, index) in experienceRanges"
-              :key="index"
-              :class="['filter-option', { active: selectedExperience === item.value }]"
-              @click="handleExperienceChange(item.value)"
-            >
-              {{ item.label }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 学历要求筛选 -->
-        <div class="filter-group">
-          <div class="filter-label">学历要求：</div>
-          <div class="filter-options">
-            <div
-              v-for="(item, index) in educationLevels"
-              :key="index"
-              :class="['filter-option', { active: selectedEducation === item.value }]"
-              @click="handleEducationChange(item.value)"
-            >
-              {{ item.label }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 关键字搜索 -->
-        <div class="search-wrapper">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="输入关键词搜索"
-            class="search-input"
-            @keyup.enter="handleSearch"
-          >
-            <template #append>
-              <el-button @click="handleSearch">
-                <el-icon><Search /></el-icon>
-              </el-button>
-            </template>
-          </el-input>
-        </div>
-      </div>
-    </div>
-
-    <!-- 招聘信息列表 -->
-    <div class="recruitment-list">
-      <div v-for="(item, index) in jobList" :key="index" class="job-item">
-        <div class="job-header">
-          <div class="job-title-section">
-            <div class="job-title">{{ item.title }}</div>
-            <div class="job-company" @click.stop="viewCompanyDetail(item.companyId)">
-              {{ item.company?.name }}
-            </div>
-          </div>
-          <div class="job-salary">{{ formatSalary(item.salaryMin, item.salaryMax) }}</div>
-        </div>
-        <div class="job-middle">
-          <div class="job-tags">
-            <span class="job-tag">{{ item.city }}</span>
-            <span class="job-tag">{{ formatExperience(item.experienceReq) }}经验</span>
-            <span class="job-tag">{{ formatEducation(item.educationReq) }}</span>
-            <span class="job-tag" v-if="item.isRemote">远程工作</span>
-          </div>
-          <div class="job-category">
-            <span>{{ item.subCategory?.category?.name }} / {{ item.subCategory?.name }}</span>
-          </div>
-        </div>
-        <div class="job-footer">
-          <div class="job-info">
-            <span>{{ item.views || 0 }}次浏览</span>
-            <span>{{ formatDate(item.createdAt) }}</span>
-          </div>
-          <div class="job-actions">
-            <el-button type="primary" size="small" @click="viewDetail(item.id)">查看</el-button>
-            <el-button
-              type="success"
-              size="small"
-              @click="applyJobDirectly(item)"
-              :loading="item.applying"
-              :disabled="item.status !== 'ACTIVE'"
-            >
-              {{ item.applying ? '投递中...' : '一键投递' }}
-            </el-button>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="loading" class="loading-state">
-        <el-card
-          shadow="never"
-          style="background: transparent; border: none; height: 100px"
-          v-loading="true"
-        ></el-card>
-      </div>
-
-      <div v-if="!loading && jobList.length === 0" class="empty-state">
-        <el-empty description="暂无符合条件的职位" />
-      </div>
-
-      <!-- 分页 -->
-      <div v-if="jobList.length > 0" class="pagination-wrapper">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 30, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="totalItems"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-    </div>
-
-    <!-- 更多城市弹出层 -->
-    <div v-if="showMoreCities" class="more-cities-panel" @click.self="showMoreCities = false">
-      <div class="cities-container">
-        <div class="cities-header">
-          <h3>选择城市</h3>
-          <span class="close-btn" @click="showMoreCities = false">×</span>
-        </div>
-        <div class="provinces-container">
-          <div
-            v-for="(province, index) in regionData"
-            :key="'province-' + index"
-            class="province-group"
-          >
-            <div class="province-name">{{ province.name }}</div>
-            <div class="cities-list">
+  <div class="recruitment-page">
+    <div class="recruitment-container">
+      <!-- 招聘筛选区域 -->
+      <div class="filter-section">
+        <div class="filter-wrapper">
+          <!-- 一级行业筛选 -->
+          <div class="filter-group">
+            <div class="filter-label">一级行业：</div>
+            <div class="filter-options">
               <div
-                v-for="(city, cityIndex) in province.children"
-                :key="'city-' + cityIndex"
-                :class="['city-item', { active: selectedCity === city.name.replace('市', '') }]"
-                @click="(handleCityChange(city.name.replace('市', '')), (showMoreCities = false))"
+                v-for="(item, index) in industryCategories"
+                :key="index"
+                :class="['filter-option', { active: selectedIndustry === item.id }]"
+                @click="handleIndustryChange(item.id)"
               >
-                {{ city.name.replace('市', '') }}
+                {{ item.name }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 二级行业筛选 -->
+          <div class="filter-group">
+            <div class="filter-label">二级行业：</div>
+            <div class="filter-options">
+              <div
+                v-for="(item, index) in industrySubCategories"
+                :key="index"
+                :class="['filter-option', { active: selectedSubIndustry === item.id }]"
+                @click="handleSubIndustryChange(item.id)"
+              >
+                {{ item.name }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 工作城市筛选 -->
+          <div class="filter-group">
+            <div class="filter-label">工作城市：</div>
+            <div class="filter-options">
+              <div
+                :class="['filter-option', { active: selectedCity === 'all' }]"
+                @click="handleCityChange('all')"
+              >
+                全部
+              </div>
+              <!-- 热门城市 - 只显示少量热门城市 -->
+              <div
+                v-for="(item, index) in hotCities"
+                :key="'hot-' + index"
+                :class="['filter-option', { active: selectedCity === item.value }]"
+                @click="handleCityChange(item.value)"
+              >
+                {{ item.label }}
+              </div>
+              <!-- 更多城市按钮 -->
+              <div class="filter-option more-btn" @click="showMoreCities = !showMoreCities">
+                {{ showMoreCities ? '收起' : '更多' }}
+                <el-icon class="icon-arrow">
+                  <component :is="showMoreCities ? ArrowUp : ArrowDown" />
+                </el-icon>
+              </div>
+            </div>
+          </div>
+
+          <!-- 薪资范围筛选 -->
+          <div class="filter-group">
+            <div class="filter-label">薪资范围：</div>
+            <div class="filter-options">
+              <div
+                v-for="(item, index) in salaryRanges"
+                :key="index"
+                :class="['filter-option', { active: selectedSalary === item.value }]"
+                @click="handleSalaryChange(item.value)"
+              >
+                {{ item.label }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 工作经验筛选 -->
+          <div class="filter-group">
+            <div class="filter-label">工作经验：</div>
+            <div class="filter-options">
+              <div
+                v-for="(item, index) in experienceRanges"
+                :key="index"
+                :class="['filter-option', { active: selectedExperience === item.value }]"
+                @click="handleExperienceChange(item.value)"
+              >
+                {{ item.label }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 学历要求筛选 -->
+          <div class="filter-group">
+            <div class="filter-label">学历要求：</div>
+            <div class="filter-options">
+              <div
+                v-for="(item, index) in educationLevels"
+                :key="index"
+                :class="['filter-option', { active: selectedEducation === item.value }]"
+                @click="handleEducationChange(item.value)"
+              >
+                {{ item.label }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 关键字搜索 -->
+          <div class="search-wrapper">
+            <el-input
+              v-model="searchKeyword"
+              placeholder="输入关键词搜索"
+              class="search-input"
+              @keyup.enter="handleSearch"
+            >
+              <template #append>
+                <el-button @click="handleSearch">
+                  <el-icon><Search /></el-icon>
+                </el-button>
+              </template>
+            </el-input>
+          </div>
+        </div>
+      </div>
+
+      <!-- 招聘信息列表 -->
+      <div class="recruitment-list">
+        <div v-for="(item, index) in jobList" :key="index" class="job-item">
+          <div class="job-header">
+            <div class="job-title-section">
+              <div class="job-title">{{ item.title }}</div>
+              <div class="job-company" @click.stop="viewCompanyDetail(item.companyId)">
+                {{ item.company?.name }}
+              </div>
+            </div>
+            <div class="job-salary">{{ formatSalary(item.salaryMin, item.salaryMax) }}</div>
+          </div>
+          <div class="job-middle">
+            <div class="job-tags">
+              <span class="job-tag">{{ item.city }}</span>
+              <span class="job-tag">{{ formatExperience(item.experienceReq) }}经验</span>
+              <span class="job-tag">{{ formatEducation(item.educationReq) }}</span>
+              <span class="job-tag" v-if="item.isRemote">远程工作</span>
+            </div>
+            <div class="job-category">
+              <span>{{ item.subCategory?.category?.name }} / {{ item.subCategory?.name }}</span>
+            </div>
+          </div>
+          <div class="job-footer">
+            <div class="job-info">
+              <span>{{ item.views || 0 }}次浏览</span>
+              <span>{{ formatDate(item.createdAt) }}</span>
+            </div>
+            <div class="job-actions">
+              <el-button type="primary" size="small" @click="viewDetail(item.id)">查看</el-button>
+              <el-button
+                type="success"
+                size="small"
+                @click="applyJobDirectly(item)"
+                :loading="item.applying"
+                :disabled="item.status !== 'ACTIVE'"
+              >
+                {{ item.applying ? '投递中...' : '一键投递' }}
+              </el-button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="loading" class="loading-state">
+          <el-card
+            shadow="never"
+            style="background: transparent; border: none; height: 100px"
+            v-loading="true"
+          ></el-card>
+        </div>
+
+        <div v-if="!loading && jobList.length === 0" class="empty-state">
+          <el-empty description="暂无符合条件的职位" />
+        </div>
+
+        <!-- 分页 -->
+        <div v-if="jobList.length > 0" class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 30, 50]"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="totalItems"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
+      </div>
+
+      <!-- 更多城市弹出层 -->
+      <div v-if="showMoreCities" class="more-cities-panel" @click.self="showMoreCities = false">
+        <div class="cities-container">
+          <div class="cities-header">
+            <h3>选择城市</h3>
+            <span class="close-btn" @click="showMoreCities = false">×</span>
+          </div>
+          <div class="provinces-container">
+            <div
+              v-for="(province, index) in regionData"
+              :key="'province-' + index"
+              class="province-group"
+            >
+              <div class="province-name">{{ province.name }}</div>
+              <div class="cities-list">
+                <div
+                  v-for="(city, cityIndex) in province.children"
+                  :key="'city-' + cityIndex"
+                  :class="['city-item', { active: selectedCity === city.name.replace('市', '') }]"
+                  @click="(handleCityChange(city.name.replace('市', '')), (showMoreCities = false))"
+                >
+                  {{ city.name.replace('市', '') }}
+                </div>
               </div>
             </div>
           </div>
@@ -626,6 +628,11 @@ onMounted(async () => {
 </script>
 
 <style lang="less" scoped>
+.recruitment-page {
+  width: 100%;
+  background-color: #f5f9ff;
+}
+
 .recruitment-container {
   max-width: 1200px;
   margin: 0 auto;
