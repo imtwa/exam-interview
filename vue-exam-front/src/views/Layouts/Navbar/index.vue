@@ -44,8 +44,17 @@
               </router-link>
             </template>
 
+            <!-- 添加在线面试导航链接，对任何人都可见 -->
+            <router-link
+              to="/online-interview"
+              class="navbar__link"
+              :class="{ 'navbar__link--active': route.path.includes('/online-interview') }"
+            >
+              在线面试
+            </router-link>
+
             <!-- 面试官导航链接 -->
-            <template v-else-if="isInterviewer">
+            <template v-if="isInterviewer">
               <router-link
                 to="/job-management"
                 class="navbar__link"
@@ -199,8 +208,17 @@
           </router-link>
         </template>
 
+        <!-- 添加在线面试移动端导航链接，对任何人都可见 -->
+        <router-link
+          to="/online-interview"
+          class="navbar__mobile-link"
+          :class="{ 'navbar__mobile-link--active': route.path.includes('/online-interview') }"
+        >
+          在线面试
+        </router-link>
+
         <!-- 面试官导航链接 -->
-        <template v-else-if="isInterviewer">
+        <template v-if="isInterviewer">
           <router-link
             to="/job-management"
             class="navbar__mobile-link"

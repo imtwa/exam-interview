@@ -63,3 +63,57 @@ export function deleteInterview(id) {
     method: 'post'
   })
 }
+
+/**
+ * 验证面试邀请码
+ * @param {Object|string} params 邀请码对象或字符串
+ * @returns {Promise}
+ */
+export function verifyInterviewInvitationCode(params) {
+  // 确保将参数格式化为对象格式
+  const data = typeof params === 'string' ? { invitationCode: params } : params
+
+  return request({
+    url: '/interview/invitation/verify',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 开始面试并获取面试内容
+ * @param {string} invitationCode 邀请码
+ * @returns {Promise}
+ */
+export function startInterview(invitationCode) {
+  return request({
+    url: `/interview/start/${invitationCode}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 结束面试
+ * @param {string} invitationCode 邀请码
+ * @returns {Promise}
+ */
+export function completeInterview(invitationCode) {
+  return request({
+    url: `/interview/complete/${invitationCode}`,
+    method: 'post'
+  })
+}
+
+/**
+ * 提交面试反馈
+ * @param {string} invitationCode 邀请码
+ * @param {Object} feedback 反馈内容
+ * @returns {Promise}
+ */
+export function submitInterviewFeedback(invitationCode, feedback) {
+  return request({
+    url: '/interview/feedback',
+    method: 'post',
+    data: { invitationCode, feedback }
+  })
+}

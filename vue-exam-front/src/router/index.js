@@ -187,6 +187,32 @@ const routes = [
         name: 'ExamResult',
         component: () => import('@/views/OnlineExam/ExamResult.vue'),
         meta: { title: '考试结果' }
+      },
+      
+      // 在线面试路由
+      {
+        path: 'online-interview',
+        name: 'OnlineInterview',
+        component: () => import('@/views/OnlineInterview/index.vue'),
+        meta: { title: '在线面试' }
+      },
+      {
+        path: 'online-interview/invitation',
+        name: 'InterviewInvitation',
+        component: () => import('@/views/OnlineInterview/Invitation.vue'),
+        meta: { title: '面试邀请码' }
+      },
+      {
+        path: 'online-interview/session/:id',
+        name: 'InterviewSession',
+        component: () => import('@/views/OnlineInterview/InterviewSession.vue'),
+        meta: { title: '在线面试', keepAlive: true }
+      },
+      {
+        path: 'online-interview/feedback/:id',
+        name: 'InterviewFeedback',
+        component: () => import('@/views/OnlineInterview/InterviewFeedback.vue'),
+        meta: { title: '面试反馈' }
       }
     ]
   }
