@@ -166,3 +166,41 @@ export function assignExam(data) {
     data
   })
 }
+
+/**
+ * 提交面试评价
+ * @param {number} interviewId 面试ID
+ * @param {Object} data 评价数据
+ * @returns {Promise} 返回评价结果
+ */
+export function submitInterviewFeedback(interviewId, data) {
+  return request({
+    url: `/interviewer/interviews/${interviewId}/feedback`,
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取面试详情
+ * @param {number} interviewId 面试ID
+ * @returns {Promise} 返回面试详情
+ */
+export function getInterviewDetail(interviewId) {
+  return request({
+    url: `/interviewer/interviews/${interviewId}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 验证面试邀请码
+ * @param {string} invitationCode 面试邀请码
+ * @returns {Promise} 返回验证结果
+ */
+export function verifyInterviewInvitation(invitationCode) {
+  return request({
+    url: `/interviewer/interviews/verify/${invitationCode}`,
+    method: 'get'
+  })
+}

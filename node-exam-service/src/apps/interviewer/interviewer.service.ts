@@ -4,11 +4,14 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   PrismaClient,
   InterviewStatus,
   Interviewer,
+  JobApplicationStatus,
 } from '../../../prisma/generated/client';
 import { CreateInterviewerDto } from './dto/create-interviewer.dto';
 import { LoggerService } from '../../common/logger/logger.service';
@@ -19,6 +22,7 @@ import * as crypto from 'crypto';
 import { AssignExamDto } from './dto/assign-exam.dto';
 import { ExamStatus } from '../../common/enums/exam-status.enum';
 import { NotificationType } from '../../common/enums/notification-type.enum';
+import { ScheduleInterviewDto } from './dto/schedule-interview.dto';
 
 @Injectable()
 export class InterviewerService {
@@ -31,7 +35,7 @@ export class InterviewerService {
     private loggerService: LoggerService,
   ) {
     this.logger = loggerService;
-    this.logger.setContext('InterviewerService');
+    this.logger.setContext(InterviewerService.name);
   }
 
   /**
@@ -225,7 +229,7 @@ export class InterviewerService {
 
     // 根据状态筛选
     if (status && status !== 'ALL') {
-      where.status = status as InterviewStatus;
+      where.status = status as JobApplicationStatus;
     }
 
     // 根据职位ID筛选
@@ -410,7 +414,7 @@ export class InterviewerService {
 
     // 构建更新数据
     const updateData: any = {
-      status: status as InterviewStatus,
+      status: status as JobApplicationStatus,
     };
 
     // 如果有反馈信息，添加到更新数据中
@@ -425,7 +429,7 @@ export class InterviewerService {
     });
 
     // 如果状态是笔试，检查是否提供了笔试试卷ID
-    if (status === 'WRITTEN_TEST' && examId) {
+    if (status === JobApplicationStatus.WRITTEN_TEST && examId) {
       // 验证试卷是否存在
       const exam = await this.prisma.examPaper.findUnique({
         where: { id: examId },
@@ -443,7 +447,7 @@ export class InterviewerService {
           note: note || '',
           assignedBy: userId,
           status: 'PENDING', // 初始状态为待完成
-          jobSeekerId: 1, // 添加默认值，后续可以根据applicationId获取真实的jobSeekerId
+          jobSeekerId: application.jobSeekerId, // 使用申请中的jobSeekerId
         },
       });
 
@@ -457,54 +461,170 @@ export class InterviewerService {
 
   /**
    * 安排面试
+   * @param applicationId 职位申请ID
+   * @param userId 当前用户ID
+   * @param interviewData 面试数据
    */
   async scheduleInterview(
     applicationId: number,
     userId: number,
-    scheduleTime: Date,
-    duration: number,
-    meetingLink?: string,
-  ) {
-    // 查找面试官ID以验证权限
+    interviewData: ScheduleInterviewDto,
+  ): Promise<any> {
+    // 验证用户是否是面试官
     const interviewer = await this.getInterviewerByUserId(userId);
+    if (!interviewer) {
+      throw new HttpException('用户不是面试官', HttpStatus.FORBIDDEN);
+    }
 
-    // 查找申请
+    // 查找职位申请
     const application = await this.prisma.jobApplication.findUnique({
       where: { id: applicationId },
       include: {
-        job: true,
+        job: {
+          include: {
+            interviewer: true,
+            company: true,
+          },
+        },
+        jobSeeker: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 
     if (!application) {
-      throw new NotFoundException(`申请不存在 ID: ${applicationId}`);
+      throw new HttpException('职位申请不存在', HttpStatus.NOT_FOUND);
     }
 
-    // 确认该申请属于此面试官负责的职位
-    if (application.job.interviewerId !== interviewer.id) {
-      throw new ForbiddenException('您无权为此申请安排面试');
+    // 验证申请是否属于此面试官
+    if (application.job.interviewer.id !== interviewer.id) {
+      throw new HttpException('无权操作此申请', HttpStatus.FORBIDDEN);
     }
 
     // 创建面试记录
     const interview = await this.prisma.interview.create({
       data: {
-        applicationId,
-        scheduleTime,
-        duration,
-        meetingLink,
-        status: InterviewStatus.SCHEDULED,
+        application: {
+          connect: { id: applicationId },
+        },
+        jobSeeker: {
+          connect: { id: application.jobSeekerId },
+        },
+        interviewer: {
+          connect: { id: interviewer.id },
+        },
+        scheduleTime: new Date(interviewData.scheduleTime),
+        duration: interviewData.duration,
+        round: interviewData.round,
+        status: 'SCHEDULED',
+        type: interviewData.type,
+        location: interviewData.location,
+        notes: interviewData.notes,
       },
     });
 
-    // 更新申请状态为已安排面试
+    // 更新申请状态为对应的面试轮次
     await this.prisma.jobApplication.update({
       where: { id: applicationId },
       data: {
-        status: InterviewStatus.SCHEDULED,
+        status: this.mapRoundToApplicationStatus(interviewData.round),
       },
     });
 
+    // 创建系统通知
+    await this.prisma.notification.create({
+      data: {
+        userId: application.jobSeeker.userId,
+        title: '面试邀请',
+        content: `您申请的 ${application.job.title} 职位已安排${this.getInterviewRoundText(interviewData.round)}，请于 ${new Date(interviewData.scheduleTime).toLocaleString()} 准时参加。面试邀请码: ${interview.invitationCode}`,
+        type: 'INTERVIEW_SCHEDULED',
+        targetId: interview.id,
+      },
+    });
+
+    // 如果需要发送邮件通知
+    if (interviewData.sendEmail) {
+      try {
+        // 获取求职者用户信息
+        const jobSeekerUser = await this.prisma.frontUser.findUnique({
+          where: { id: application.jobSeeker.userId },
+        });
+
+        if (jobSeekerUser && jobSeekerUser.email) {
+          // 格式化日期，使用原生JavaScript方法
+          const formattedDate = new Date(
+            interviewData.scheduleTime,
+          ).toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+
+          await this.emailService.sendInterviewInvitation({
+            to: jobSeekerUser.email,
+            candidateName: jobSeekerUser.username,
+            jobTitle: application.job.title,
+            companyName: application.job.company.name,
+            interviewTime: formattedDate,
+            interviewType: this.getInterviewTypeText(interviewData.type),
+            interviewLocation: interviewData.location || '线上面试',
+            interviewNotes: interviewData.notes || '无',
+            verificationLink: `${this.configService.get('FRONTEND_URL')}/interview/join/${interview.invitationCode}`,
+            round: this.getInterviewRoundText(interviewData.round),
+          });
+          this.logger.log(`成功发送面试邀请邮件至 ${jobSeekerUser.email}`);
+        }
+      } catch (error) {
+        this.logger.error(`发送面试邀请邮件失败: ${error.message}`, error);
+        // 不要因为邮件发送失败而中断整个流程
+      }
+    }
+
     return interview;
+  }
+
+  /**
+   * 将面试轮次映射到对应的申请状态
+   */
+  private mapRoundToApplicationStatus(round: string): JobApplicationStatus {
+    switch (round) {
+      case 'FIRST_INTERVIEW':
+        return JobApplicationStatus.FIRST_INTERVIEW;
+      case 'SECOND_INTERVIEW':
+        return JobApplicationStatus.SECOND_INTERVIEW;
+      case 'HR_INTERVIEW':
+        return JobApplicationStatus.HR_INTERVIEW;
+      default:
+        return JobApplicationStatus.FIRST_INTERVIEW;
+    }
+  }
+
+  /**
+   * 获取面试轮次文本表示
+   */
+  private getInterviewRoundText(round: string): string {
+    const roundMap = {
+      FIRST_INTERVIEW: '一面',
+      SECOND_INTERVIEW: '二面',
+      HR_INTERVIEW: 'HR面试',
+    };
+    return roundMap[round] || '面试';
+  }
+
+  /**
+   * 获取面试类型文本表示
+   */
+  private getInterviewTypeText(type: string): string {
+    const typeMap = {
+      phone: '电话面试',
+      video: '视频面试',
+      onsite: '现场面试',
+    };
+    return typeMap[type] || '面试';
   }
 
   /**
@@ -1297,5 +1417,248 @@ export class InterviewerService {
     });
 
     return updatedAssignment;
+  }
+
+  /**
+   * 提交面试评价
+   * @param interviewId 面试ID
+   * @param userId 当前用户ID
+   * @param feedbackData 评价数据
+   */
+  async submitInterviewFeedback(
+    interviewId: number,
+    userId: number,
+    feedbackData: any,
+  ): Promise<any> {
+    // 验证用户是否是面试官
+    const interviewer = await this.getInterviewerByUserId(userId);
+    if (!interviewer) {
+      throw new HttpException('用户不是面试官', HttpStatus.FORBIDDEN);
+    }
+
+    // 查找面试记录
+    const interview = await this.prisma.interview.findUnique({
+      where: { id: interviewId },
+      include: {
+        application: {
+          include: {
+            job: {
+              include: {
+                company: true,
+              },
+            },
+            jobSeeker: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+        jobSeeker: {
+          include: {
+            user: true,
+          },
+        },
+        interviewer: true,
+      },
+    });
+
+    if (!interview) {
+      throw new HttpException('面试不存在', HttpStatus.NOT_FOUND);
+    }
+
+    // 验证面试是否属于此面试官
+    if (interview.interviewerId !== interviewer.id) {
+      throw new HttpException('无权操作此面试', HttpStatus.FORBIDDEN);
+    }
+
+    // 更新面试状态和评价
+    const updatedInterview = await this.prisma.interview.update({
+      where: { id: interviewId },
+      data: {
+        status: 'COMPLETED',
+        feedback: feedbackData.feedback,
+        feedbackRating: feedbackData.feedbackRating,
+      },
+    });
+
+    // 更新申请状态
+    let newStatus = interview.application.status;
+    if (feedbackData.status === 'PASS') {
+      // 如果通过了面试
+      if (feedbackData.scheduleNextRound) {
+        // 如果需要进入下一轮面试
+        newStatus = feedbackData.scheduleNextRound;
+      } else if (interview.round === 'HR_INTERVIEW') {
+        // 如果是HR面试且通过，发放Offer
+        newStatus = 'OFFER';
+      }
+    } else if (feedbackData.status === 'REJECTED') {
+      // 如果面试未通过
+      newStatus = 'REJECTED';
+    }
+
+    await this.prisma.jobApplication.update({
+      where: { id: interview.applicationId },
+      data: {
+        status: newStatus,
+      },
+    });
+
+    // 创建系统通知
+    let notificationTitle = '';
+    let notificationContent = '';
+    if (feedbackData.status === 'PASS') {
+      if (feedbackData.scheduleNextRound) {
+        notificationTitle = '面试通过';
+        notificationContent = `恭喜您！您申请的 ${interview.application.job.title} 职位的${this.getInterviewRoundText(interview.round)}已通过，将进入${this.getInterviewRoundText(feedbackData.scheduleNextRound)}。`;
+      } else if (interview.round === 'HR_INTERVIEW') {
+        notificationTitle = 'Offer通知';
+        notificationContent = `恭喜您！您申请的 ${interview.application.job.title} 职位的所有面试环节已通过，HR将尽快联系您发放Offer。`;
+      } else {
+        notificationTitle = '面试通过';
+        notificationContent = `恭喜您！您申请的 ${interview.application.job.title} 职位的${this.getInterviewRoundText(interview.round)}已通过。`;
+      }
+    } else if (feedbackData.status === 'REJECTED') {
+      notificationTitle = '面试未通过';
+      notificationContent = `很遗憾，您申请的 ${interview.application.job.title} 职位的${this.getInterviewRoundText(interview.round)}未通过。感谢您的参与，祝您求职顺利！`;
+    } else {
+      notificationTitle = '面试状态更新';
+      notificationContent = `您申请的 ${interview.application.job.title} 职位的${this.getInterviewRoundText(interview.round)}评估已更新，HR将进一步确认结果。`;
+    }
+
+    await this.prisma.notification.create({
+      data: {
+        userId: interview.application.jobSeeker.userId,
+        title: notificationTitle,
+        content: notificationContent,
+        type: 'APPLICATION_STATUS',
+        targetId: interview.applicationId,
+      },
+    });
+
+    return updatedInterview;
+  }
+
+  /**
+   * 获取面试详情
+   * @param interviewId 面试ID
+   * @param userId 当前用户ID
+   */
+  async getInterviewDetail(interviewId: number, userId: number): Promise<any> {
+    // 验证面试官权限
+    const interviewer = await this.getInterviewerByUserId(userId);
+
+    // 获取面试详情
+    const interview = await this.prisma.interview.findUnique({
+      where: { id: interviewId },
+      include: {
+        application: {
+          include: {
+            jobSeeker: true,
+            job: true,
+          },
+        },
+      },
+    });
+
+    if (!interview) {
+      throw new NotFoundException(`面试记录不存在 ID: ${interviewId}`);
+    }
+
+    // 验证是否是该面试官的面试
+    if (interview.interviewerId !== interviewer.id) {
+      throw new ForbiddenException('您无权查看此面试记录');
+    }
+
+    // 获取求职者用户信息
+    let candidateName = '未知用户';
+    try {
+      const jobSeekerUser = await this.prisma.frontUser.findUnique({
+        where: { id: interview.application.jobSeeker.userId },
+      });
+      if (jobSeekerUser) {
+        candidateName = jobSeekerUser.username;
+      }
+    } catch (error) {
+      this.logger.error(`获取求职者信息失败: ${error.message}`);
+    }
+
+    // 处理返回数据
+    return {
+      id: interview.id,
+      applicationId: interview.applicationId,
+      scheduleTime: interview.scheduleTime,
+      duration: interview.duration,
+      status: interview.status,
+      location: interview.location,
+      feedback: interview.feedback,
+      feedbackRating: interview.feedbackRating,
+      candidateName: candidateName,
+      jobTitle: interview.application.job.title,
+      roundText: this.getInterviewRoundText(interview.round),
+    };
+  }
+
+  /**
+   * 验证面试邀请码
+   * @param invitationCode 面试邀请码
+   * @param userId 当前用户ID
+   */
+  async verifyInterviewInvitation(
+    invitationCode: string,
+    userId: number,
+  ): Promise<any> {
+    // 查找面试记录
+    const interview = await this.prisma.interview.findFirst({
+      where: { invitationCode },
+      include: {
+        application: {
+          include: {
+            job: {
+              include: {
+                company: true,
+              },
+            },
+          },
+        },
+        jobSeeker: true,
+      },
+    });
+
+    if (!interview) {
+      throw new HttpException('面试邀请码无效', HttpStatus.NOT_FOUND);
+    }
+
+    // 检查是否已过期
+    const now = new Date();
+    const interviewTime = new Date(interview.scheduleTime);
+    const validUntil = new Date(interviewTime);
+    validUntil.setHours(validUntil.getHours() + 2); // 面试结束后2小时内有效
+
+    if (now > validUntil) {
+      throw new HttpException('面试邀请已过期', HttpStatus.BAD_REQUEST);
+    }
+
+    // 获取用户信息
+    const jobSeekerUser = await this.prisma.frontUser.findUnique({
+      where: { id: interview.jobSeeker.userId },
+    });
+
+    if (!jobSeekerUser) {
+      throw new HttpException('求职者信息不存在', HttpStatus.NOT_FOUND);
+    }
+
+    // 返回面试信息
+    return {
+      id: interview.id,
+      scheduleTime: interview.scheduleTime,
+      duration: interview.duration,
+      status: interview.status,
+      jobTitle: interview.application.job.title,
+      companyName: interview.application.job.company.name,
+      candidateName: jobSeekerUser.username,
+      roundText: this.getInterviewRoundText(interview.round),
+    };
   }
 }

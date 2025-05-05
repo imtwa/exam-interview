@@ -704,12 +704,12 @@ const handleCommand = (command, row) => {
   } else if (command === 'offer') {
     updateApplicationStatus(row.id, { status: 'OFFER' })
     ElMessage.success(
-      `已向${row.candidateName || row.jobSeeker?.user?.username || '候选人'}发送Offer`
+      `已向${row.candidateName || '候选人'}发送Offer`
     )
     fetchCandidates(currentPage.value)
   } else if (command === 'hire') {
     updateApplicationStatus(row.id, { status: 'OFFER' })
-    ElMessage.success(`已录用${row.candidateName || row.jobSeeker?.user?.username || '候选人'}`)
+    ElMessage.success(`已录用${row.candidateName || '候选人'}`)
     fetchCandidates(currentPage.value)
   } else if (command === 'reject') {
     rejectApplication(row)
@@ -724,7 +724,7 @@ const handleScheduleSuccess = () => {
 // 拒绝申请
 const rejectApplication = application => {
   ElMessageBox.confirm(
-    `确定要拒绝 ${application.jobSeeker?.user?.username || '该候选人'} 的申请吗？`,
+    `确定要拒绝 ${application.candidateName || '该候选人'} 的申请吗？`,
     '拒绝确认',
     {
       confirmButtonText: '确定',

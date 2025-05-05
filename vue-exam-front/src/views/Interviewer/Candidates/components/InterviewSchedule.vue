@@ -11,6 +11,14 @@
         <el-input v-model="form.candidateName" disabled />
       </el-form-item>
 
+      <el-form-item label="面试轮次" prop="round">
+        <el-select v-model="form.round" placeholder="请选择面试轮次" style="width: 100%">
+          <el-option label="一面" value="FIRST_INTERVIEW" />
+          <el-option label="二面" value="SECOND_INTERVIEW" />
+          <el-option label="HR面试" value="HR_INTERVIEW" />
+        </el-select>
+      </el-form-item>
+
       <el-form-item label="面试类型" prop="type">
         <el-select v-model="form.type" placeholder="请选择面试类型" style="width: 100%">
           <el-option label="电话面试" value="phone" />
@@ -40,20 +48,8 @@
         <span class="unit">分钟</span>
       </el-form-item>
 
-      <el-form-item label="面试官" prop="interviewerIds">
-        <el-select
-          v-model="form.interviewerIds"
-          multiple
-          placeholder="请选择面试官"
-          style="width: 100%"
-        >
-          <el-option
-            v-for="interviewer in interviewers"
-            :key="interviewer.id"
-            :label="interviewer.name"
-            :value="interviewer.id"
-          />
-        </el-select>
+      <el-form-item label="发送邮件通知" prop="sendEmail">
+        <el-switch v-model="form.sendEmail" active-text="是" inactive-text="否" />
       </el-form-item>
 
       <el-form-item label="备注" prop="notes">
@@ -74,7 +70,7 @@
 import { ref, reactive, defineProps, defineEmits, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { scheduleInterview } from '@/api/interviewer'
-import { getInterviewers } from '@/api/interviewer'
+import { useUserStore } from '@/stores/user'
 
 const props = defineProps({
   visible: {
@@ -91,41 +87,31 @@ const emit = defineEmits(['update:visible', 'success'])
 
 const formRef = ref(null)
 const loading = ref(false)
-const interviewers = ref([])
+const userStore = useUserStore()
 
 // 表单数据
 const form = reactive({
   candidateId: '',
   candidateName: '',
+  round: 'FIRST_INTERVIEW', // 面试轮次: 一面、二面、HR面试
   type: 'video',
   interviewTime: '',
   duration: 60,
-  interviewerIds: [],
+  sendEmail: true, // 是否发送邮件通知
   notes: ''
 })
 
 // 表单验证规则
 const rules = reactive({
+  round: [{ required: true, message: '请选择面试轮次', trigger: 'change' }],
   type: [{ required: true, message: '请选择面试类型', trigger: 'change' }],
   interviewTime: [{ required: true, message: '请选择面试时间', trigger: 'change' }],
-  duration: [{ required: true, message: '请设置面试时长', trigger: 'change' }],
-  interviewerIds: [{ required: true, message: '请选择至少一位面试官', trigger: 'change' }]
+  duration: [{ required: true, message: '请设置面试时长', trigger: 'change' }]
 })
 
 // 禁用过去的日期
 const disabledDate = time => {
   return time.getTime() < Date.now() - 8.64e7 // 禁用今天之前的日期
-}
-
-// 获取面试官列表
-const fetchInterviewers = async () => {
-  try {
-    const response = await getInterviewers()
-    interviewers.value = response.list || []
-  } catch (error) {
-    console.error('获取面试官列表失败:', error)
-    ElMessage.error('获取面试官列表失败')
-  }
 }
 
 // 提交表单
@@ -137,12 +123,13 @@ const submitForm = async () => {
 
     loading.value = true
     await scheduleInterview(form.candidateId, {
+      round: form.round, // 面试轮次
       scheduleTime: form.interviewTime,
       duration: form.duration,
-      meetingLink: form.type === 'video' ? 'https://meeting.example.com/123456' : undefined,
       notes: form.notes,
-      interviewerIds: form.interviewerIds,
-      type: form.type
+      type: form.type,
+      interviewerIds: [userStore.interviewerId], // 使用当前登录面试官的ID
+      sendEmail: form.sendEmail // 是否发送邮件通知
     })
 
     ElMessage.success('面试安排成功')
@@ -177,19 +164,25 @@ watch(
   newVal => {
     if (newVal && newVal.id) {
       form.candidateId = newVal.id
-      form.candidateName = newVal.candidateName || newVal.jobSeeker?.user?.username || '未知候选人'
+      form.candidateName = newVal.candidateName || '未知候选人'
     }
   },
   { immediate: true }
+)
+
+// 根据面试类型更新表单验证
+watch(
+  () => form.type,
+  newType => {
+    // 类型改变时的处理逻辑
+  }
 )
 
 // 监听对话框显示状态
 watch(
   () => props.visible,
   newVal => {
-    if (newVal) {
-      fetchInterviewers()
-    }
+    // 对话框显示时的处理逻辑
   },
   { immediate: true }
 )

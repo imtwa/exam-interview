@@ -183,6 +183,7 @@ model JobSeeker {
   workExperience    WorkExperience[] /// 工作经历，一对多关系
   education         Education[] /// 教育经历，一对多关系
   applications      JobApplication[] /// 职位申请记录，一对多关系
+  interviews        Interview[] /// 面试记录，一对多关系
   createdAt         DateTime         @default(now()) /// 创建时间
   updatedAt         DateTime         @updatedAt /// 更新时间
   deletedAt         DateTime? /// 删除时间，用于软删除
@@ -262,6 +263,7 @@ model Interviewer {
   user            FrontUser @relation(fields: [userId], references: [id]) /// 关联的用户，一对一关系
   company         Company   @relation(fields: [companyId], references: [id]) /// 所属公司，多对一关系
   jobPostings     JobPosting[] /// 该HR发布的招聘信息，一对多关系
+  interviews      Interview[] /// 该HR负责的面试，一对多关系
 
   @@map("exam_recruitment_interviewers")
 }
@@ -333,29 +335,38 @@ model JobPosting {
 model Interview {
   id              Int       @id @default(autoincrement()) /// 面试ID，自增主键
   applicationId   Int /// 关联的职位申请ID
+  jobSeekerId     Int /// 关联的求职者ID
+  interviewerId   Int /// 安排面试的HR/面试官ID
   scheduleTime    DateTime /// 面试时间
   duration        Int /// 面试时长(分钟)
-  meetingLink     String? /// 线上面试链接
+  invitationCode  String    @unique @default(uuid()) /// 面试邀请码，用于验证身份
+  location        String? /// 面试地点(线下面试)
+  round           InterviewRound /// 面试轮次：一面/二面/HR面试
   status          InterviewStatus @default(SCHEDULED) /// 面试状态：已安排/已完成/已取消
+  type            String? /// 面试类型：电话/视频/现场
+  notes           String?   @db.Text /// 面试说明/备注
   feedback        String?   @db.Text /// 面试反馈
+  feedbackRating  Int? /// 面试评分(1-5)
   createdAt       DateTime  @default(now()) /// 创建时间
   updatedAt       DateTime  @updatedAt /// 更新时间
   deletedAt       DateTime? /// 删除时间，用于软删除
   
   // 关联表
   application     JobApplication @relation(fields: [applicationId], references: [id]) /// 关联的职位申请，多对一关系
+  jobSeeker       JobSeeker      @relation(fields: [jobSeekerId], references: [id]) /// 关联的求职者，多对一关系
+  interviewer     Interviewer    @relation(fields: [interviewerId], references: [id]) /// 关联的面试官，多对一关系
 
   @@map("exam_recruitment_interviews")
 }
 
 /// 职位申请表：求职者申请职位的记录
 model JobApplication {
-  id             Int             @id @default(autoincrement()) /// 申请ID，自增主键
+  id             Int                 @id @default(autoincrement()) /// 申请ID，自增主键
   jobSeekerId    Int /// 申请的求职者ID
   jobSeeker      JobSeeker       @relation(fields: [jobSeekerId], references: [id]) /// 申请的求职者，多对一关系
   jobId          Int /// 申请的职位ID
   job            JobPosting      @relation(fields: [jobId], references: [id]) /// 申请的职位，多对一关系
-  status         InterviewStatus @default(RESUME_SCREENING) /// 申请状态：简历筛选/笔试/一面/二面/HR面试/已安排/Offer/拒绝
+  status         JobApplicationStatus @default(RESUME_SCREENING) /// 申请状态：简历筛选/笔试/一面/二面/HR面试/Offer/拒绝
   appliedAt      DateTime        @default(now()) /// 申请时间
   updatedAt      DateTime        @updatedAt /// 更新时间
   feedback       String?         @db.Text /// 申请反馈
@@ -486,14 +497,12 @@ enum ExamStatus {
 
 /// 面试状态枚举：定义求职过程中的各个阶段
 enum InterviewStatus {
-  RESUME_SCREENING  /// 简历筛选：HR正在审核简历
-  WRITTEN_TEST      /// 笔试：进入笔试阶段
-  FIRST_INTERVIEW   /// 一面(线上)：第一轮面试，技术面试
-  SECOND_INTERVIEW  /// 二面(线上)：第二轮面试，高级技术面试
-  HR_INTERVIEW      /// HR面试(线上)：人力资源部门面试
-  SCHEDULED         /// 已安排面试：面试已安排，等待进行
-  OFFER             /// Offer：已通过所有面试，收到录用通知
-  REJECTED          /// 拒绝：求职申请被拒绝
+  SCHEDULED  /// 已安排：面试已安排但尚未进行
+  COMPLETED  /// 已完成：面试已经完成
+  CANCELLED  /// 已取消：面试被取消
+  PASS       /// 通过：面试通过
+  PENDING    /// 待定：面试结果待定
+  REJECTED   /// 拒绝：面试未通过
 }
 
 /// 通知类型枚举：定义系统通知的不同类型
@@ -513,4 +522,22 @@ enum ExperienceLevel {
   THREE_TO_FIVE /// 三到五年：具有3-5年工作经验
   FIVE_TO_TEN   /// 五到十年：具有5-10年工作经验
   MORE_THAN_TEN /// 十年以上：具有10年以上工作经验
+}
+
+/// 面试轮次枚举：定义面试轮次
+enum InterviewRound {
+  FIRST_INTERVIEW  /// 一面：第一轮技术面试
+  SECOND_INTERVIEW /// 二面：第二轮技术面试
+  HR_INTERVIEW     /// HR面试：最终人力资源面试
+}
+
+/// 职位申请状态枚举：定义求职过程中的各个阶段
+enum JobApplicationStatus {
+  RESUME_SCREENING  /// 简历筛选：HR正在审核简历
+  WRITTEN_TEST      /// 笔试：进入笔试阶段
+  FIRST_INTERVIEW   /// 一面：第一轮面试，技术面试
+  SECOND_INTERVIEW  /// 二面：第二轮面试，高级技术面试
+  HR_INTERVIEW      /// HR面试：人力资源部门面试
+  OFFER             /// Offer：已通过所有面试，收到录用通知
+  REJECTED          /// 拒绝：求职申请被拒绝
 }

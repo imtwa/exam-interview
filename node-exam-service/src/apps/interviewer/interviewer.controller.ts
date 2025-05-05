@@ -24,6 +24,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { AssignExamDto } from './dto/assign-exam.dto';
+import { ScheduleInterviewDto } from './dto/schedule-interview.dto';
 
 @ApiTags('interviewer')
 @Controller('interviewer')
@@ -291,29 +292,10 @@ export class InterviewerController {
    * 安排面试
    */
   @ApiOperation({ summary: '安排面试' })
-  @ApiParam({ name: 'id', description: '申请ID', type: 'number' })
+  @ApiParam({ name: 'id', description: '职位申请ID', type: Number })
   @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        scheduleTime: {
-          type: 'string',
-          description: '面试时间',
-          example: '2023-07-05T10:00:00Z',
-        },
-        duration: {
-          type: 'number',
-          description: '面试时长(分钟)',
-          example: 60,
-        },
-        meetingLink: {
-          type: 'string',
-          description: '会议链接',
-          example: 'https://zoom.us/j/123456789',
-        },
-      },
-      required: ['scheduleTime', 'duration'],
-    },
+    description: '面试安排数据',
+    type: ScheduleInterviewDto,
   })
   @ApiResponse({ status: 200, description: '安排成功' })
   @ApiResponse({ status: 404, description: '申请不存在' })
@@ -324,26 +306,21 @@ export class InterviewerController {
   @Post('applications/:id/schedule')
   async scheduleInterview(
     @Param('id') id: string,
-    @Body()
-    interviewData: {
-      scheduleTime: string;
-      duration: number;
-      meetingLink?: string;
-    },
+    @Body() interviewData: ScheduleInterviewDto,
     @Req() req,
   ) {
     const userId = req.user.userId;
     const applicationId = parseInt(id);
 
-    this.logger.log(`用户${userId}为职位申请ID:${applicationId}安排面试`);
+    this.logger.log(
+      `用户${userId}为职位申请ID:${applicationId}安排面试，轮次:${interviewData.round}`,
+    );
 
     try {
       const interview = await this.interviewerService.scheduleInterview(
         applicationId,
         userId,
-        new Date(interviewData.scheduleTime),
-        interviewData.duration,
-        interviewData.meetingLink,
+        interviewData,
       );
       return success(interview, '安排面试成功');
     } catch (error) {
@@ -560,6 +537,99 @@ export class InterviewerController {
       return success(result, '取消考试成功');
     } catch (error) {
       this.logger.error(`取消考试失败: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 提交面试评价
+   */
+  @ApiOperation({ summary: '提交面试评价' })
+  @ApiParam({ name: 'id', description: '面试ID', type: Number })
+  @ApiResponse({ status: 200, description: '评价成功' })
+  @ApiResponse({ status: 404, description: '面试不存在' })
+  @ApiResponse({ status: 403, description: '无权操作此面试' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('interviews/:id/feedback')
+  async submitInterviewFeedback(
+    @Param('id') id: string,
+    @Body() feedbackData: any,
+    @Req() req,
+  ) {
+    const userId = req.user.userId;
+    const interviewId = parseInt(id);
+
+    this.logger.log(`用户${userId}提交面试ID:${interviewId}的评价`);
+
+    try {
+      const result = await this.interviewerService.submitInterviewFeedback(
+        interviewId,
+        userId,
+        feedbackData,
+      );
+      return success(result, '提交面试评价成功');
+    } catch (error) {
+      this.logger.error(`提交面试评价失败: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取面试详情
+   */
+  @ApiOperation({ summary: '获取面试详情' })
+  @ApiParam({ name: 'id', description: '面试ID', type: Number })
+  @ApiResponse({ status: 200, description: '获取成功' })
+  @ApiResponse({ status: 404, description: '面试不存在' })
+  @ApiResponse({ status: 403, description: '无权查看此面试' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Get('interviews/:id')
+  async getInterviewDetail(@Param('id') id: string, @Req() req) {
+    const userId = req.user.userId;
+    const interviewId = parseInt(id);
+
+    this.logger.log(`用户${userId}查看面试ID:${interviewId}的详情`);
+
+    try {
+      const result = await this.interviewerService.getInterviewDetail(
+        interviewId,
+        userId,
+      );
+      return success(result, '获取面试详情成功');
+    } catch (error) {
+      this.logger.error(`获取面试详情失败: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 验证面试邀请码
+   */
+  @ApiOperation({ summary: '验证面试邀请码' })
+  @ApiParam({ name: 'code', description: '面试邀请码', type: String })
+  @ApiResponse({ status: 200, description: '验证成功' })
+  @ApiResponse({ status: 404, description: '邀请码无效' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Get('interviews/verify/:code')
+  async verifyInterviewInvitation(@Param('code') code: string, @Req() req) {
+    const userId = req.user.userId;
+
+    this.logger.log(`用户${userId}验证面试邀请码:${code}`);
+
+    try {
+      const result = await this.interviewerService.verifyInterviewInvitation(
+        code,
+        userId,
+      );
+      return success(result, '验证面试邀请码成功');
+    } catch (error) {
+      this.logger.error(`验证面试邀请码失败: ${error.message}`, error);
       throw error;
     }
   }

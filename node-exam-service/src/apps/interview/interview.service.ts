@@ -8,6 +8,7 @@ import {
 import {
   PrismaClient,
   InterviewStatus,
+  JobApplicationStatus,
 } from '../../../prisma/generated/client';
 import { CreateInterviewDto } from './dto/create-interview.dto';
 import { UpdateInterviewDto } from './dto/update-interview.dto';
@@ -87,11 +88,22 @@ export class InterviewService {
       // 创建面试
       const interview = await this.prisma.interview.create({
         data: {
-          applicationId: createInterviewDto.applicationId,
+          application: {
+            connect: { id: createInterviewDto.applicationId },
+          },
+          jobSeeker: {
+            connect: { id: application.jobSeekerId },
+          },
+          interviewer: {
+            connect: { id: interviewer.id },
+          },
           scheduleTime: createInterviewDto.scheduleTime,
           duration: createInterviewDto.duration,
-          meetingLink: createInterviewDto.meetingLink,
+          location: createInterviewDto.location,
+          notes: createInterviewDto.notes,
+          round: 'FIRST_INTERVIEW',
           status: InterviewStatus.SCHEDULED,
+          type: 'VIDEO',
         },
       });
 
@@ -99,7 +111,7 @@ export class InterviewService {
       await this.prisma.jobApplication.update({
         where: { id: createInterviewDto.applicationId },
         data: {
-          status: InterviewStatus.SCHEDULED,
+          status: JobApplicationStatus.FIRST_INTERVIEW,
         },
       });
 
@@ -414,10 +426,13 @@ export class InterviewService {
 
       // 如果更新了面试状态，同步更新申请状态
       if (updateInterviewDto.status) {
+        const applicationStatus = this.mapInterviewStatusToApplicationStatus(
+          updateInterviewDto.status,
+        );
         await this.prisma.jobApplication.update({
           where: { id: interview.applicationId },
           data: {
-            status: updateInterviewDto.status,
+            status: applicationStatus,
           },
         });
       }
@@ -499,7 +514,7 @@ export class InterviewService {
       await this.prisma.jobApplication.update({
         where: { id: interview.applicationId },
         data: {
-          status: InterviewStatus.RESUME_SCREENING, // 默认回到简历筛选状态
+          status: JobApplicationStatus.RESUME_SCREENING, // 默认回到简历筛选状态
         },
       });
 
@@ -507,6 +522,24 @@ export class InterviewService {
     } catch (error) {
       this.logger.error(`删除面试失败: ${error.message}`, error.stack);
       throw new BadRequestException('删除面试失败');
+    }
+  }
+
+  /**
+   * 将面试状态映射到申请状态
+   */
+  private mapInterviewStatusToApplicationStatus(
+    interviewStatus: InterviewStatus,
+  ): JobApplicationStatus {
+    switch (interviewStatus) {
+      case InterviewStatus.PASS:
+        return JobApplicationStatus.OFFER;
+      case InterviewStatus.REJECTED:
+        return JobApplicationStatus.REJECTED;
+      case InterviewStatus.COMPLETED:
+        return JobApplicationStatus.RESUME_SCREENING; // 默认返回到简历筛选状态
+      default:
+        return JobApplicationStatus.RESUME_SCREENING;
     }
   }
 }
