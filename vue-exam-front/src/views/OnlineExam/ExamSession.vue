@@ -188,6 +188,11 @@ const fetchExamData = async () => {
       throw new Error('无法获取考试数据')
     }
     
+    if (!response.examTitle || !response.questions) {
+      console.error('获取的考试数据格式不正确:', response)
+      throw new Error('考试数据格式不正确，请联系管理员')
+    }
+    
     exam.value = {
       id: response.examId,
       title: response.examTitle,
@@ -215,7 +220,7 @@ const fetchExamData = async () => {
                   value: opt.Key
                 }))
               } catch (err) {
-                console.error('解析选项错误:', err)
+                console.error('解析选项错误:', err, '原始选项:', q.options)
               }
             }
             

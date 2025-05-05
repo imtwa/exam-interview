@@ -110,7 +110,7 @@ const handleSubmit = async () => {
         }
         
         ElMessage.success('邀请码验证成功，正在进入考试...')
-        router.push(`/online-exam/exam-session/${examId}`)
+        router.push(`/online-exam/session/${formData.invitationCode}`)
       } else {
         ElMessage.warning('验证成功但未返回考试信息，请联系管理员')
       }
