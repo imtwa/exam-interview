@@ -115,7 +115,7 @@
 
                     <!-- 求职者菜单项 -->
                     <template v-if="isJobSeeker">
-                      <el-dropdown-item @click="router.push('/my-exams')"
+                      <el-dropdown-item @click="router.push('/online-exam/user-exams')"
                         >我的考试</el-dropdown-item
                       >
                       <el-dropdown-item @click="router.push('/favorites')"

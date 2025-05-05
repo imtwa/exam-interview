@@ -2189,10 +2189,10 @@ export class ExamService {
       const questionId = examQuestion.questionId.toString();
       const question = examQuestion.question;
       const userAnswer = userAnswers[questionId];
-      
+
       // 累加总分
       totalScore += examQuestion.score;
-      
+
       let isCorrect = false;
 
       // 根据题目类型判断答案是否正确
@@ -2229,11 +2229,11 @@ export class ExamService {
           const parsedOptions = JSON.parse(question.options);
           if (Array.isArray(parsedOptions)) {
             parsedOptions.forEach((opt, index) => {
-              const isOptionCorrect = 
-                (question.qtype === 1 || question.qtype === 2)
-                ? question.answer.includes(index.toString()) 
-                : false;
-              
+              const isOptionCorrect =
+                question.qtype === 1 || question.qtype === 2
+                  ? question.answer.includes(index.toString())
+                  : false;
+
               options.push({
                 label: String.fromCharCode(65 + index), // A, B, C...
                 value: index.toString(),
@@ -2264,7 +2264,8 @@ export class ExamService {
 
     // 计算考试持续时间（秒）
     const duration = Math.floor(
-      (assignment.updatedAt.getTime() - assignment.examStartTime.getTime()) / 1000,
+      (assignment.updatedAt.getTime() - assignment.examStartTime.getTime()) /
+        1000,
     );
 
     // 返回考试结果
@@ -2273,9 +2274,7 @@ export class ExamService {
       submittedAt: assignment.updatedAt,
       score: assignment.score,
       totalScore: totalScore,
-      percentage: Math.round(
-        (assignment.score / totalScore) * 100,
-      ),
+      percentage: Math.round((assignment.score / totalScore) * 100),
       duration: duration,
       correctCount: correctCount,
       totalQuestions: examQuestions.length,

@@ -941,12 +941,52 @@ export class ExamController {
   }
 
   // 获取用户的考试列表
-  @Post('user-exams')
+  @Post('online-exam/user-exams')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '获取用户的考试列表' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '获取成功，返回考试列表',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        data: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', example: 1 },
+                  examId: { type: 'number', example: 100 },
+                  examTitle: { type: 'string', example: 'JavaScript基础测试' },
+                  status: { type: 'string', example: 'PENDING' },
+                  score: { type: 'number', example: 0 },
+                  duration: { type: 'number', example: 60 },
+                  startTime: {
+                    type: 'string',
+                    example: '2023-05-15T08:00:00Z',
+                  },
+                  endTime: { type: 'string', example: '2023-05-15T09:00:00Z' },
+                  invitationCode: { type: 'string', example: 'abc123def456' },
+                  companyId: { type: 'number', example: 5 },
+                  companyName: { type: 'string', example: '示例科技有限公司' },
+                  positionId: { type: 'number', example: 10 },
+                  positionName: { type: 'string', example: '前端开发工程师' },
+                },
+              },
+            },
+            total: { type: 'number', example: 10 },
+          },
+        },
+        message: { type: 'string', example: '获取成功' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: '获取失败',
   })
   async getUserExams(
     @Body() queryDto: QueryUserExamsDto,
@@ -957,6 +997,7 @@ export class ExamController {
         user.userId,
         queryDto,
       );
+
       return {
         code: HttpStatus.OK,
         data: { items, total },

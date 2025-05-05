@@ -267,9 +267,9 @@ export function verifyInvitationCode(params) {
  */
 export function getUserExams(params) {
   return request({
-    url: '/exam/user-exams',
+    url: '/online-exam/user-exams',
     method: 'post',
-    data: params
+    data: params || { page: 1, pageSize: 10 }
   })
 }
 
