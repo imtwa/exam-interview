@@ -46,8 +46,8 @@
             <h3>您的反馈</h3>
             <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
               <el-form-item label="整体评价" prop="overallRating">
-                <el-rate 
-                  v-model="form.overallRating" 
+                <el-rate
+                  v-model="form.overallRating"
                   :colors="['#99A9BF', '#F7BA2A', '#FF9900']"
                   :texts="['失望', '一般', '满意', '良好', '优秀']"
                   show-text
@@ -55,8 +55,8 @@
               </el-form-item>
 
               <el-form-item label="面试体验" prop="experienceRating">
-                <el-rate 
-                  v-model="form.experienceRating" 
+                <el-rate
+                  v-model="form.experienceRating"
                   :colors="['#99A9BF', '#F7BA2A', '#FF9900']"
                 />
               </el-form-item>
@@ -90,9 +90,9 @@
               </el-form-item>
 
               <el-form-item label="详细反馈" prop="comments">
-                <el-input 
-                  v-model="form.comments" 
-                  type="textarea" 
+                <el-input
+                  v-model="form.comments"
+                  type="textarea"
                   :rows="5"
                   placeholder="请分享您对这次面试的详细反馈，包括面试内容、面试官表现、公司环境等方面"
                 />
@@ -109,7 +109,9 @@
               <el-form-item>
                 <div class="form-actions">
                   <el-button @click="goBack">返回</el-button>
-                  <el-button type="primary" @click="submitFeedback" :loading="submitting">提交反馈</el-button>
+                  <el-button type="primary" @click="submitFeedback" :loading="submitting"
+                    >提交反馈</el-button
+                  >
                 </div>
               </el-form-item>
             </el-form>
@@ -184,10 +186,10 @@ const submitFeedback = async () => {
 
   try {
     await formRef.value.validate()
-    
+
     submitting.value = true
     await submitInterviewFeedback(invitationCode, form)
-    
+
     ElMessage.success('反馈提交成功，感谢您的参与！')
     router.push('/online-interview')
   } catch (error) {
@@ -221,9 +223,9 @@ const formatDateTime = dateTime => {
 // 辅助函数 - 获取面试轮次文本
 const getInterviewRoundText = round => {
   const roundMap = {
-    'FIRST_INTERVIEW': '一面',
-    'SECOND_INTERVIEW': '二面', 
-    'HR_INTERVIEW': 'HR面试'
+    FIRST_INTERVIEW: '一面',
+    SECOND_INTERVIEW: '二面',
+    HR_INTERVIEW: 'HR面试'
   }
   return roundMap[round] || round || '未知'
 }
@@ -327,9 +329,9 @@ onMounted(() => {
   .feedback-container {
     padding: 0 15px;
   }
-  
+
   .info-grid {
     grid-template-columns: 1fr;
   }
 }
-</style> 
+</style>

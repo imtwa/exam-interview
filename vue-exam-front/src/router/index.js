@@ -188,7 +188,7 @@ const routes = [
         component: () => import('@/views/OnlineExam/ExamResult.vue'),
         meta: { title: '考试结果' }
       },
-      
+
       // 在线面试路由
       {
         path: 'online-interview',

@@ -17,8 +17,12 @@
                 <el-icon><Ticket /></el-icon>
               </div>
               <div class="option-title">输入邀请码</div>
-              <div class="option-desc">如果您已收到面试邀请码，请点击此处输入邀请码进入面试室。</div>
-              <el-button type="primary" class="option-button" @click.stop="goToInvitationPage">进入面试室</el-button>
+              <div class="option-desc">
+                如果您已收到面试邀请码，请点击此处输入邀请码进入面试室。
+              </div>
+              <el-button type="primary" class="option-button" @click.stop="goToInvitationPage"
+                >进入面试室</el-button
+              >
             </div>
           </div>
         </div>
@@ -169,4 +173,4 @@ const goToInvitationPage = () => {
     width: 100%;
   }
 }
-</style> 
+</style>

@@ -47,7 +47,11 @@
               </div>
               <div class="video-controls">
                 <el-button-group>
-                  <el-button :type="isMicrophoneOn ? 'primary' : 'danger'" circle @click="toggleMicrophone">
+                  <el-button
+                    :type="isMicrophoneOn ? 'primary' : 'danger'"
+                    circle
+                    @click="toggleMicrophone"
+                  >
                     <el-icon v-if="isMicrophoneOn"><Microphone /></el-icon>
                     <el-icon v-else><MicrophoneOff /></el-icon>
                   </el-button>
@@ -55,7 +59,11 @@
                     <el-icon v-if="isCameraOn"><VideoCamera /></el-icon>
                     <el-icon v-else><VideoCameraOff /></el-icon>
                   </el-button>
-                  <el-button :type="isScreenSharing ? 'danger' : 'primary'" circle @click="toggleScreenSharing">
+                  <el-button
+                    :type="isScreenSharing ? 'danger' : 'primary'"
+                    circle
+                    @click="toggleScreenSharing"
+                  >
                     <el-icon v-if="isScreenSharing"><Share /></el-icon>
                     <el-icon v-else><Share /></el-icon>
                   </el-button>
@@ -69,7 +77,7 @@
               </div>
             </div>
           </el-col>
-          
+
           <!-- 面试信息和备注 -->
           <el-col :span="6">
             <div class="info-sidebar">
@@ -121,17 +129,20 @@
                 </template>
                 <div class="chat-container">
                   <div class="chat-messages" ref="chatMessages">
-                    <div v-for="(message, index) in chatMessages" :key="index" 
-                         :class="['message', message.isSelf ? 'self-message' : 'other-message']">
+                    <div
+                      v-for="(message, index) in chatMessages"
+                      :key="index"
+                      :class="['message', message.isSelf ? 'self-message' : 'other-message']"
+                    >
                       <div class="message-sender">{{ message.sender }}</div>
                       <div class="message-content">{{ message.content }}</div>
                       <div class="message-time">{{ formatTime(message.time) }}</div>
                     </div>
                   </div>
                   <div class="chat-input">
-                    <el-input 
-                      v-model="chatInput" 
-                      placeholder="输入消息..." 
+                    <el-input
+                      v-model="chatInput"
+                      placeholder="输入消息..."
                       @keyup.enter="sendMessage"
                     />
                     <el-button type="primary" @click="sendMessage">发送</el-button>
@@ -145,11 +156,7 @@
     </el-container>
 
     <!-- 退出确认弹窗 -->
-    <el-dialog
-      v-model="exitDialogVisible"
-      title="确认退出面试"
-      width="30%"
-    >
+    <el-dialog v-model="exitDialogVisible" title="确认退出面试" width="30%">
       <span>面试尚未结束，确定要退出吗？</span>
       <template #footer>
         <span class="dialog-footer">
@@ -165,9 +172,16 @@
 import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Clock, User, OfficeBuilding, VideoCamera, Microphone, MicrophoneOff, 
-  VideoCameraOff, Share, MoreFilled 
+import {
+  Clock,
+  User,
+  OfficeBuilding,
+  VideoCamera,
+  Microphone,
+  MicrophoneOff,
+  VideoCameraOff,
+  Share,
+  MoreFilled
 } from '@element-plus/icons-vue'
 import { startInterview, completeInterview } from '@/api/interview'
 
@@ -212,7 +226,7 @@ const fetchInterviewData = async () => {
     // 调用API获取面试数据
     const response = await startInterview(invitationCode)
     console.log('获取到的面试数据:', response)
-    
+
     if (response) {
       interviewData.value = response
     } else {
@@ -234,16 +248,16 @@ const startVideo = async () => {
       video: true,
       audio: true
     })
-    
+
     // 显示本地视频
     if (localVideo.value) {
       localVideo.value.srcObject = localStream.value
     }
-    
+
     isVideoStarted.value = true
     isMicrophoneOn.value = true
     isCameraOn.value = true
-    
+
     // 发送系统消息
     chatMessages.value.push({
       sender: '系统',
@@ -251,10 +265,10 @@ const startVideo = async () => {
       time: new Date(),
       isSelf: false
     })
-    
+
     // 这里应该有WebRTC连接逻辑
     // setupPeerConnection()
-    
+
     ElMessage.success('视频面试已开始')
   } catch (error) {
     console.error('启动视频失败:', error)
@@ -269,7 +283,7 @@ const toggleMicrophone = () => {
       track.enabled = !track.enabled
     })
     isMicrophoneOn.value = !isMicrophoneOn.value
-    
+
     // 发送系统消息
     chatMessages.value.push({
       sender: '系统',
@@ -287,7 +301,7 @@ const toggleCamera = () => {
       track.enabled = !track.enabled
     })
     isCameraOn.value = !isCameraOn.value
-    
+
     // 发送系统消息
     chatMessages.value.push({
       sender: '系统',
@@ -305,19 +319,19 @@ const toggleScreenSharing = async () => {
     if (localStream.value) {
       localStream.value.getTracks().forEach(track => track.stop())
     }
-    
+
     try {
       localStream.value = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
       })
-      
+
       if (localVideo.value) {
         localVideo.value.srcObject = localStream.value
       }
-      
+
       isScreenSharing.value = false
-      
+
       // 发送系统消息
       chatMessages.value.push({
         sender: '系统',
@@ -335,31 +349,31 @@ const toggleScreenSharing = async () => {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true
       })
-      
+
       // 保留原始音频轨道
       if (localStream.value) {
         const audioTrack = localStream.value.getAudioTracks()[0]
         if (audioTrack) {
           screenStream.addTrack(audioTrack)
         }
-        
+
         // 停止原视频轨道
         localStream.value.getVideoTracks().forEach(track => track.stop())
       }
-      
+
       localStream.value = screenStream
-      
+
       if (localVideo.value) {
         localVideo.value.srcObject = localStream.value
       }
-      
+
       isScreenSharing.value = true
-      
+
       // 监听共享结束事件
       screenStream.getVideoTracks()[0].onended = () => {
         toggleScreenSharing()
       }
-      
+
       // 发送系统消息
       chatMessages.value.push({
         sender: '系统',
@@ -377,21 +391,22 @@ const toggleScreenSharing = async () => {
 // 发送聊天消息
 const sendMessage = () => {
   if (!chatInput.value.trim()) return
-  
+
   chatMessages.value.push({
     sender: '我',
     content: chatInput.value,
     time: new Date(),
     isSelf: true
   })
-  
+
   // 清空输入框
   chatInput.value = ''
-  
+
   // 滚动到底部
   nextTick(() => {
     if (document.querySelector('.chat-messages')) {
-      document.querySelector('.chat-messages').scrollTop = document.querySelector('.chat-messages').scrollHeight
+      document.querySelector('.chat-messages').scrollTop =
+        document.querySelector('.chat-messages').scrollHeight
     }
   })
 }
@@ -408,19 +423,19 @@ const confirmExit = async () => {
     if (localStream.value) {
       localStream.value.getTracks().forEach(track => track.stop())
     }
-    
+
     if (remoteStream.value) {
       remoteStream.value.getTracks().forEach(track => track.stop())
     }
-    
+
     // 关闭对等连接
     if (peerConnection.value) {
       peerConnection.value.close()
     }
-    
+
     // 调用API完成面试
     await completeInterview(invitationCode)
-    
+
     ElMessage.success('已成功退出面试')
     router.push('/online-interview')
   } catch (error) {
@@ -455,9 +470,9 @@ const formatTime = time => {
 // 辅助函数 - 获取面试轮次文本
 const getInterviewRoundText = round => {
   const roundMap = {
-    'FIRST_INTERVIEW': '一面',
-    'SECOND_INTERVIEW': '二面',
-    'HR_INTERVIEW': 'HR面试'
+    FIRST_INTERVIEW: '一面',
+    SECOND_INTERVIEW: '二面',
+    HR_INTERVIEW: 'HR面试'
   }
   return roundMap[round] || round || '未知'
 }
@@ -466,7 +481,7 @@ const getInterviewRoundText = round => {
 onMounted(() => {
   // 获取面试数据
   fetchInterviewData()
-  
+
   // 页面离开警告
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
@@ -477,16 +492,16 @@ onBeforeUnmount(() => {
   if (localStream.value) {
     localStream.value.getTracks().forEach(track => track.stop())
   }
-  
+
   if (remoteStream.value) {
     remoteStream.value.getTracks().forEach(track => track.stop())
   }
-  
+
   // 关闭对等连接
   if (peerConnection.value) {
     peerConnection.value.close()
   }
-  
+
   // 移除事件监听器
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
@@ -640,7 +655,9 @@ const handleBeforeUnload = e => {
   height: 100%;
 }
 
-.info-card, .notes-card, .chat-card {
+.info-card,
+.notes-card,
+.chat-card {
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   margin-bottom: 0;
@@ -758,15 +775,15 @@ const handleBeforeUnload = e => {
   .session-main {
     padding: 10px;
   }
-  
+
   .self-video-container {
     width: 100px;
     height: 75px;
     bottom: 70px;
   }
-  
+
   .video-controls {
     bottom: 10px;
   }
 }
-</style> 
+</style>

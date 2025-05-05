@@ -703,9 +703,7 @@ const handleCommand = (command, row) => {
     scheduleDialogVisible.value = true
   } else if (command === 'offer') {
     updateApplicationStatus(row.id, { status: 'OFFER' })
-    ElMessage.success(
-      `已向${row.candidateName || '候选人'}发送Offer`
-    )
+    ElMessage.success(`已向${row.candidateName || '候选人'}发送Offer`)
     fetchCandidates(currentPage.value)
   } else if (command === 'hire') {
     updateApplicationStatus(row.id, { status: 'OFFER' })

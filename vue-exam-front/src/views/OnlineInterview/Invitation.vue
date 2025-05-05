@@ -105,9 +105,7 @@ const handleSubmit = async () => {
 
         if (!canStart) {
           const scheduleTime = new Date(response.scheduleTime).toLocaleString()
-          ElMessage.warning(
-            `该面试尚未开始或已结束，面试时间为：${scheduleTime}`
-          )
+          ElMessage.warning(`该面试尚未开始或已结束，面试时间为：${scheduleTime}`)
           loading.value = false
           return
         }
@@ -234,4 +232,4 @@ const goBack = () => {
 .notice-list li:last-child {
   margin-bottom: 0;
 }
-</style> 
+</style>
