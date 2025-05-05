@@ -13,6 +13,7 @@ import {
 import { CreateInterviewDto } from './dto/create-interview.dto';
 import { UpdateInterviewDto } from './dto/update-interview.dto';
 import { QueryInterviewDto } from './dto/query-interview.dto';
+import { VerifyInvitationCodeDto } from './dto/verify-invitation-code.dto';
 import { LoggerService } from '../../common/logger/logger.service';
 import { UserRole } from '../../common/enums/user-role.enum';
 
@@ -522,6 +523,75 @@ export class InterviewService {
     } catch (error) {
       this.logger.error(`删除面试失败: ${error.message}`, error.stack);
       throw new BadRequestException('删除面试失败');
+    }
+  }
+
+  /**
+   * 验证面试邀请码
+   * @param dto 邀请码信息
+   * @returns 面试信息
+   */
+  async verifyInvitation(dto: VerifyInvitationCodeDto) {
+    try {
+      // 查找面试记录
+      const interview = await this.prisma.interview.findUnique({
+        where: {
+          invitationCode: dto.invitationCode,
+          deletedAt: null,
+        },
+        include: {
+          jobSeeker: {
+            include: {
+              user: true,
+            },
+          },
+          interviewer: {
+            include: {
+              user: true,
+              company: true,
+            },
+          },
+          application: {
+            include: {
+              job: true,
+            },
+          },
+        },
+      });
+
+      if (!interview) {
+        throw new NotFoundException('无效的邀请码');
+      }
+
+      // 检查面试状态
+      if (interview.status !== 'SCHEDULED') {
+        throw new BadRequestException('该面试已结束或已取消');
+      }
+
+      // 检查面试时间
+      const now = new Date();
+      const scheduleTime = new Date(interview.scheduleTime);
+      const endTime = new Date(
+        scheduleTime.getTime() + interview.duration * 60000,
+      );
+
+      // 如果当前时间在面试时间范围内
+      const canStart = now >= scheduleTime && now <= endTime;
+
+      return {
+        interviewId: interview.id,
+        title: `${interview.application.job.title} - ${interview.round}面试`,
+        scheduleTime: interview.scheduleTime,
+        duration: interview.duration,
+        canStart,
+        job: interview.application.job,
+        company: interview.interviewer.company,
+        interviewer: interview.interviewer.user,
+        jobSeeker: interview.jobSeeker.user,
+      };
+    } catch (error) {
+      this.logger.error('验证面试邀请码失败', error);
+      throw error;
     }
   }
 

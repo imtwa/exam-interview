@@ -1,13 +1,13 @@
+import { IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Length } from 'class-validator';
 
-export class VerifyInvitationDto {
+export class VerifyInvitationCodeDto {
   @ApiProperty({
     description: '面试邀请码',
-    example: 'abc123',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: true,
   })
   @IsNotEmpty({ message: '邀请码不能为空' })
   @IsString({ message: '邀请码必须是字符串' })
-  @Length(6, 20, { message: '邀请码长度必须在6-20个字符之间' })
   invitationCode: string;
 }

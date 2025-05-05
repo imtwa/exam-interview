@@ -15,8 +15,6 @@ import { JobSeekerModule } from './apps/jobseeker/jobseeker.module';
 import { JobModule } from './apps/job/job.module';
 import { IndustryModule } from './apps/industry/industry.module';
 import { UploadModule } from './apps/upload/upload.module';
-import { VideoInterviewModule } from './apps/video-interview/video-interview.module';
-
 @Module({
   imports: [
     UserModule,
@@ -36,7 +34,6 @@ import { VideoInterviewModule } from './apps/video-interview/video-interview.mod
     JobModule,
     IndustryModule,
     UploadModule,
-    VideoInterviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],
