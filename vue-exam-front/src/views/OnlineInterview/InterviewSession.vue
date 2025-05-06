@@ -1,81 +1,113 @@
 <template>
-  <div class="interview-session">
-    <!-- 加载提示 -->
-    <div v-if="loading" class="loading-container">
-      <el-skeleton :rows="10" animated />
-    </div>
-    
-    <template v-else>
-      <!-- 面试进行中 -->
-      <div class="interview-in-progress">
-        <!-- 主视频区域 -->
-        <div class="main-video-container">
-          <div class="video-list">
-            <div v-for="item in selectedVideoList"
-                v-bind:video="item"
-                v-bind:key="item.id"
-                class="main-video-item">
-              <video controls autoplay playsinline :height="mainVideoHeight" :muted="item.muted" :id="item.id"></video>
+  <div class="interview-session-page">
+    <div class="interview-container">
+      <!-- 面试信息条 -->
+      <div class="interview-info-bar">
+        <div class="info-left">
+          <h1 class="interview-title">{{ interviewData.title || '在线面试' }}</h1>
+          <div class="interview-details">
+            <span class="info-item">
+              <el-icon><Clock /></el-icon>
+              {{ interviewData.duration || '--' }} 分钟
+            </span>
+            <span class="info-item">
+              <el-icon><User /></el-icon>
+              {{ interviewData.interviewer?.name || '面试官' }}
+            </span>
+            <span class="info-item">
+              <el-icon><OfficeBuilding /></el-icon>
+              {{ interviewData.company?.name || '公司' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 主要内容区域 -->
+      <div class="session-main">
+        <div v-if="loading" class="loading-container">
+          <el-skeleton :rows="10" animated />
+        </div>
+        <div v-else class="interview-layout">
+          <!-- 主视频区域 -->
+          <div class="main-video-area">
+            <div class="main-video-container">
+              <div v-if="!isVideoStarted" class="video-placeholder">
+                <el-icon><VideoCamera /></el-icon>
+                <p>等待开启视频...</p>
+                <el-button type="primary" @click="startVideo">开始视频面试</el-button>
+              </div>
+              <div v-else class="main-video-stream">
+                <video 
+                  ref="mainVideo" 
+                  autoplay 
+                  playsinline
+                  :srcObject="selectedStream || remoteStream"
+                ></video>
+                <div class="main-video-overlay">
+                  <div class="participant-name">{{ selectedParticipant?.name || '面试官' }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 底部控制栏 -->
+            <div class="video-controls">
+              <el-button-group>
+                <el-button
+                  :type="isMicrophoneOn ? 'primary' : 'danger'"
+                  circle
+                  @click="toggleMicrophone"
+                >
+                  <el-icon v-if="isMicrophoneOn"><Microphone /></el-icon>
+                  <el-icon v-else><Mute /></el-icon>
+                </el-button>
+                <el-button :type="isCameraOn ? 'primary' : 'danger'" circle @click="toggleCamera">
+                  <el-icon v-if="isCameraOn"><VideoCamera /></el-icon>
+                  <el-icon v-else><VideoPlay /></el-icon>
+                </el-button>
+                <el-button
+                  :type="isScreenSharing ? 'danger' : 'primary'"
+                  circle
+                  @click="toggleScreenSharing"
+                >
+                  <el-icon v-if="isScreenSharing"><Share /></el-icon>
+                  <el-icon v-else><Share /></el-icon>
+                </el-button>
+              </el-button-group>
+              
+              <el-button class="exit-button" type="danger" @click="exitInterview">退出面试</el-button>
             </div>
           </div>
-          <div class="video-overlay">
-            <div class="participant-name">{{ selectedStream?.id === 'local' ? '我' : getParticipantName(selectedStream?.id) }}</div>
-          </div>
-        </div>
-        
-        <!-- 控制栏 -->
-        <div class="control-bar">
-          <div class="video-controls">
-            <el-button 
-              :type="isMicrophoneOn ? 'success' : 'danger'" 
-              circle 
-              @click="toggleMicrophone"
-            >
-              <el-icon>
-                <Microphone v-if="isMicrophoneOn" />
-                <Mute v-else />
-              </el-icon>
-            </el-button>
-            
-            <el-button 
-              :type="isCameraOn ? 'success' : 'danger'" 
-              circle 
-              @click="toggleCamera"
-            >
-              <el-icon>
-                <VideoCamera v-if="isCameraOn" />
-                <VideoPlay v-else />
-              </el-icon>
-            </el-button>
-            
-            <el-button 
-              type="primary" 
-              circle 
-              @click="shareScreen"
-            >
-              <el-icon><Share /></el-icon>
-            </el-button>
-            
-            <el-button 
-              type="danger" 
-              @click="exitInterview"
-            >
-              退出面试
-            </el-button>
-          </div>
-        </div>
-        
-        <!-- 参与者列表 -->
-        <div class="participants-list">
-          <!-- 所有参与者视频 -->
-          <div 
-            v-for="item in videoList"
-            :key="item.id"
-            class="participant-item" 
-            :class="{ active: selectedStream?.id === item.id }"
-            @click="selectParticipant(item)"
-          >
-            <video 
+          
+          <!-- 右侧参与者列表 -->
+          <div class="sidebar">
+            <!-- 参与者视频列表 -->
+            <div class="participants-list">
+              <div class="sidebar-header">参与者</div>
+              
+              <!-- 本地视频预览 -->
+              <div 
+                class="participant-video-item"
+                :class="{ 'selected': selectedParticipantId === 'local' }"
+                @click="selectParticipant('local', localStream, '我')"
+              >
+                <video ref="localVideo" autoplay playsinline muted></video>
+                <div class="participant-info">
+                  <div class="participant-name">我</div>
+                  <div class="participant-status" v-if="!isMicrophoneOn">
+                    <el-icon><Mute /></el-icon>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 模拟其他参与者 -->
+              <div 
+                v-for="(item, index) in videoList" 
+                :key="item.id"
+                class="participant-video-item"
+                :class="{ 'selected': selectedParticipantId === item.id }"
+                @click="selectParticipant(item)"
+              >
+              <video 
               ref="videos"
               :id="item.id"
               autoplay 
@@ -89,28 +121,24 @@
               <div class="participant-status" :class="{ muted: item.muted }">
                 <el-icon v-if="item.muted"><Mute /></el-icon>
               </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- 退出面试确认对话框 -->
-      <el-dialog
-        v-model="exitDialogVisible"
-        title="退出面试"
-        width="30%"
-        :close-on-click-modal="false"
-        :show-close="false"
-      >
-        <span>确定要退出当前面试吗？</span>
-        <template #footer>
-          <span class="dialog-footer">
-            <el-button @click="exitDialogVisible = false">取消</el-button>
-            <el-button type="danger" @click="confirmExit">确认退出</el-button>
-          </span>
-        </template>
-      </el-dialog>
-    </template>
+    </div>
+
+    <!-- 退出确认弹窗 -->
+    <el-dialog v-model="exitDialogVisible" title="确认退出面试" width="30%">
+      <span>面试尚未结束，确定要退出吗？</span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="exitDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmExit">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -491,6 +519,7 @@ const getInterviewRoundText = round => {
 onMounted(() => {
   // 获取面试数据
   fetchInterviewData()
+  startVideo()
   
   // 页面离开警告
   window.addEventListener('beforeunload', handleBeforeUnload)
@@ -515,176 +544,221 @@ const handleBeforeUnload = e => {
 </script>
 
 <style scoped>
-.interview-session {
-  width: 100%;
-  height: 100vh;
-  background-color: #f5f7fa;
+.interview-session-page {
+  background-color: #f5f9ff;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.interview-container {
   display: flex;
   flex-direction: column;
+  max-width: 1600px;
+  width: 100%;
+  height: calc(100vh - 40px);
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* 面试信息条 */
+.interview-info-bar {
+  background-color: #fff;
+  padding: 15px 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.info-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.interview-title {
+  font-size: 18px;
+  margin: 0 0 6px 0;
+  color: #303133;
+}
+
+.interview-details {
+  display: flex;
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  color: #606266;
+  font-size: 13px;
+}
+
+.info-item .el-icon {
+  margin-right: 5px;
+  color: #409EFF;
+}
+
+.session-main {
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
   position: relative;
 }
 
 .loading-container {
   padding: 20px;
-  width: 100%;
-  max-width: 800px;
-  margin: 40px auto;
-}
-
-/* 面试开始前的样式 */
-.interview-start {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-}
-
-.interview-info-card {
   background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  padding: 30px;
+}
+
+/* 新的布局样式 */
+.interview-layout {
+  display: flex;
+  height: 100%;
   width: 100%;
-  max-width: 600px;
 }
 
-.interview-info-card h2 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #409EFF;
-}
-
-.interview-details {
-  margin-bottom: 30px;
-}
-
-.detail-item {
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-}
-
-.detail-item .el-icon {
-  margin-right: 10px;
-  color: #409EFF;
-}
-
-.notice {
-  background-color: #f8f8f8;
-  border-radius: 4px;
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.notice ul {
-  padding-left: 20px;
-}
-
-.notice li {
-  margin-bottom: 5px;
-}
-
-.actions {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-/* 面试进行中的样式 */
-.interview-in-progress {
+/* 主视频区域 */
+.main-video-area {
   flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 200px;
-  grid-template-rows: 1fr 80px;
-  grid-template-areas:
-    "main participants"
-    "controls participants";
-  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 20px;
 }
 
 .main-video-container {
-  grid-area: main;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: relative;
-  background-color: #000;
+}
+
+.video-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  height: 100%;
+  width: 100%;
+}
+
+.video-placeholder .el-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  color: #409EFF;
+}
+
+.video-placeholder p {
+  margin: 10px 0 20px;
+}
+
+.main-video-stream {
   width: 100%;
   height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
 }
 
-.video-list {
+.main-video-stream video {
   width: 100%;
   height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  object-fit: cover;
 }
 
-.main-video-item {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.main-video-item video {
-  width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.video-overlay {
+.main-video-overlay {
   position: absolute;
   bottom: 20px;
   left: 20px;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: #fff;
+  background-color: rgba(0, 0, 0, 0.6);
   padding: 5px 10px;
   border-radius: 4px;
 }
 
-.control-bar {
-  grid-area: controls;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #f5f7fa;
-  padding: 10px;
+.participant-name {
+  font-size: 14px;
+  color: #fff;
 }
 
+/* 视频控制 */
 .video-controls {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f8f9fa;
+  border-top: 1px solid #eee;
+  padding: 0 20px;
+}
+
+.video-controls .el-button-group {
   display: flex;
   gap: 15px;
 }
 
-.participants-list {
-  grid-area: participants;
-  background-color: #2c3e50;
-  padding: 10px;
-  overflow-y: auto;
+.exit-button {
+  margin-left: 10px;
+}
+
+/* 右侧边栏 */
+.sidebar {
+  width: 250px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.participant-item {
-  position: relative;
+  background-color: #fff;
+  border-left: 1px solid #eee;
+  margin: 20px 20px 20px 0;
   border-radius: 4px;
   overflow: hidden;
+}
+
+/* 参与者列表 */
+.participants-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  /* 隐藏滚动条但保留滚动功能 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Chrome, Safari 和 Opera 的滚动条 */
+.participants-list::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar-header {
+  padding: 12px 15px;
+  font-weight: 600;
+  background-color: #409EFF;
+  color: #fff;
+}
+
+.participant-video-item {
+  width: 100%;
+  height: 150px;
+  margin-bottom: 1px;
+  position: relative;
   cursor: pointer;
-  height: 120px;
-  border: 3px solid transparent;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.participant-item.active {
-  border-color: #409EFF;
+.participant-video-item:hover {
+  background-color: #ecf5ff;
 }
 
-.participant-video {
+.participant-video-item.selected {
+  box-shadow: 0 0 0 2px #409EFF;
+}
+
+.participant-video-item video, 
+.participant-video-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -695,48 +769,53 @@ const handleBeforeUnload = e => {
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  padding: 5px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 5px 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.participant-name {
-  font-size: 12px;
-  font-weight: bold;
-}
-
 .participant-status {
-  display: flex;
-  align-items: center;
+  color: #ff4949;
 }
 
-.participant-status.muted {
-  color: #f56c6c;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .interview-in-progress {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto auto;
-    grid-template-areas:
-      "main"
-      "participants"
-      "controls";
+/* 响应式调整 */
+@media (max-width: 900px) {
+  .interview-session-page {
+    padding: 10px;
+  }
+  
+  .interview-container {
+    height: calc(100vh - 20px);
+  }
+  
+  .interview-layout {
+    flex-direction: column;
+  }
+  
+  .main-video-area {
+    margin: 10px;
+  }
+  
+  .sidebar {
+    width: auto;
+    margin: 0 10px 10px;
   }
   
   .participants-list {
-    flex-direction: row;
+    display: flex;
+    flex-wrap: nowrap;
     overflow-x: auto;
-    height: 120px;
+    padding: 10px;
   }
   
-  .participant-item {
-    min-width: 160px;
+  .participant-video-item {
+    width: 160px;
+    height: 120px;
+    flex-shrink: 0;
+    margin-right: 10px;
+    margin-bottom: 0;
   }
 }
 </style>
-
