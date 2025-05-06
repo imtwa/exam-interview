@@ -41,10 +41,13 @@
                   ref="mainVideo" 
                   autoplay 
                   playsinline
-                  :srcObject="selectedStream || remoteStream"
+                  :muted="selectedStream?.isLocal"
+                  :srcObject="selectedStream?.stream"
                 ></video>
                 <div class="main-video-overlay">
-                  <div class="participant-name">{{ selectedParticipant?.name || '面试官' }}</div>
+                  <div class="participant-name">
+                    {{ selectedStream?.isLocal ? '我' : getParticipantName(selectedStream?.id) }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -60,17 +63,20 @@
                   <el-icon v-if="isMicrophoneOn"><Microphone /></el-icon>
                   <el-icon v-else><Mute /></el-icon>
                 </el-button>
-                <el-button :type="isCameraOn ? 'primary' : 'danger'" circle @click="toggleCamera">
+                <el-button 
+                  :type="isCameraOn ? 'primary' : 'danger'" 
+                  circle 
+                  @click="toggleCamera"
+                >
                   <el-icon v-if="isCameraOn"><VideoCamera /></el-icon>
                   <el-icon v-else><VideoPlay /></el-icon>
                 </el-button>
                 <el-button
                   :type="isScreenSharing ? 'danger' : 'primary'"
                   circle
-                  @click="toggleScreenSharing"
+                  @click="shareScreen"
                 >
-                  <el-icon v-if="isScreenSharing"><Share /></el-icon>
-                  <el-icon v-else><Share /></el-icon>
+                  <el-icon><Share /></el-icon>
                 </el-button>
               </el-button-group>
               
@@ -86,41 +92,29 @@
               
               <!-- 本地视频预览 -->
               <div 
-                class="participant-video-item"
-                :class="{ 'selected': selectedParticipantId === 'local' }"
-                @click="selectParticipant('local', localStream, '我')"
-              >
-                <video ref="localVideo" autoplay playsinline muted></video>
-                <div class="participant-info">
-                  <div class="participant-name">我</div>
-                  <div class="participant-status" v-if="!isMicrophoneOn">
-                    <el-icon><Mute /></el-icon>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- 模拟其他参与者 -->
-              <div 
-                v-for="(item, index) in videoList" 
+                v-for="item in videoList" 
                 :key="item.id"
                 class="participant-video-item"
-                :class="{ 'selected': selectedParticipantId === item.id }"
+                :class="{ 'selected': selectedStream?.id === item.id }"
                 @click="selectParticipant(item)"
               >
-              <video 
-              ref="videos"
-              :id="item.id"
-              autoplay 
-              playsinline
-              :muted="item.muted"
-              :height="participantVideoHeight"
-              class="participant-video">
-            </video>
-            <div class="participant-info">
-              <div class="participant-name">{{ item.isLocal ? '我' : getParticipantName(item.id) }}</div>
-              <div class="participant-status" :class="{ muted: item.muted }">
-                <el-icon v-if="item.muted"><Mute /></el-icon>
-              </div>
+                <video 
+                  :ref="el => { if (el) videos[item.id] = el }"
+                  :id="item.id"
+                  autoplay 
+                  playsinline
+                  :muted="item.isLocal || item.muted"
+                  :srcObject="item.stream"
+                ></video>
+                <div class="participant-info">
+                  <div class="participant-name">
+                    {{ item.isLocal ? '我' : getParticipantName(item.id) }}
+                  </div>
+                  <div class="participant-status" :class="{ muted: !item.isLocal && item.muted }">
+                    <el-icon v-if="item.isLocal ? !isMicrophoneOn : item.muted">
+                      <Mute />
+                    </el-icon>
+                  </div>
                 </div>
               </div>
             </div>
@@ -172,8 +166,9 @@ const interviewData = ref({})
 const isVideoStarted = ref(false)
 const isMicrophoneOn = ref(true)
 const isCameraOn = ref(true)
+const isScreenSharing = ref(false)
 const exitDialogVisible = ref(false)
-const videos = ref([])
+const videos = ref({})
 const mainVideoHeight = ref(500)
 const participantVideoHeight = ref(120)
 
@@ -244,7 +239,13 @@ const startVideo = async () => {
     ElMessage.success('视频面试已开始')
   } catch (error) {
     console.error('启动视频失败:', error)
-    ElMessage.error('无法访问摄像头或麦克风，请确保设备连接正常并授予权限')
+    isVideoStarted.value = false
+    // 显示更具体的错误信息
+    if (error.name === 'AbortError' && error.message.includes('Timeout')) {
+      ElMessage.error('无法访问摄像头（超时）。请检查设备连接并确保授予了摄像头权限。')
+    } else {
+      ElMessage.error('无法访问摄像头或麦克风，请确保设备连接正常并授予权限')
+    }
   }
 }
 
@@ -255,17 +256,60 @@ const join = async () => {
     socket.value = io(socketURL, ioOptions)
     signalClient.value = new SimpleSignalClient(socket.value)
     
-    // 获取本地媒体流
-    let constraints = {
-      video: isCameraOn.value,
-      audio: isMicrophoneOn.value
+    // 获取本地媒体流 - 优化后的方法
+    try {
+      // 首先检查摄像头设备列表
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(device => device.kind === 'videoinput')
+      
+      // 基本约束条件
+      let constraints = {
+        video: isCameraOn.value,
+        audio: isMicrophoneOn.value
+      }
+      
+      // 如果有视频设备可用且需要启用摄像头，尝试使用第一个设备
+      if (videoDevices.length > 0 && isCameraOn.value) {
+        constraints.video = { 
+          deviceId: { ideal: videoDevices[0].deviceId },
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      }
+      
+      console.log('使用媒体约束:', constraints)
+      const localStream = await navigator.mediaDevices.getUserMedia(constraints)
+      console.log('获取到本地媒体流:', localStream)
+      
+      // 将本地流添加到视频列表
+      joinedRoom(localStream, true)
+    } catch (mediaError) {
+      console.warn('获取视频流失败，尝试备用方案:', mediaError)
+      
+      try {
+        // 仅尝试获取音频
+        if (isMicrophoneOn.value) {
+          const audioOnlyStream = await navigator.mediaDevices.getUserMedia({
+            video: false,
+            audio: true
+          })
+          
+          console.log('获取到仅音频流')
+          isCameraOn.value = false
+          joinedRoom(audioOnlyStream, true)
+          ElMessage.warning('摄像头不可用，仅使用麦克风继续面试')
+        } else {
+          // 创建一个空的媒体流，作为观众模式
+          const emptyStream = new MediaStream()
+          joinedRoom(emptyStream, true)
+          isCameraOn.value = false
+          ElMessage.warning('摄像头不可用，以观众模式加入面试')
+        }
+      } catch (fallbackError) {
+        console.error('备用方案也失败:', fallbackError)
+        throw new Error('无法访问任何媒体设备，请检查设备连接和权限设置')
+      }
     }
-    
-    const localStream = await navigator.mediaDevices.getUserMedia(constraints)
-    console.log('获取到本地媒体流:', localStream)
-    
-    // 将本地流添加到视频列表
-    joinedRoom(localStream, true)
     
     // 处理发现其他参与者
     signalClient.value.once('discover', (discoveryData) => {
@@ -347,7 +391,7 @@ const onPeer = (peer, localStream) => {
   })
 }
 
-// 加入房间并添加视频流
+// 修改加入房间方法
 const joinedRoom = (stream, isLocal) => {
   console.log('加入房间:', stream.id, isLocal ? '(本地)' : '(远程)')
   
@@ -370,17 +414,16 @@ const joinedRoom = (stream, isLocal) => {
     }
   }
   
-  // 设置video元素的srcObject
+  // 延迟设置视频元素的srcObject以确保DOM已更新
   setTimeout(() => {
-    if (videos.value) {
-      for (let i = 0; i < videos.value.length; i++) {
-        const videoElement = videos.value[i]
-        if (videoElement && videoElement.id === stream.id) {
-          videoElement.srcObject = stream
-          break
+    nextTick(() => {
+      for (const id in videos.value) {
+        if (id === stream.id && videos.value[id]) {
+          videos.value[id].srcObject = stream
+          console.log('设置视频源成功:', id)
         }
       }
-    }
+    })
   }, 500)
 }
 
@@ -409,39 +452,62 @@ const toggleCamera = () => {
 // 屏幕共享
 const shareScreen = async () => {
   try {
-    const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
-      video: true, 
-      audio: false 
-    })
-    
-    // 添加到视频列表
-    joinedRoom(screenStream, true)
-    
-    // 与其他对等方共享
-    signalClient.value.peers().forEach(p => onPeer(p, screenStream))
-    
-    // 自动切换到屏幕共享视图
-    const screenVideo = videoList.value.find(v => v.stream === screenStream)
-    if (screenVideo) {
-      selectedStream.value = screenVideo
-    }
-    
-    // 监听屏幕共享结束
-    screenStream.getVideoTracks()[0].onended = () => {
-      // 从视频列表中移除屏幕共享
-      videoList.value = videoList.value.filter(v => v.stream !== screenStream)
-      // 如果当前选中的是屏幕共享，则切换回本地视频
-      if (selectedStream.value.stream === screenStream) {
+    if (isScreenSharing.value) {
+      // 如果已经在共享屏幕，则停止共享
+      const screenVideo = videoList.value.find(v => v.isScreenShare)
+      if (screenVideo) {
+        screenVideo.stream.getTracks().forEach(track => track.stop())
+        videoList.value = videoList.value.filter(v => !v.isScreenShare)
+        
+        // 切换回本地视频
         const localVideo = videoList.value.find(v => v.isLocal)
         if (localVideo) {
           selectedStream.value = localVideo
         }
       }
+      isScreenSharing.value = false
+    } else {
+      // 开始新的屏幕共享
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+        video: true, 
+        audio: false 
+      })
+      
+      // 添加到视频列表
+      const screenVideo = {
+        id: 'screen-share',
+        stream: screenStream,
+        isLocal: true,
+        isScreenShare: true,
+        muted: true
+      }
+      videoList.value.push(screenVideo)
+      
+      // 与其他对等方共享
+      if (signalClient.value) {
+        signalClient.value.peers().forEach(p => onPeer(p, screenStream))
+      }
+      
+      // 自动切换到屏幕共享视图
+      selectedStream.value = screenVideo
+      isScreenSharing.value = true
+      
+      // 监听屏幕共享结束
+      screenStream.getVideoTracks()[0].onended = () => {
+        videoList.value = videoList.value.filter(v => !v.isScreenShare)
+        if (selectedStream.value.isScreenShare) {
+          const localVideo = videoList.value.find(v => v.isLocal)
+          if (localVideo) {
+            selectedStream.value = localVideo
+          }
+        }
+        isScreenSharing.value = false
+      }
     }
-    
   } catch (error) {
     console.error('屏幕共享失败:', error)
     ElMessage.error('屏幕共享失败')
+    isScreenSharing.value = false
   }
 }
 
