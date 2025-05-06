@@ -37,12 +37,27 @@
                 <el-button type="primary" @click="startVideo">开始视频面试</el-button>
               </div>
               <div v-else class="main-video-stream">
+                <!-- 添加视频显示模式控制按钮 -->
+                <div class="video-display-controls">
+                  <el-tooltip content="切换视频显示模式" placement="bottom">
+                    <el-button 
+                      type="text" 
+                      class="mode-toggle-btn"
+                      @click="toggleVideoDisplayMode" 
+                    >
+                      <el-icon v-if="videoDisplayMode === 'contain'"><FullScreen /></el-icon>
+                      <el-icon v-else><ScaleToOriginal /></el-icon>
+                    </el-button>
+                  </el-tooltip>
+                </div>
+                
                 <video 
                   ref="mainVideo" 
                   autoplay 
                   playsinline
                   :muted="selectedStream?.isLocal"
                   :srcObject="selectedStream?.stream"
+                  :class="{ 'fill-mode': videoDisplayMode === 'cover' }"
                 ></video>
                 <div class="main-video-overlay">
                   <div class="participant-name">
@@ -188,7 +203,9 @@ import {
   User,
   OfficeBuilding,
   Close,
-  Switch
+  Switch,
+  FullScreen,
+  ScaleToOriginal
 } from '@element-plus/icons-vue'
 import { startInterview, completeInterview } from '@/api/interview'
 import { io } from 'socket.io-client'
@@ -209,6 +226,7 @@ const exitDialogVisible = ref(false)
 const videos = ref({})
 const mainVideoHeight = ref(500)
 const participantVideoHeight = ref(120)
+const videoDisplayMode = ref('contain') // 'contain' 或 'cover'
 
 // 设备选择相关变量
 const videoDevices = ref([])
@@ -718,6 +736,11 @@ const getInterviewRoundText = round => {
   return roundMap[round] || round || '未知'
 }
 
+// 切换视频显示模式
+const toggleVideoDisplayMode = () => {
+  videoDisplayMode.value = videoDisplayMode.value === 'contain' ? 'cover' : 'contain'
+}
+
 // 组件挂载
 onMounted(() => {
   // 获取面试数据
@@ -841,6 +864,7 @@ const handleBeforeUnload = e => {
   justify-content: center;
   align-items: center;
   position: relative;
+  overflow: hidden; /* 确保内容不会溢出 */
 }
 
 .video-placeholder {
@@ -867,11 +891,23 @@ const handleBeforeUnload = e => {
   width: 100%;
   height: 100%;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* 防止视频溢出 */
 }
 
 .main-video-stream video {
   width: 100%;
   height: 100%;
+  object-fit: contain; /* 改为 contain 以保持比例且确保完全可见 */
+  max-height: 100%; /* 确保不超过容器高度 */
+  max-width: 100%; /* 确保不超过容器宽度 */
+  background-color: #000; /* 背景色填充空白区域 */
+}
+
+/* 填充模式 */
+.main-video-stream video.fill-mode {
   object-fit: cover;
 }
 
@@ -882,11 +918,43 @@ const handleBeforeUnload = e => {
   background-color: rgba(0, 0, 0, 0.6);
   padding: 5px 10px;
   border-radius: 4px;
+  z-index: 5;
 }
 
 .participant-name {
   font-size: 14px;
-  color: #999;
+  color: #fff;
+}
+
+/* 视频显示模式控制 */
+.video-display-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+.mode-toggle-btn {
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  color: #fff;
+  transition: all 0.3s;
+}
+
+.mode-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.mode-toggle-btn .el-icon {
+  font-size: 16px;
+}
+
+/* 参与者视频项样式调整 */
+.participant-video-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 对小视频使用 cover 以填充整个空间 */
 }
 
 /* 视频控制 */
