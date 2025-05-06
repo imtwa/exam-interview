@@ -1,19 +1,3 @@
-/**
- * Model JobApplication
- */
-export type JobApplication = {
-  id: number;
-  jobSeekerId: number;
-  jobId: number;
-  status: InterviewStatus;
-  appliedAt: Date;
-  updatedAt: Date;
-  feedback: string | null;
-};
-
-/**
- * Model ExamAssignment
- */
 export type ExamAssignment = {
   id: number;
   applicationId: number;

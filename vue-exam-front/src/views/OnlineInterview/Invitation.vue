@@ -24,7 +24,7 @@
                   <el-input
                     v-model="formData.invitationCode"
                     placeholder="请输入邀请码"
-                    maxlength="20"
+                    maxlength="60"
                     :prefix-icon="Ticket"
                     size="large"
                     @keyup.enter="handleSubmit"
@@ -92,19 +92,15 @@ const handleSubmit = async () => {
 
     loading.value = true
     try {
-      console.log('提交面试邀请码:', formData.invitationCode)
       const response = await verifyInterviewInvitationCode({
         invitationCode: formData.invitationCode
       })
-
-      console.log('验证结果:', response)
       if (response) {
         // 获取面试信息
-        const interviewId = response.interviewId
         const canStart = response.canStart
 
         if (!canStart) {
-          const scheduleTime = new Date(response.scheduleTime).toLocaleString()
+          const scheduleTime = response.scheduleTime
           ElMessage.warning(`该面试尚未开始或已结束，面试时间为：${scheduleTime}`)
           loading.value = false
           return
@@ -116,16 +112,7 @@ const handleSubmit = async () => {
         ElMessage.warning('验证成功但未返回面试信息，请联系招聘方')
       }
     } catch (error) {
-      console.error('邀请码验证失败:', error)
-      let errorMsg = '邀请码验证失败，请检查后重试'
-
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMsg = error.response.data.message
-      } else if (error.message) {
-        errorMsg = error.message
-      }
-
-      ElMessage.error(errorMsg)
+      ElMessage.error('邀请码验证失败，请检查后重试')
     } finally {
       loading.value = false
     }
@@ -193,20 +180,21 @@ const goBack = () => {
 }
 
 .code-input-container {
-  margin-bottom: 10px;
+  margin-bottom: 4px;
+  width: 100%;
 }
 
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
+  margin-top: 4px;
 }
 
 .info-section {
   background-color: #f8f9fa;
   border-radius: 8px;
   padding: 15px 20px;
-  margin-top: 20px;
+  margin-top: 4px;
 }
 
 .info-section h4 {

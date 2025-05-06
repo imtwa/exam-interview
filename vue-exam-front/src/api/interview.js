@@ -69,9 +69,7 @@ export function deleteInterview(id) {
  * @param {Object|string} params 邀请码对象或字符串
  * @returns {Promise}
  */
-export function verifyInterviewInvitationCode(params) {
-  // 确保将参数格式化为对象格式
-  const data = typeof params === 'string' ? { invitationCode: params } : params
+export function verifyInterviewInvitationCode(data) {
 
   return request({
     url: '/interview/invitation/verify',

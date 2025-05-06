@@ -574,7 +574,6 @@ export class InterviewService {
       const endTime = new Date(
         scheduleTime.getTime() + interview.duration * 60000,
       );
-
       // 如果当前时间在面试时间范围内
       const canStart = now >= scheduleTime && now <= endTime;
 
