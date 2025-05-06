@@ -203,18 +203,18 @@ const routes = [
         meta: { title: '面试邀请码' }
       },
       {
-        path: 'online-interview/session/:id',
-        name: 'InterviewSession',
-        component: () => import('@/views/OnlineInterview/InterviewSession.vue'),
-        meta: { title: '在线面试', keepAlive: true }
-      },
-      {
         path: 'online-interview/feedback/:id',
         name: 'InterviewFeedback',
         component: () => import('@/views/OnlineInterview/InterviewFeedback.vue'),
         meta: { title: '面试反馈' }
       }
     ]
+  },
+  {
+    path: '/online-interview/session/:id',
+    name: 'InterviewSession',
+    component: () => import('@/views/OnlineInterview/InterviewSession.vue'),
+    meta: { title: '在线面试', keepAlive: true }
   }
 ]
 
