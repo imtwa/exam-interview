@@ -1,141 +1,121 @@
 <template>
-  <div class="interview-session-page">
-    <div class="interview-container">
-      <!-- 面试信息条 -->
-      <div class="interview-info-bar">
-        <div class="info-left">
-          <h1 class="interview-title">{{ interviewData.title || '在线面试' }}</h1>
-          <div class="interview-details">
-            <span class="info-item">
-              <el-icon><Clock /></el-icon>
-              {{ interviewData.duration || '--' }} 分钟
-            </span>
-            <span class="info-item">
-              <el-icon><User /></el-icon>
-              {{ interviewData.interviewer?.name || '面试官' }}
-            </span>
-            <span class="info-item">
-              <el-icon><OfficeBuilding /></el-icon>
-              {{ interviewData.company?.name || '公司' }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 主要内容区域 -->
-      <div class="session-main">
-        <div v-if="loading" class="loading-container">
-          <el-skeleton :rows="10" animated />
-        </div>
-        <div v-else class="interview-layout">
-          <!-- 主视频区域 -->
-          <div class="main-video-area">
-            <div class="main-video-container">
-              <div v-if="!isVideoStarted" class="video-placeholder">
-                <el-icon><VideoCamera /></el-icon>
-                <p>等待开启视频...</p>
-                <el-button type="primary" @click="startVideo">开始视频面试</el-button>
-              </div>
-              <div v-else class="main-video-stream">
-                <video 
-                  ref="mainVideo" 
-                  autoplay 
-                  playsinline
-                  :srcObject="selectedStream || remoteStream"
-                ></video>
-                <div class="main-video-overlay">
-                  <div class="participant-name">{{ selectedParticipant?.name || '面试官' }}</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 底部控制栏 -->
-            <div class="video-controls">
-              <el-button-group>
-                <el-button
-                  :type="isMicrophoneOn ? 'primary' : 'danger'"
-                  circle
-                  @click="toggleMicrophone"
-                >
-                  <el-icon v-if="isMicrophoneOn"><Microphone /></el-icon>
-                  <el-icon v-else><Mute /></el-icon>
-                </el-button>
-                <el-button :type="isCameraOn ? 'primary' : 'danger'" circle @click="toggleCamera">
-                  <el-icon v-if="isCameraOn"><VideoCamera /></el-icon>
-                  <el-icon v-else><VideoPlay /></el-icon>
-                </el-button>
-                <el-button
-                  :type="isScreenSharing ? 'danger' : 'primary'"
-                  circle
-                  @click="toggleScreenSharing"
-                >
-                  <el-icon v-if="isScreenSharing"><Share /></el-icon>
-                  <el-icon v-else><Share /></el-icon>
-                </el-button>
-              </el-button-group>
-              
-              <el-button class="exit-button" type="danger" @click="exitInterview">退出面试</el-button>
-            </div>
-          </div>
-          
-          <!-- 右侧参与者列表 -->
-          <div class="sidebar">
-            <!-- 参与者视频列表 -->
-            <div class="participants-list">
-              <div class="sidebar-header">参与者</div>
-              
-              <!-- 本地视频预览 -->
-              <div 
-                class="participant-video-item"
-                :class="{ 'selected': selectedParticipantId === 'local' }"
-                @click="selectParticipant('local', localStream, '我')"
-              >
-                <video ref="localVideo" autoplay playsinline muted></video>
-                <div class="participant-info">
-                  <div class="participant-name">我</div>
-                  <div class="participant-status" v-if="!isMicrophoneOn">
-                    <el-icon><Mute /></el-icon>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- 模拟其他参与者 -->
-              <div 
-                v-for="(participant, index) in participants" 
-                :key="participant.id"
-                class="participant-video-item"
-                :class="{ 'selected': selectedParticipantId === participant.id }"
-                @click="selectParticipant(participant.id, participant.stream, participant.name)"
-              >
-                <video :ref="`participant-${index}`" autoplay playsinline></video>
-                <div class="participant-info">
-                  <div class="participant-name">{{ participant.name }}</div>
-                  <div class="participant-status" v-if="participant.muted">
-                    <el-icon><Mute /></el-icon>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <div class="interview-session">
+    <!-- 加载提示 -->
+    <div v-if="loading" class="loading-container">
+      <el-skeleton :rows="10" animated />
     </div>
-
-    <!-- 退出确认弹窗 -->
-    <el-dialog v-model="exitDialogVisible" title="确认退出面试" width="30%">
-      <span>面试尚未结束，确定要退出吗？</span>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="exitDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="confirmExit">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+    
+    <template v-else>
+      <!-- 面试进行中 -->
+      <div class="interview-in-progress">
+        <!-- 主视频区域 -->
+        <div class="main-video-container">
+          <div class="video-list">
+            <div v-for="item in selectedVideoList"
+                v-bind:video="item"
+                v-bind:key="item.id"
+                class="main-video-item">
+              <video controls autoplay playsinline :height="mainVideoHeight" :muted="item.muted" :id="item.id"></video>
+            </div>
+          </div>
+          <div class="video-overlay">
+            <div class="participant-name">{{ selectedStream?.id === 'local' ? '我' : getParticipantName(selectedStream?.id) }}</div>
+          </div>
+        </div>
+        
+        <!-- 控制栏 -->
+        <div class="control-bar">
+          <div class="video-controls">
+            <el-button 
+              :type="isMicrophoneOn ? 'success' : 'danger'" 
+              circle 
+              @click="toggleMicrophone"
+            >
+              <el-icon>
+                <Microphone v-if="isMicrophoneOn" />
+                <Mute v-else />
+              </el-icon>
+            </el-button>
+            
+            <el-button 
+              :type="isCameraOn ? 'success' : 'danger'" 
+              circle 
+              @click="toggleCamera"
+            >
+              <el-icon>
+                <VideoCamera v-if="isCameraOn" />
+                <VideoPlay v-else />
+              </el-icon>
+            </el-button>
+            
+            <el-button 
+              type="primary" 
+              circle 
+              @click="shareScreen"
+            >
+              <el-icon><Share /></el-icon>
+            </el-button>
+            
+            <el-button 
+              type="danger" 
+              @click="exitInterview"
+            >
+              退出面试
+            </el-button>
+          </div>
+        </div>
+        
+        <!-- 参与者列表 -->
+        <div class="participants-list">
+          <!-- 所有参与者视频 -->
+          <div 
+            v-for="item in videoList"
+            :key="item.id"
+            class="participant-item" 
+            :class="{ active: selectedStream?.id === item.id }"
+            @click="selectParticipant(item)"
+          >
+            <video 
+              ref="videos"
+              :id="item.id"
+              autoplay 
+              playsinline
+              :muted="item.muted"
+              :height="participantVideoHeight"
+              class="participant-video">
+            </video>
+            <div class="participant-info">
+              <div class="participant-name">{{ item.isLocal ? '我' : getParticipantName(item.id) }}</div>
+              <div class="participant-status" :class="{ muted: item.muted }">
+                <el-icon v-if="item.muted"><Mute /></el-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 退出面试确认对话框 -->
+      <el-dialog
+        v-model="exitDialogVisible"
+        title="退出面试"
+        width="30%"
+        :close-on-click-modal="false"
+        :show-close="false"
+      >
+        <span>确定要退出当前面试吗？</span>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="exitDialogVisible = false">取消</el-button>
+            <el-button type="danger" @click="confirmExit">确认退出</el-button>
+          </span>
+        </template>
+      </el-dialog>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -147,9 +127,12 @@ import {
   MoreFilled,
   Clock,
   User,
-  OfficeBuilding
+  OfficeBuilding,
+  Close
 } from '@element-plus/icons-vue'
 import { startInterview, completeInterview } from '@/api/interview'
+import { io } from 'socket.io-client'
+import SimpleSignalClient from 'simple-signal-client'
 
 const route = useRoute()
 const router = useRouter()
@@ -161,63 +144,47 @@ const interviewData = ref({})
 const isVideoStarted = ref(false)
 const isMicrophoneOn = ref(true)
 const isCameraOn = ref(true)
-const isScreenSharing = ref(false)
 const exitDialogVisible = ref(false)
-const localVideo = ref(null)
-const mainVideo = ref(null)
-const localStream = ref(null)
-const remoteStream = ref(null)
-const peerConnection = ref(null)
+const videos = ref([])
+const mainVideoHeight = ref(500)
+const participantVideoHeight = ref(120)
 
-// 参与者管理
-const participants = ref([])
-const selectedParticipantId = ref('local') // 默认选中自己
-const selectedParticipant = ref(null)
+// WebRTC相关变量
+const signalClient = ref(null)
+const socket = ref(null)
+const videoList = ref([])
 const selectedStream = ref(null)
+const selectedVideoList = computed(() => {
+  if (!selectedStream.value) return []
+  return videoList.value.filter(item => item.id === selectedStream.value.id)
+})
 
-// 选择要在主视频区域显示的参与者视频
-const selectParticipant = (id, stream, name) => {
-  selectedParticipantId.value = id
-  selectedStream.value = stream
-  selectedParticipant.value = { id, name }
+// 加入房间设置
+const roomId = computed(() => 'interview-' + invitationCode)
+const socketURL = 'https://weston-vue-webrtc-lobby.azurewebsites.net' // 实际环境中应替换为你自己的信令服务器
+const ioOptions = {
+  rejectUnauthorized: false,
+  transports: ['polling', 'websocket']
+}
+const peerOptions = {}
+
+// 获取参与者名称的辅助函数
+const getParticipantName = (id) => {
+  // 在实际应用中，这会从服务器获取参与者信息
+  const names = {
+    'interviewer-1': 'Caroline',
+    'interviewer-2': 'Jimmy',
+    'interviewer-3': 'Lucy',
+    'interviewer-4': 'Alfredo',
+    'interviewer-5': 'Allon'
+  }
+  return names[id] || '未知用户'
 }
 
-// 创建模拟参与者
-onMounted(() => {
-  // 模拟其他参与者（后续可以通过WebRTC信令替换真实的参与者）
-  participants.value = [
-    {
-      id: 'interviewer-1',
-      name: 'Caroline',
-      stream: null,
-      muted: false
-    },
-    {
-      id: 'interviewer-2',
-      name: 'Jimmy',
-      stream: null,
-      muted: true
-    },
-    {
-      id: 'interviewer-3',
-      name: 'Lucy',
-      stream: null,
-      muted: false
-    },
-    {
-      id: 'interviewer-4',
-      name: 'Alfredo',
-      stream: null,
-      muted: true
-    },
-    {
-      id: 'interviewer-5',
-      name: 'Allon',
-      stream: null,
-      muted: false
-    }
-  ]
-})
+// 选择要在主视频区域显示的参与者视频
+const selectParticipant = (videoItem) => {
+  selectedStream.value = videoItem
+}
 
 // 获取面试数据
 const fetchInterviewData = async () => {
@@ -243,28 +210,9 @@ const fetchInterviewData = async () => {
 // 开始视频面试
 const startVideo = async () => {
   try {
-    // 获取本地媒体流
-    localStream.value = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
-    })
-
-    // 显示本地视频
-    if (localVideo.value) {
-      localVideo.value.srcObject = localStream.value
-    }
-    
-    // 默认显示自己的视频在主视频区
-    selectedStream.value = localStream.value
-    selectedParticipant.value = { id: 'local', name: '我' }
-
     isVideoStarted.value = true
-    isMicrophoneOn.value = true
-    isCameraOn.value = true
-
-    // 为模拟参与者创建虚拟视频（实际应通过WebRTC连接）
-    createMockParticipantVideos()
-
+    // 加入WebRTC房间
+    await join()
     ElMessage.success('视频面试已开始')
   } catch (error) {
     console.error('启动视频失败:', error)
@@ -272,126 +220,200 @@ const startVideo = async () => {
   }
 }
 
-// 创建模拟参与者视频（实际项目中应当通过WebRTC连接接收真实视频流）
-const createMockParticipantVideos = async () => {
-  // 在实际应用中，这部分会被替换为WebRTC连接
+// 加入WebRTC房间
+const join = async () => {
   try {
-    // 由于浏览器安全限制，我们无法动态创建多个真实的视频流
-    // 这里我们假装从其他参与者接收到了视频流
-    nextTick(() => {
-      participants.value.forEach(async (participant, index) => {
-        // 在真实场景中，这会是从远程接收到的流
-        // 这里我们仅为布局演示，显示将使用模拟视频
-        const video = document.querySelector(`#participant-${index}`)
-        if (video) {
-          // 设置一个占位图像
-          video.poster = `https://via.placeholder.com/160x120/666666/FFFFFF?text=${participant.name}`
+    console.log('加入房间:', roomId.value)
+    socket.value = io(socketURL, ioOptions)
+    signalClient.value = new SimpleSignalClient(socket.value)
+    
+    // 获取本地媒体流
+    let constraints = {
+      video: isCameraOn.value,
+      audio: isMicrophoneOn.value
+    }
+    
+    const localStream = await navigator.mediaDevices.getUserMedia(constraints)
+    console.log('获取到本地媒体流:', localStream)
+    
+    // 将本地流添加到视频列表
+    joinedRoom(localStream, true)
+    
+    // 处理发现其他参与者
+    signalClient.value.once('discover', (discoveryData) => {
+      console.log('发现其他参与者:', discoveryData)
+      
+      // 连接到房间里的其他参与者
+      async function connectToPeer(peerID) {
+        if (peerID == socket.value.id) return
+        try {
+          console.log('连接到参与者:', peerID)
+          const { peer } = await signalClient.value.connect(peerID, roomId.value, peerOptions)
+          
+          // 为所有对等连接添加本地流
+          videoList.value.forEach(v => {
+            if (v.isLocal) {
+              onPeer(peer, v.stream)
+            }
+          })
+        } catch (e) {
+          console.error('连接参与者失败:', e)
+        }
+      }
+      
+      // 连接到所有已存在的参与者
+      discoveryData.peers.forEach((peerID) => connectToPeer(peerID))
+    })
+    
+    // 处理连接请求
+    signalClient.value.on('request', async (request) => {
+      console.log('收到连接请求:', request)
+      const { peer } = await request.accept({}, peerOptions)
+      console.log('接受连接请求:', peer)
+      
+      // 为新建立的对等连接添加本地流
+      videoList.value.forEach(v => {
+        if (v.isLocal) {
+          onPeer(peer, v.stream)
         }
       })
     })
+    
+    // 开始发现房间中的其他参与者
+    signalClient.value.discover(roomId.value)
+    
+    // 默认选择本地视频作为主显示
+    if (videoList.value.length > 0) {
+      selectedStream.value = videoList.value[0]
+    }
+    
   } catch (error) {
-    console.error('创建模拟参与者视频失败:', error)
+    console.error('加入房间失败:', error)
+    throw error
   }
+}
+
+// 处理对等连接
+const onPeer = (peer, localStream) => {
+  console.log('处理对等连接:', peer)
+  
+  // 添加本地流到对等连接
+  peer.addStream(localStream)
+  
+  // 接收远程流
+  peer.on('stream', (remoteStream) => {
+    // 添加远程流到视频列表
+    joinedRoom(remoteStream, false)
+    
+    // 处理连接关闭
+    peer.on('close', () => {
+      console.log('对等连接关闭:', remoteStream.id)
+      // 从视频列表中移除该流
+      videoList.value = videoList.value.filter(item => item.id !== remoteStream.id)
+    })
+    
+    // 处理连接错误
+    peer.on('error', (err) => {
+      console.error('对等连接错误:', err)
+    })
+  })
+}
+
+// 加入房间并添加视频流
+const joinedRoom = (stream, isLocal) => {
+  console.log('加入房间:', stream.id, isLocal ? '(本地)' : '(远程)')
+  
+  // 检查是否已存在相同ID的视频
+  let found = videoList.value.find(video => video.id === stream.id)
+  
+  if (found === undefined) {
+    // 添加新视频到列表
+    let video = {
+      id: stream.id,
+      muted: isLocal, // 本地视频静音避免回声
+      stream: stream,
+      isLocal: isLocal
+    }
+    videoList.value.push(video)
+    
+    // 如果是第一个视频，设为主视频
+    if (videoList.value.length === 1 || isLocal) {
+      selectedStream.value = video
+    }
+  }
+  
+  // 设置video元素的srcObject
+  setTimeout(() => {
+    if (videos.value) {
+      for (let i = 0; i < videos.value.length; i++) {
+        const videoElement = videos.value[i]
+        if (videoElement && videoElement.id === stream.id) {
+          videoElement.srcObject = stream
+          break
+        }
+      }
+    }
+  }, 500)
 }
 
 // 切换麦克风状态
 const toggleMicrophone = () => {
-  if (localStream.value) {
-    localStream.value.getAudioTracks().forEach(track => {
+  const localVideo = videoList.value.find(v => v.isLocal)
+  if (localVideo && localVideo.stream) {
+    localVideo.stream.getAudioTracks().forEach(track => {
       track.enabled = !track.enabled
+      isMicrophoneOn.value = track.enabled
     })
-    isMicrophoneOn.value = !isMicrophoneOn.value
   }
 }
 
 // 切换摄像头状态
 const toggleCamera = () => {
-  if (localStream.value) {
-    localStream.value.getVideoTracks().forEach(track => {
+  const localVideo = videoList.value.find(v => v.isLocal)
+  if (localVideo && localVideo.stream) {
+    localVideo.stream.getVideoTracks().forEach(track => {
       track.enabled = !track.enabled
+      isCameraOn.value = track.enabled
     })
-    isCameraOn.value = !isCameraOn.value
   }
 }
 
-// 切换屏幕共享
-const toggleScreenSharing = async () => {
-  if (isScreenSharing.value) {
-    // 停止屏幕共享，恢复摄像头
-    if (localStream.value) {
-      localStream.value.getTracks().forEach(track => track.stop())
-    }
-
-    try {
-      localStream.value = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      })
-
-      if (localVideo.value) {
-        localVideo.value.srcObject = localStream.value
-      }
-      
-      // 如果主视频区正在显示本地视频，则更新主视频区
-      if (selectedParticipantId.value === 'local') {
-        selectedStream.value = localStream.value
-      }
-
-      isScreenSharing.value = false
-    } catch (error) {
-      console.error('恢复摄像头失败:', error)
-      ElMessage.error('恢复摄像头失败')
-    }
-  } else {
-    // 开始屏幕共享
-    try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true
-      })
-
-      // 保留原始音频轨道
-      if (localStream.value) {
-        const audioTrack = localStream.value.getAudioTracks()[0]
-        if (audioTrack) {
-          screenStream.addTrack(audioTrack)
-        }
-
-        // 停止原视频轨道
-        localStream.value.getVideoTracks().forEach(track => track.stop())
-      }
-
-      localStream.value = screenStream
-
-      if (localVideo.value) {
-        localVideo.value.srcObject = localStream.value
-      }
-      
-      // 如果主视频区正在显示本地视频，则更新主视频区
-      if (selectedParticipantId.value === 'local') {
-        selectedStream.value = localStream.value
-      }
-
-      isScreenSharing.value = true
-
-      // 监听共享结束事件
-      screenStream.getVideoTracks()[0].onended = () => {
-        toggleScreenSharing()
-      }
-    } catch (error) {
-      console.error('屏幕共享失败:', error)
-      ElMessage.error('屏幕共享失败')
-    }
-  }
-}
-
-// 辅助函数 - 格式化日期时间
-const formatDateTime = dateTime => {
-  if (!dateTime) return '--'
+// 屏幕共享
+const shareScreen = async () => {
   try {
-    const date = new Date(dateTime)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+    const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+      video: true, 
+      audio: false 
+    })
+    
+    // 添加到视频列表
+    joinedRoom(screenStream, true)
+    
+    // 与其他对等方共享
+    signalClient.value.peers().forEach(p => onPeer(p, screenStream))
+    
+    // 自动切换到屏幕共享视图
+    const screenVideo = videoList.value.find(v => v.stream === screenStream)
+    if (screenVideo) {
+      selectedStream.value = screenVideo
+    }
+    
+    // 监听屏幕共享结束
+    screenStream.getVideoTracks()[0].onended = () => {
+      // 从视频列表中移除屏幕共享
+      videoList.value = videoList.value.filter(v => v.stream !== screenStream)
+      // 如果当前选中的是屏幕共享，则切换回本地视频
+      if (selectedStream.value.stream === screenStream) {
+        const localVideo = videoList.value.find(v => v.isLocal)
+        if (localVideo) {
+          selectedStream.value = localVideo
+        }
+      }
+    }
+    
   } catch (error) {
-    return '--'
+    console.error('屏幕共享失败:', error)
+    ElMessage.error('屏幕共享失败')
   }
 }
 
@@ -403,29 +425,55 @@ const exitInterview = () => {
 // 确认退出
 const confirmExit = async () => {
   try {
-    // 停止所有媒体流
-    if (localStream.value) {
-      localStream.value.getTracks().forEach(track => track.stop())
-    }
-
-    if (remoteStream.value) {
-      remoteStream.value.getTracks().forEach(track => track.stop())
-    }
-
-    // 关闭对等连接
-    if (peerConnection.value) {
-      peerConnection.value.close()
-    }
-
+    // 离开房间，清理资源
+    leave()
+    
     // 调用API完成面试
     await completeInterview(invitationCode)
-
+    
     ElMessage.success('已成功退出面试')
     router.push('/online-interview')
   } catch (error) {
     console.error('退出面试失败:', error)
     // 即使API调用失败也允许用户退出
     router.push('/online-interview')
+  }
+}
+
+// 离开房间
+const leave = () => {
+  // 停止所有视频流
+  videoList.value.forEach(v => {
+    if (v.stream) {
+      v.stream.getTracks().forEach(t => t.stop())
+    }
+  })
+  
+  // 清空视频列表
+  videoList.value = []
+  
+  // 清理信令客户端和连接
+  if (signalClient.value) {
+    signalClient.value.peers().forEach(peer => peer.removeAllListeners())
+    signalClient.value.destroy()
+    signalClient.value = null
+  }
+  
+  // 关闭socket连接
+  if (socket.value) {
+    socket.value.disconnect()
+    socket.value = null
+  }
+}
+
+// 辅助函数 - 格式化日期时间
+const formatDateTime = dateTime => {
+  if (!dateTime) return '--'
+  try {
+    const date = new Date(dateTime)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+  } catch (error) {
+    return '--'
   }
 }
 
@@ -443,27 +491,18 @@ const getInterviewRoundText = round => {
 onMounted(() => {
   // 获取面试数据
   fetchInterviewData()
-
+  
   // 页面离开警告
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 // 组件卸载
 onBeforeUnmount(() => {
-  // 停止所有媒体流
-  if (localStream.value) {
-    localStream.value.getTracks().forEach(track => track.stop())
+  // 离开房间，清理资源
+  if (isVideoStarted.value) {
+    leave()
   }
-
-  if (remoteStream.value) {
-    remoteStream.value.getTracks().forEach(track => track.stop())
-  }
-
-  // 关闭对等连接
-  if (peerConnection.value) {
-    peerConnection.value.close()
-  }
-
+  
   // 移除事件监听器
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
@@ -476,221 +515,176 @@ const handleBeforeUnload = e => {
 </script>
 
 <style scoped>
-.interview-session-page {
-  background-color: #f5f9ff;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.interview-container {
-  display: flex;
-  flex-direction: column;
-  max-width: 1600px;
+.interview-session {
   width: 100%;
-  height: calc(100vh - 40px);
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-/* 面试信息条 */
-.interview-info-bar {
-  background-color: #fff;
-  padding: 15px 20px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.info-left {
+  height: 100vh;
+  background-color: #f5f7fa;
   display: flex;
   flex-direction: column;
-}
-
-.interview-title {
-  font-size: 18px;
-  margin: 0 0 6px 0;
-  color: #303133;
-}
-
-.interview-details {
-  display: flex;
-  gap: 20px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  color: #606266;
-  font-size: 13px;
-}
-
-.info-item .el-icon {
-  margin-right: 5px;
-  color: #409EFF;
-}
-
-.session-main {
-  padding: 0;
-  overflow: hidden;
-  flex: 1;
   position: relative;
 }
 
 .loading-container {
   padding: 20px;
+  width: 100%;
+  max-width: 800px;
+  margin: 40px auto;
+}
+
+/* 面试开始前的样式 */
+.interview-start {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+}
+
+.interview-info-card {
   background-color: #fff;
-}
-
-/* 新的布局样式 */
-.interview-layout {
-  display: flex;
-  height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  padding: 30px;
   width: 100%;
+  max-width: 600px;
 }
 
-/* 主视频区域 */
-.main-video-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  background-color: #000;
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 20px;
-}
-
-.main-video-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
-.video-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  height: 100%;
-  width: 100%;
-}
-
-.video-placeholder .el-icon {
-  font-size: 48px;
-  margin-bottom: 15px;
+.interview-info-card h2 {
+  text-align: center;
+  margin-bottom: 30px;
   color: #409EFF;
 }
 
-.video-placeholder p {
-  margin: 10px 0 20px;
+.interview-details {
+  margin-bottom: 30px;
 }
 
-.main-video-stream {
-  width: 100%;
-  height: 100%;
+.detail-item {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.detail-item .el-icon {
+  margin-right: 10px;
+  color: #409EFF;
+}
+
+.notice {
+  background-color: #f8f8f8;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.notice ul {
+  padding-left: 20px;
+}
+
+.notice li {
+  margin-bottom: 5px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+/* 面试进行中的样式 */
+.interview-in-progress {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  grid-template-rows: 1fr 80px;
+  grid-template-areas:
+    "main participants"
+    "controls participants";
+  height: 100vh;
+}
+
+.main-video-container {
+  grid-area: main;
   position: relative;
-}
-
-.main-video-stream video {
+  background-color: #000;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.main-video-overlay {
+.video-list {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-video-item {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-video-item video {
+  width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.video-overlay {
   position: absolute;
   bottom: 20px;
   left: 20px;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
   padding: 5px 10px;
   border-radius: 4px;
 }
 
-.participant-name {
-  font-size: 14px;
-  color: #fff;
-}
-
-/* 视频控制 */
-.video-controls {
-  height: 70px;
+.control-bar {
+  grid-area: controls;
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  background-color: #f8f9fa;
-  border-top: 1px solid #eee;
-  padding: 0 20px;
+  background-color: #f5f7fa;
+  padding: 10px;
 }
 
-.video-controls .el-button-group {
+.video-controls {
   display: flex;
   gap: 15px;
 }
 
-.exit-button {
-  margin-left: 10px;
-}
-
-/* 右侧边栏 */
-.sidebar {
-  width: 250px;
+.participants-list {
+  grid-area: participants;
+  background-color: #2c3e50;
+  padding: 10px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  background-color: #fff;
-  border-left: 1px solid #eee;
-  margin: 20px 20px 20px 0;
+  gap: 10px;
+}
+
+.participant-item {
+  position: relative;
   border-radius: 4px;
   overflow: hidden;
-}
-
-/* 参与者列表 */
-.participants-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0;
-  /* 隐藏滚动条但保留滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-/* Chrome, Safari 和 Opera 的滚动条 */
-.participants-list::-webkit-scrollbar {
-  display: none;
-}
-
-.sidebar-header {
-  padding: 12px 15px;
-  font-weight: 600;
-  background-color: #409EFF;
-  color: #fff;
-}
-
-.participant-video-item {
-  width: 100%;
-  height: 150px;
-  margin-bottom: 1px;
-  position: relative;
   cursor: pointer;
-  transition: all 0.2s;
-  border-bottom: 1px solid #f0f0f0;
+  height: 120px;
+  border: 3px solid transparent;
+  transition: all 0.3s ease;
 }
 
-.participant-video-item:hover {
-  background-color: #ecf5ff;
+.participant-item.active {
+  border-color: #409EFF;
 }
 
-.participant-video-item.selected {
-  box-shadow: 0 0 0 2px #409EFF;
-}
-
-.participant-video-item video, 
-.participant-video-item img {
+.participant-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -701,53 +695,47 @@ const handleBeforeUnload = e => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 5px 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.participant-status {
-  color: #ff4949;
+.participant-name {
+  font-size: 12px;
+  font-weight: bold;
 }
 
-/* 响应式调整 */
-@media (max-width: 900px) {
-  .interview-session-page {
-    padding: 10px;
-  }
-  
-  .interview-container {
-    height: calc(100vh - 20px);
-  }
-  
-  .interview-layout {
-    flex-direction: column;
-  }
-  
-  .main-video-area {
-    margin: 10px;
-  }
-  
-  .sidebar {
-    width: auto;
-    margin: 0 10px 10px;
+.participant-status {
+  display: flex;
+  align-items: center;
+}
+
+.participant-status.muted {
+  color: #f56c6c;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .interview-in-progress {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto auto;
+    grid-template-areas:
+      "main"
+      "participants"
+      "controls";
   }
   
   .participants-list {
-    display: flex;
-    flex-wrap: nowrap;
+    flex-direction: row;
     overflow-x: auto;
-    padding: 10px;
+    height: 120px;
   }
   
-  .participant-video-item {
-    width: 160px;
-    height: 120px;
-    flex-shrink: 0;
-    margin-right: 10px;
-    margin-bottom: 0;
+  .participant-item {
+    min-width: 160px;
   }
 }
 </style>

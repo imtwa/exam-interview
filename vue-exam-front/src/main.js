@@ -14,6 +14,10 @@ import './assets/css/common.less'
 import './assets/icon/iconfont.css'
 import './style.css'
 
+if (typeof global === 'undefined') {
+  window.global = window;
+}
+
 const app = createApp(App)
 
 // 使用 Pinia
