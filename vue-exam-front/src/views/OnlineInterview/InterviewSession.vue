@@ -69,46 +69,50 @@
             
             <!-- 底部控制栏 -->
             <div class="video-controls">
-              <el-button-group>
-                <el-button
-                  :type="isMicrophoneOn ? 'primary' : 'danger'"
-                  circle
+              <div class="control-buttons">
+                <button 
+                  class="control-btn"
+                  :class="{ 'active': isMicrophoneOn, 'inactive': !isMicrophoneOn }"
                   @click="toggleMicrophone"
                 >
                   <el-icon v-if="isMicrophoneOn"><Microphone /></el-icon>
                   <el-icon v-else><Mute /></el-icon>
-                </el-button>
-                <el-button 
-                  :type="isCameraOn ? 'primary' : 'danger'" 
-                  circle 
+                  <span>{{ isMicrophoneOn ? '麦克风开启' : '麦克风关闭' }}</span>
+                </button>
+                
+                <button 
+                  class="control-btn"
+                  :class="{ 'active': isCameraOn, 'inactive': !isCameraOn }"
                   @click="toggleCamera"
                 >
                   <el-icon v-if="isCameraOn"><VideoCamera /></el-icon>
                   <el-icon v-else><VideoPlay /></el-icon>
-                </el-button>
-                <el-button
-                  :type="isScreenSharing ? 'danger' : 'primary'"
-                  circle
+                  <span>{{ isCameraOn ? '摄像头开启' : '摄像头关闭' }}</span>
+                </button>
+                
+                <button
+                  class="control-btn"
+                  :class="{ 'sharing': isScreenSharing }"
                   @click="shareScreen"
                 >
                   <el-icon><Share /></el-icon>
-                </el-button>
-              </el-button-group>
-              
-              <!-- 添加摄像头切换按钮 -->
-              <div class="control-secondary">
-                <el-button 
+                  <span>{{ isScreenSharing ? '停止共享' : '屏幕共享' }}</span>
+                </button>
+                
+                <button 
                   v-if="videoDevices.length > 1 && isCameraOn" 
-                  type="default" 
-                  size="small"
+                  class="control-btn secondary"
                   @click="deviceSelectDialogVisible = true"
                 >
                   <el-icon><Switch /></el-icon>
-                  切换摄像头
-                </el-button>
+                  <span>切换摄像头</span>
+                </button>
               </div>
-              
-              <el-button class="exit-button" type="danger" @click="exitInterview">退出面试</el-button>
+
+              <button class="control-btn exit-btn" @click="exitInterview">
+                <el-icon><Close /></el-icon>
+                <span>退出面试</span>
+              </button>
             </div>
           </div>
           
@@ -952,23 +956,74 @@ const handleBeforeUnload = e => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #f8f9fa;
-  border-top: 1px solid #eee;
+  background-color: rgba(255, 255, 255, 0.95);
   padding: 0 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.video-controls .el-button-group {
+.control-buttons {
   display: flex;
-  gap: 15px;
+  gap: 10px;
+  align-items: center;
 }
 
-.control-secondary {
-  margin-left: auto;
-  margin-right: 10px;
+.control-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #606266;
+  position: relative;
+  min-width: 65px;
 }
 
-.exit-button {
-  margin-left: 10px;
+.control-btn:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.control-btn .el-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.control-btn span {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.control-btn.active {
+  color: #409EFF;
+}
+
+.control-btn.inactive {
+  color: #F56C6C;
+}
+
+.control-btn.sharing {
+  color: #E6A23C;
+}
+
+.control-btn.secondary {
+  color: #909399;
+  margin-left: 5px;
+}
+
+.exit-btn {
+  background-color: rgba(245, 108, 108, 0.1);
+  color: #F56C6C;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.exit-btn:hover {
+  background-color: rgba(245, 108, 108, 0.2);
 }
 
 /* 摄像头选择对话框 */
@@ -1168,6 +1223,22 @@ const handleBeforeUnload = e => {
   
   .participant-video-item {
     width: 120px;
+  }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .control-btn {
+    padding: 8px 10px;
+    min-width: auto;
+  }
+  
+  .control-btn span {
+    display: none;
+  }
+  
+  .control-btn .el-icon {
+    margin-bottom: 0;
   }
 }
 </style>
