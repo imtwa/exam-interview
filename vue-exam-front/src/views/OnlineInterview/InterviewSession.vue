@@ -80,6 +80,19 @@
                 </el-button>
               </el-button-group>
               
+              <!-- 添加摄像头切换按钮 -->
+              <div class="control-secondary">
+                <el-button 
+                  v-if="videoDevices.length > 1 && isCameraOn" 
+                  type="default" 
+                  size="small"
+                  @click="deviceSelectDialogVisible = true"
+                >
+                  <el-icon><Switch /></el-icon>
+                  切换摄像头
+                </el-button>
+              </div>
+              
               <el-button class="exit-button" type="danger" @click="exitInterview">退出面试</el-button>
             </div>
           </div>
@@ -133,6 +146,30 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 添加摄像头选择器对话框 -->
+    <el-dialog v-model="deviceSelectDialogVisible" title="选择摄像头" width="360px">
+      <div class="camera-select-list">
+        <div v-if="videoDevices.length === 0" class="no-device-tip">
+          未检测到摄像头设备
+        </div>
+        <el-radio-group v-model="selectedVideoDeviceId" @change="switchCamera">
+          <el-radio 
+            v-for="device in videoDevices" 
+            :key="device.deviceId" 
+            :label="device.deviceId"
+            class="camera-option"
+          >
+            {{ device.label || `摄像头 ${videoDevices.indexOf(device) + 1}` }}
+          </el-radio>
+        </el-radio-group>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="deviceSelectDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -150,7 +187,8 @@ import {
   Clock,
   User,
   OfficeBuilding,
-  Close
+  Close,
+  Switch
 } from '@element-plus/icons-vue'
 import { startInterview, completeInterview } from '@/api/interview'
 import { io } from 'socket.io-client'
@@ -171,6 +209,11 @@ const exitDialogVisible = ref(false)
 const videos = ref({})
 const mainVideoHeight = ref(500)
 const participantVideoHeight = ref(120)
+
+// 设备选择相关变量
+const videoDevices = ref([])
+const selectedVideoDeviceId = ref('')
+const deviceSelectDialogVisible = ref(false)
 
 // WebRTC相关变量
 const signalClient = ref(null)
@@ -249,6 +292,101 @@ const startVideo = async () => {
   }
 }
 
+// 获取所有可用的媒体设备
+const getMediaDevices = async () => {
+  try {
+    // 请求权限
+    await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+    
+    const devices = await navigator.mediaDevices.enumerateDevices()
+    videoDevices.value = devices.filter(device => device.kind === 'videoinput')
+    console.log('视频设备列表:', videoDevices.value)
+    
+    // 如果有设备，设置默认选中的设备
+    if (videoDevices.value.length > 0) {
+      selectedVideoDeviceId.value = videoDevices.value[0].deviceId
+    }
+  } catch (error) {
+    console.error('获取媒体设备失败:', error)
+    ElMessage.warning('无法获取摄像头列表')
+  }
+}
+
+// 切换摄像头
+const switchCamera = async () => {
+  if (!isCameraOn.value || !selectedVideoDeviceId.value) return
+  
+  try {
+    // 停止当前视频流
+    const localVideo = videoList.value.find(v => v.isLocal && !v.isScreenShare)
+    if (localVideo) {
+      // 停止当前视频流的所有轨道
+      localVideo.stream.getVideoTracks().forEach(track => track.stop())
+    }
+    
+    // 获取新的视频流
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        deviceId: { exact: selectedVideoDeviceId.value },
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      },
+      audio: false // 保留现有音频流
+    })
+    
+    // 如果本地视频存在，替换视频轨道
+    if (localVideo) {
+      // 获取现有的音频轨道
+      const audioTracks = localVideo.stream.getAudioTracks()
+      
+      // 创建一个新的媒体流，包含新的视频轨道和现有的音频轨道
+      const combinedStream = new MediaStream([
+        ...newStream.getVideoTracks(),
+        ...audioTracks
+      ])
+      
+      // 更新流对象
+      localVideo.stream = combinedStream
+      
+      // 更新UI上的视频元素
+      setTimeout(() => {
+        nextTick(() => {
+          if (videos.value[localVideo.id]) {
+            videos.value[localVideo.id].srcObject = combinedStream
+          }
+          
+          // 如果当前选中的是本地视频，也更新主视频
+          if (selectedStream.value && selectedStream.value.id === localVideo.id) {
+            selectedStream.value.stream = combinedStream
+          }
+          
+          // 通知对等方更新视频轨道
+          if (signalClient.value) {
+            signalClient.value.peers().forEach(peer => {
+              // 替换现有轨道
+              const senders = peer.getSenders()
+              const videoSender = senders.find(sender => 
+                sender.track && sender.track.kind === 'video'
+              )
+              
+              if (videoSender && newStream.getVideoTracks().length > 0) {
+                videoSender.replaceTrack(newStream.getVideoTracks()[0])
+              }
+            })
+          }
+        })
+      }, 500)
+      
+      ElMessage.success('摄像头已切换')
+    }
+    
+    deviceSelectDialogVisible.value = false
+  } catch (error) {
+    console.error('切换摄像头失败:', error)
+    ElMessage.error('切换摄像头失败: ' + error.message)
+  }
+}
+
 // 加入WebRTC房间
 const join = async () => {
   try {
@@ -256,22 +394,21 @@ const join = async () => {
     socket.value = io(socketURL, ioOptions)
     signalClient.value = new SimpleSignalClient(socket.value)
     
+    // 获取可用的媒体设备
+    await getMediaDevices()
+    
     // 获取本地媒体流 - 优化后的方法
     try {
-      // 首先检查摄像头设备列表
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const videoDevices = devices.filter(device => device.kind === 'videoinput')
-      console.log('视频设备列表:', videoDevices)
       // 基本约束条件
       let constraints = {
         video: isCameraOn.value,
         audio: isMicrophoneOn.value
       }
       
-      // 如果有视频设备可用且需要启用摄像头，尝试使用第一个设备
-      if (videoDevices.length > 0 && isCameraOn.value) {
+      // 如果有视频设备可用且需要启用摄像头，使用选择的设备或第一个设备
+      if (videoDevices.value.length > 0 && isCameraOn.value) {
         constraints.video = { 
-          deviceId: { ideal: videoDevices[0].deviceId },
+          deviceId: { ideal: selectedVideoDeviceId.value || videoDevices.value[0].deviceId },
           width: { ideal: 640 },
           height: { ideal: 480 }
         }
@@ -768,8 +905,39 @@ const handleBeforeUnload = e => {
   gap: 15px;
 }
 
+.control-secondary {
+  margin-left: auto;
+  margin-right: 10px;
+}
+
 .exit-button {
   margin-left: 10px;
+}
+
+/* 摄像头选择对话框 */
+.camera-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.camera-option {
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 4px;
+  display: block;
+  transition: all 0.2s;
+}
+
+.camera-option:hover {
+  background-color: #f5f7fa;
+}
+
+.no-device-tip {
+  text-align: center;
+  color: #909399;
+  padding: 20px 0;
 }
 
 /* 右侧边栏 */
