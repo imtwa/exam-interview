@@ -715,17 +715,6 @@ const leave = () => {
   }
 }
 
-// 辅助函数 - 格式化日期时间
-const formatDateTime = dateTime => {
-  if (!dateTime) return '--'
-  try {
-    const date = new Date(dateTime)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-  } catch (error) {
-    return '--'
-  }
-}
-
 // 辅助函数 - 获取面试轮次文本
 const getInterviewRoundText = round => {
   const roundMap = {
@@ -775,7 +764,7 @@ const handleBeforeUnload = e => {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding: 20px;
+  padding:20px 80px;
   box-sizing: border-box;
 }
 
