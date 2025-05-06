@@ -261,7 +261,7 @@ const join = async () => {
       // 首先检查摄像头设备列表
       const devices = await navigator.mediaDevices.enumerateDevices()
       const videoDevices = devices.filter(device => device.kind === 'videoinput')
-      
+      console.log('视频设备列表:', videoDevices)
       // 基本约束条件
       let constraints = {
         video: isCameraOn.value,
@@ -627,7 +627,7 @@ const handleBeforeUnload = e => {
   height: calc(100vh - 40px);
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
@@ -652,6 +652,7 @@ const handleBeforeUnload = e => {
 .interview-details {
   display: flex;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .info-item {
@@ -748,7 +749,7 @@ const handleBeforeUnload = e => {
 
 .participant-name {
   font-size: 14px;
-  color: #fff;
+  color: #999;
 }
 
 /* 视频控制 */
@@ -781,6 +782,7 @@ const handleBeforeUnload = e => {
   margin: 20px 20px 20px 0;
   border-radius: 4px;
   overflow: hidden;
+  box-shadow: 0 0 10px rgba(64, 158, 255, 0.1);
 }
 
 /* 参与者列表 */
@@ -803,16 +805,18 @@ const handleBeforeUnload = e => {
   font-weight: 600;
   background-color: #409EFF;
   color: #fff;
+  text-align: center;
+  letter-spacing: 1px;
 }
 
 .participant-video-item {
   width: 100%;
   height: 150px;
-  margin-bottom: 1px;
   position: relative;
   cursor: pointer;
   transition: all 0.2s;
   border-bottom: 1px solid #f0f0f0;
+  overflow: hidden;
 }
 
 .participant-video-item:hover {
@@ -820,7 +824,7 @@ const handleBeforeUnload = e => {
 }
 
 .participant-video-item.selected {
-  box-shadow: 0 0 0 2px #409EFF;
+  box-shadow: 0 0 0 1px rgba(3, 100, 197, 0.08);
 }
 
 .participant-video-item video, 
@@ -835,8 +839,7 @@ const handleBeforeUnload = e => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 5px 10px;
+  padding: 4px 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -862,26 +865,84 @@ const handleBeforeUnload = e => {
   
   .main-video-area {
     margin: 10px;
+    flex: 1;
   }
   
   .sidebar {
     width: auto;
+    height: 120px;
     margin: 0 10px 10px;
+    box-shadow: 0 0 8px rgba(64, 158, 255, 0.08);
   }
   
   .participants-list {
     display: flex;
     flex-wrap: nowrap;
     overflow-x: auto;
-    padding: 10px;
+    height: calc(100% - 40px);
+  }
+  
+  .sidebar-header {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(64, 158, 255, 0.9);
   }
   
   .participant-video-item {
     width: 160px;
-    height: 120px;
+    height: 100%;
     flex-shrink: 0;
-    margin-right: 10px;
-    margin-bottom: 0;
+    margin-right: 8px;
+    border-bottom: none;
+    border-right: 1px solid #f0f0f0;
+  }
+  
+  .participant-video-item:last-child {
+    margin-right: 0;
+    border-right: none;
+  }
+}
+
+/* 超小屏幕调整 */
+@media (max-width: 480px) {
+  .interview-session-page {
+    padding: 5px;
+  }
+  
+  .interview-container {
+    height: calc(100vh - 10px);
+  }
+  
+  .interview-info-bar {
+    padding: 10px;
+  }
+  
+  .interview-title {
+    font-size: 16px;
+  }
+  
+  .interview-details {
+    gap: 10px;
+  }
+  
+  .main-video-area {
+    margin: 5px;
+  }
+  
+  .video-controls {
+    height: 60px;
+    padding: 0 10px;
+  }
+  
+  .sidebar {
+    height: 150px;
+    margin: 0 5px 5px;
+  }
+  
+  .participant-video-item {
+    width: 120px;
   }
 }
 </style>
