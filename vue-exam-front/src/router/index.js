@@ -171,9 +171,9 @@ const routes = [
         meta: { title: '考试邀请码' }
       },
       {
-        path: 'online-exam/user-exams',
+        path: 'job-seeker/user-exams',
         name: 'UserExams',
-        component: () => import('@/views/OnlineExam/UserExams.vue'),
+        component: () => import('@/views/JobSeeker/UserExams.vue'),
         meta: { title: '我的笔试', requireAuth: true }
       },
       {

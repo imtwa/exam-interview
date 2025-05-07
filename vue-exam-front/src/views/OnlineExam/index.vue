@@ -87,7 +87,7 @@ const goToExamList = () => {
 
 // 跳转到用户笔试列表
 const goToUserExams = () => {
-  router.push('/online-exam/user-exams')
+  router.push('/job-seeker/user-exams')
 }
 </script>
 

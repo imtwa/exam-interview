@@ -124,7 +124,7 @@
 
                     <!-- 求职者菜单项 -->
                     <template v-if="isJobSeeker">
-                      <el-dropdown-item @click="router.push('/online-exam/user-exams')"
+                      <el-dropdown-item @click="router.push('/job-seeker/user-exams')"
                         >我的考试</el-dropdown-item
                       >
                       <el-dropdown-item @click="router.push('/favorites')"
@@ -134,7 +134,7 @@
                       <el-dropdown-item @click="router.push('/applications')"
                         >应聘进度</el-dropdown-item
                       >
-                      <el-dropdown-item @click="router.push('/online-exam/user-exams')"
+                      <el-dropdown-item @click="router.push('/job-seeker/user-exams')"
                         >我的笔试</el-dropdown-item
                       >
                     </template>
@@ -322,7 +322,7 @@ const navItems = computed(() => {
         { index: '/recruitment', name: '招聘岗位' },
         { index: '/applications', name: '我的申请' },
         { index: '/favorites', name: '我的收藏' },
-        { index: '/online-exam/user-exams', name: '我的笔试' }
+        { index: '/job-seeker/user-exams', name: '我的笔试' }
       )
     } else if (isInterviewer.value) {
       baseItems.push(
