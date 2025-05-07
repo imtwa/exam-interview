@@ -70,7 +70,6 @@ export function deleteInterview(id) {
  * @returns {Promise}
  */
 export function verifyInterviewInvitationCode(data) {
-
   return request({
     url: '/interview/invitation/verify',
     method: 'post',

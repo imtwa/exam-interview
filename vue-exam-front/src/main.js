@@ -15,7 +15,7 @@ import './assets/icon/iconfont.css'
 import './style.css'
 
 if (typeof global === 'undefined') {
-  window.global = window;
+  window.global = window
 }
 
 const app = createApp(App)

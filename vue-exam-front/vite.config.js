@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import requireTransform from 'vite-plugin-require-transform';
+import requireTransform from 'vite-plugin-require-transform'
 
 const pathSrc = resolve(__dirname, 'src')
 

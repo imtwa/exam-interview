@@ -40,20 +40,16 @@
                 <!-- 添加视频显示模式控制按钮 -->
                 <div class="video-display-controls">
                   <el-tooltip content="切换视频显示模式" placement="bottom">
-                    <el-button 
-                      type="text" 
-                      class="mode-toggle-btn"
-                      @click="toggleVideoDisplayMode" 
-                    >
+                    <el-button type="text" class="mode-toggle-btn" @click="toggleVideoDisplayMode">
                       <el-icon v-if="videoDisplayMode === 'contain'"><FullScreen /></el-icon>
                       <el-icon v-else><ScaleToOriginal /></el-icon>
                     </el-button>
                   </el-tooltip>
                 </div>
-                
-                <video 
-                  ref="mainVideo" 
-                  autoplay 
+
+                <video
+                  ref="mainVideo"
+                  autoplay
                   playsinline
                   :muted="selectedStream?.isLocal"
                   :srcObject="selectedStream?.stream"
@@ -66,41 +62,41 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- 底部控制栏 -->
             <div class="video-controls">
               <div class="control-buttons">
-                <button 
+                <button
                   class="control-btn"
-                  :class="{ 'active': isMicrophoneOn, 'inactive': !isMicrophoneOn }"
+                  :class="{ active: isMicrophoneOn, inactive: !isMicrophoneOn }"
                   @click="toggleMicrophone"
                 >
                   <el-icon v-if="isMicrophoneOn"><Microphone /></el-icon>
                   <el-icon v-else><Mute /></el-icon>
                   <span>{{ isMicrophoneOn ? '麦克风开启' : '麦克风关闭' }}</span>
                 </button>
-                
-                <button 
+
+                <button
                   class="control-btn"
-                  :class="{ 'active': isCameraOn, 'inactive': !isCameraOn }"
+                  :class="{ active: isCameraOn, inactive: !isCameraOn }"
                   @click="toggleCamera"
                 >
                   <el-icon v-if="isCameraOn"><VideoCamera /></el-icon>
                   <el-icon v-else><VideoPlay /></el-icon>
                   <span>{{ isCameraOn ? '摄像头开启' : '摄像头关闭' }}</span>
                 </button>
-                
+
                 <button
                   class="control-btn"
-                  :class="{ 'sharing': isScreenSharing }"
+                  :class="{ sharing: isScreenSharing }"
                   @click="shareScreen"
                 >
                   <el-icon><Share /></el-icon>
                   <span>{{ isScreenSharing ? '停止共享' : '屏幕共享' }}</span>
                 </button>
-                
-                <button 
-                  v-if="videoDevices.length > 1 && isCameraOn" 
+
+                <button
+                  v-if="videoDevices.length > 1 && isCameraOn"
                   class="control-btn secondary"
                   @click="deviceSelectDialogVisible = true"
                 >
@@ -115,25 +111,29 @@
               </button>
             </div>
           </div>
-          
+
           <!-- 右侧参与者列表 -->
           <div class="sidebar">
             <!-- 参与者视频列表 -->
             <div class="participants-list">
               <div class="sidebar-header">参与者</div>
-              
+
               <!-- 本地视频预览 -->
-              <div 
-                v-for="item in videoList" 
+              <div
+                v-for="item in videoList"
                 :key="item.id"
                 class="participant-video-item"
-                :class="{ 'selected': selectedStream?.id === item.id }"
+                :class="{ selected: selectedStream?.id === item.id }"
                 @click="selectParticipant(item)"
               >
-                <video 
-                  :ref="el => { if (el) videos[item.id] = el }"
+                <video
+                  :ref="
+                    el => {
+                      if (el) videos[item.id] = el
+                    }
+                  "
                   :id="item.id"
-                  autoplay 
+                  autoplay
                   playsinline
                   :muted="item.isLocal || item.muted"
                   :srcObject="item.stream"
@@ -169,13 +169,11 @@
     <!-- 添加摄像头选择器对话框 -->
     <el-dialog v-model="deviceSelectDialogVisible" title="选择摄像头" width="360px">
       <div class="camera-select-list">
-        <div v-if="videoDevices.length === 0" class="no-device-tip">
-          未检测到摄像头设备
-        </div>
+        <div v-if="videoDevices.length === 0" class="no-device-tip">未检测到摄像头设备</div>
         <el-radio-group v-model="selectedVideoDeviceId" @change="switchCamera">
-          <el-radio 
-            v-for="device in videoDevices" 
-            :key="device.deviceId" 
+          <el-radio
+            v-for="device in videoDevices"
+            :key="device.deviceId"
             :label="device.deviceId"
             class="camera-option"
           >
@@ -257,7 +255,7 @@ const ioOptions = {
 const peerOptions = {}
 
 // 获取参与者名称的辅助函数
-const getParticipantName = (id) => {
+const getParticipantName = id => {
   // 在实际应用中，这会从服务器获取参与者信息
   const names = {
     'interviewer-1': 'Caroline',
@@ -270,7 +268,7 @@ const getParticipantName = (id) => {
 }
 
 // 选择要在主视频区域显示的参与者视频
-const selectParticipant = (videoItem) => {
+const selectParticipant = videoItem => {
   selectedStream.value = videoItem
 }
 
@@ -319,11 +317,11 @@ const getMediaDevices = async () => {
   try {
     // 请求权限
     await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-    
+
     const devices = await navigator.mediaDevices.enumerateDevices()
     videoDevices.value = devices.filter(device => device.kind === 'videoinput')
     console.log('视频设备列表:', videoDevices.value)
-    
+
     // 如果有设备，设置默认选中的设备
     if (videoDevices.value.length > 0) {
       selectedVideoDeviceId.value = videoDevices.value[0].deviceId
@@ -337,7 +335,7 @@ const getMediaDevices = async () => {
 // 切换摄像头
 const switchCamera = async () => {
   if (!isCameraOn.value || !selectedVideoDeviceId.value) return
-  
+
   try {
     // 停止当前视频流
     const localVideo = videoList.value.find(v => v.isLocal && !v.isScreenShare)
@@ -345,7 +343,7 @@ const switchCamera = async () => {
       // 停止当前视频流的所有轨道
       localVideo.stream.getVideoTracks().forEach(track => track.stop())
     }
-    
+
     // 获取新的视频流
     const newStream = await navigator.mediaDevices.getUserMedia({
       video: {
@@ -355,42 +353,39 @@ const switchCamera = async () => {
       },
       audio: false // 保留现有音频流
     })
-    
+
     // 如果本地视频存在，替换视频轨道
     if (localVideo) {
       // 获取现有的音频轨道
       const audioTracks = localVideo.stream.getAudioTracks()
-      
+
       // 创建一个新的媒体流，包含新的视频轨道和现有的音频轨道
-      const combinedStream = new MediaStream([
-        ...newStream.getVideoTracks(),
-        ...audioTracks
-      ])
-      
+      const combinedStream = new MediaStream([...newStream.getVideoTracks(), ...audioTracks])
+
       // 更新流对象
       localVideo.stream = combinedStream
-      
+
       // 更新UI上的视频元素
       setTimeout(() => {
         nextTick(() => {
           if (videos.value[localVideo.id]) {
             videos.value[localVideo.id].srcObject = combinedStream
           }
-          
+
           // 如果当前选中的是本地视频，也更新主视频
           if (selectedStream.value && selectedStream.value.id === localVideo.id) {
             selectedStream.value.stream = combinedStream
           }
-          
+
           // 通知对等方更新视频轨道
           if (signalClient.value) {
             signalClient.value.peers().forEach(peer => {
               // 替换现有轨道
               const senders = peer.getSenders()
-              const videoSender = senders.find(sender => 
-                sender.track && sender.track.kind === 'video'
+              const videoSender = senders.find(
+                sender => sender.track && sender.track.kind === 'video'
               )
-              
+
               if (videoSender && newStream.getVideoTracks().length > 0) {
                 videoSender.replaceTrack(newStream.getVideoTracks()[0])
               }
@@ -398,10 +393,10 @@ const switchCamera = async () => {
           }
         })
       }, 500)
-      
+
       ElMessage.success('摄像头已切换')
     }
-    
+
     deviceSelectDialogVisible.value = false
   } catch (error) {
     console.error('切换摄像头失败:', error)
@@ -415,10 +410,10 @@ const join = async () => {
     console.log('加入房间:', roomId.value)
     socket.value = io(socketURL, ioOptions)
     signalClient.value = new SimpleSignalClient(socket.value)
-    
+
     // 获取可用的媒体设备
     await getMediaDevices()
-    
+
     // 获取本地媒体流 - 优化后的方法
     try {
       // 基本约束条件
@@ -426,25 +421,25 @@ const join = async () => {
         video: isCameraOn.value,
         audio: isMicrophoneOn.value
       }
-      
+
       // 如果有视频设备可用且需要启用摄像头，使用选择的设备或第一个设备
       if (videoDevices.value.length > 0 && isCameraOn.value) {
-        constraints.video = { 
+        constraints.video = {
           deviceId: { ideal: selectedVideoDeviceId.value || videoDevices.value[0].deviceId },
           width: { ideal: 640 },
           height: { ideal: 480 }
         }
       }
-      
+
       console.log('使用媒体约束:', constraints)
       const localStream = await navigator.mediaDevices.getUserMedia(constraints)
       console.log('获取到本地媒体流:', localStream)
-      
+
       // 将本地流添加到视频列表
       joinedRoom(localStream, true)
     } catch (mediaError) {
       console.warn('获取视频流失败，尝试备用方案:', mediaError)
-      
+
       try {
         // 仅尝试获取音频
         if (isMicrophoneOn.value) {
@@ -452,7 +447,7 @@ const join = async () => {
             video: false,
             audio: true
           })
-          
+
           console.log('获取到仅音频流')
           isCameraOn.value = false
           joinedRoom(audioOnlyStream, true)
@@ -469,18 +464,18 @@ const join = async () => {
         throw new Error('无法访问任何媒体设备，请检查设备连接和权限设置')
       }
     }
-    
+
     // 处理发现其他参与者
-    signalClient.value.once('discover', (discoveryData) => {
+    signalClient.value.once('discover', discoveryData => {
       console.log('发现其他参与者:', discoveryData)
-      
+
       // 连接到房间里的其他参与者
       async function connectToPeer(peerID) {
         if (peerID == socket.value.id) return
         try {
           console.log('连接到参与者:', peerID)
           const { peer } = await signalClient.value.connect(peerID, roomId.value, peerOptions)
-          
+
           // 为所有对等连接添加本地流
           videoList.value.forEach(v => {
             if (v.isLocal) {
@@ -491,17 +486,17 @@ const join = async () => {
           console.error('连接参与者失败:', e)
         }
       }
-      
+
       // 连接到所有已存在的参与者
-      discoveryData.peers.forEach((peerID) => connectToPeer(peerID))
+      discoveryData.peers.forEach(peerID => connectToPeer(peerID))
     })
-    
+
     // 处理连接请求
-    signalClient.value.on('request', async (request) => {
+    signalClient.value.on('request', async request => {
       console.log('收到连接请求:', request)
       const { peer } = await request.accept({}, peerOptions)
       console.log('接受连接请求:', peer)
-      
+
       // 为新建立的对等连接添加本地流
       videoList.value.forEach(v => {
         if (v.isLocal) {
@@ -509,15 +504,14 @@ const join = async () => {
         }
       })
     })
-    
+
     // 开始发现房间中的其他参与者
     signalClient.value.discover(roomId.value)
-    
+
     // 默认选择本地视频作为主显示
     if (videoList.value.length > 0) {
       selectedStream.value = videoList.value[0]
     }
-    
   } catch (error) {
     console.error('加入房间失败:', error)
     throw error
@@ -527,24 +521,24 @@ const join = async () => {
 // 处理对等连接
 const onPeer = (peer, localStream) => {
   console.log('处理对等连接:', peer)
-  
+
   // 添加本地流到对等连接
   peer.addStream(localStream)
-  
+
   // 接收远程流
-  peer.on('stream', (remoteStream) => {
+  peer.on('stream', remoteStream => {
     // 添加远程流到视频列表
     joinedRoom(remoteStream, false)
-    
+
     // 处理连接关闭
     peer.on('close', () => {
       console.log('对等连接关闭:', remoteStream.id)
       // 从视频列表中移除该流
       videoList.value = videoList.value.filter(item => item.id !== remoteStream.id)
     })
-    
+
     // 处理连接错误
-    peer.on('error', (err) => {
+    peer.on('error', err => {
       console.error('对等连接错误:', err)
     })
   })
@@ -553,10 +547,10 @@ const onPeer = (peer, localStream) => {
 // 修改加入房间方法
 const joinedRoom = (stream, isLocal) => {
   console.log('加入房间:', stream.id, isLocal ? '(本地)' : '(远程)')
-  
+
   // 检查是否已存在相同ID的视频
   let found = videoList.value.find(video => video.id === stream.id)
-  
+
   if (found === undefined) {
     // 添加新视频到列表
     let video = {
@@ -566,13 +560,13 @@ const joinedRoom = (stream, isLocal) => {
       isLocal: isLocal
     }
     videoList.value.push(video)
-    
+
     // 如果是第一个视频，设为主视频
     if (videoList.value.length === 1 || isLocal) {
       selectedStream.value = video
     }
   }
-  
+
   // 延迟设置视频元素的srcObject以确保DOM已更新
   setTimeout(() => {
     nextTick(() => {
@@ -617,7 +611,7 @@ const shareScreen = async () => {
       if (screenVideo) {
         screenVideo.stream.getTracks().forEach(track => track.stop())
         videoList.value = videoList.value.filter(v => !v.isScreenShare)
-        
+
         // 切换回本地视频
         const localVideo = videoList.value.find(v => v.isLocal)
         if (localVideo) {
@@ -627,11 +621,11 @@ const shareScreen = async () => {
       isScreenSharing.value = false
     } else {
       // 开始新的屏幕共享
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
-        video: true, 
-        audio: false 
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false
       })
-      
+
       // 添加到视频列表
       const screenVideo = {
         id: 'screen-share',
@@ -641,16 +635,16 @@ const shareScreen = async () => {
         muted: true
       }
       videoList.value.push(screenVideo)
-      
+
       // 与其他对等方共享
       if (signalClient.value) {
         signalClient.value.peers().forEach(p => onPeer(p, screenStream))
       }
-      
+
       // 自动切换到屏幕共享视图
       selectedStream.value = screenVideo
       isScreenSharing.value = true
-      
+
       // 监听屏幕共享结束
       screenStream.getVideoTracks()[0].onended = () => {
         videoList.value = videoList.value.filter(v => !v.isScreenShare)
@@ -680,10 +674,10 @@ const confirmExit = async () => {
   try {
     // 离开房间，清理资源
     leave()
-    
+
     // 调用API完成面试
     await completeInterview(invitationCode)
-    
+
     ElMessage.success('已成功退出面试')
     router.push('/online-interview')
   } catch (error) {
@@ -701,17 +695,17 @@ const leave = () => {
       v.stream.getTracks().forEach(t => t.stop())
     }
   })
-  
+
   // 清空视频列表
   videoList.value = []
-  
+
   // 清理信令客户端和连接
   if (signalClient.value) {
     signalClient.value.peers().forEach(peer => peer.removeAllListeners())
     signalClient.value.destroy()
     signalClient.value = null
   }
-  
+
   // 关闭socket连接
   if (socket.value) {
     socket.value.disconnect()
@@ -739,7 +733,7 @@ onMounted(() => {
   // 获取面试数据
   fetchInterviewData()
   startVideo()
-  
+
   // 页面离开警告
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
@@ -750,7 +744,7 @@ onBeforeUnmount(() => {
   if (isVideoStarted.value) {
     leave()
   }
-  
+
   // 移除事件监听器
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
@@ -768,7 +762,7 @@ const handleBeforeUnload = e => {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding:20px 80px;
+  padding: 20px 80px;
   box-sizing: border-box;
 }
 
@@ -817,7 +811,7 @@ const handleBeforeUnload = e => {
 
 .info-item .el-icon {
   margin-right: 5px;
-  color: #409EFF;
+  color: #409eff;
 }
 
 .session-main {
@@ -873,7 +867,7 @@ const handleBeforeUnload = e => {
 .video-placeholder .el-icon {
   font-size: 48px;
   margin-bottom: 15px;
-  color: #409EFF;
+  color: #409eff;
 }
 
 .video-placeholder p {
@@ -998,15 +992,15 @@ const handleBeforeUnload = e => {
 }
 
 .control-btn.active {
-  color: #409EFF;
+  color: #409eff;
 }
 
 .control-btn.inactive {
-  color: #F56C6C;
+  color: #f56c6c;
 }
 
 .control-btn.sharing {
-  color: #E6A23C;
+  color: #e6a23c;
 }
 
 .control-btn.secondary {
@@ -1016,7 +1010,7 @@ const handleBeforeUnload = e => {
 
 .exit-btn {
   background-color: rgba(245, 108, 108, 0.1);
-  color: #F56C6C;
+  color: #f56c6c;
   font-weight: 500;
   border-radius: 8px;
   transition: all 0.2s;
@@ -1083,7 +1077,7 @@ const handleBeforeUnload = e => {
 .sidebar-header {
   padding: 12px 15px;
   font-weight: 600;
-  background-color: #409EFF;
+  background-color: #409eff;
   color: #fff;
   text-align: center;
   letter-spacing: 1px;
@@ -1107,7 +1101,7 @@ const handleBeforeUnload = e => {
   box-shadow: 0 0 0 1px rgba(3, 100, 197, 0.08);
 }
 
-.participant-video-item video, 
+.participant-video-item video,
 .participant-video-item img {
   width: 100%;
   height: 100%;
@@ -1134,34 +1128,34 @@ const handleBeforeUnload = e => {
   .interview-session-page {
     padding: 10px;
   }
-  
+
   .interview-container {
     height: calc(100vh - 20px);
   }
-  
+
   .interview-layout {
     flex-direction: column;
   }
-  
+
   .main-video-area {
     margin: 10px;
     flex: 1;
   }
-  
+
   .sidebar {
     width: auto;
     height: 120px;
     margin: 0 10px 10px;
     box-shadow: 0 0 8px rgba(64, 158, 255, 0.08);
   }
-  
+
   .participants-list {
     display: flex;
     flex-wrap: nowrap;
     overflow-x: auto;
     height: calc(100% - 40px);
   }
-  
+
   .sidebar-header {
     height: 40px;
     display: flex;
@@ -1169,7 +1163,7 @@ const handleBeforeUnload = e => {
     justify-content: center;
     background-color: rgba(64, 158, 255, 0.9);
   }
-  
+
   .participant-video-item {
     width: 160px;
     height: 100%;
@@ -1178,7 +1172,7 @@ const handleBeforeUnload = e => {
     border-bottom: none;
     border-right: 1px solid #f0f0f0;
   }
-  
+
   .participant-video-item:last-child {
     margin-right: 0;
     border-right: none;
@@ -1190,37 +1184,37 @@ const handleBeforeUnload = e => {
   .interview-session-page {
     padding: 5px;
   }
-  
+
   .interview-container {
     height: calc(100vh - 10px);
   }
-  
+
   .interview-info-bar {
     padding: 10px;
   }
-  
+
   .interview-title {
     font-size: 16px;
   }
-  
+
   .interview-details {
     gap: 10px;
   }
-  
+
   .main-video-area {
     margin: 5px;
   }
-  
+
   .video-controls {
     height: 60px;
     padding: 0 10px;
   }
-  
+
   .sidebar {
     height: 150px;
     margin: 0 5px 5px;
   }
-  
+
   .participant-video-item {
     width: 120px;
   }
@@ -1232,11 +1226,11 @@ const handleBeforeUnload = e => {
     padding: 8px 10px;
     min-width: auto;
   }
-  
+
   .control-btn span {
     display: none;
   }
-  
+
   .control-btn .el-icon {
     margin-bottom: 0;
   }
