@@ -12,7 +12,7 @@
             </span>
             <span class="info-item">
               <el-icon><User /></el-icon>
-              {{ interviewData.interviewer?.name || '面试官' }}
+              {{ interviewData.interviewer?.username || '面试官' }}
             </span>
             <span class="info-item">
               <el-icon><OfficeBuilding /></el-icon>
@@ -209,7 +209,7 @@ import {
   FullScreen,
   ScaleToOriginal
 } from '@element-plus/icons-vue'
-import { startInterview, completeInterview } from '@/api/interview'
+import { startInterview, completeInterview, verifyInterviewInvitationCode } from '@/api/interview'
 import { io } from 'socket.io-client'
 import SimpleSignalClient from 'simple-signal-client'
 
@@ -219,7 +219,16 @@ const invitationCode = route.params.id
 
 // 状态变量
 const loading = ref(true)
-const interviewData = ref({})
+const interviewData = ref({
+  title: '',
+  duration: 0,
+  interviewer: null,
+  company: null,
+  job: null,
+  jobSeeker: null,
+  scheduleTime: null,
+  canStart: false
+})
 const isVideoStarted = ref(false)
 const isMicrophoneOn = ref(true)
 const isCameraOn = ref(true)
@@ -256,15 +265,58 @@ const peerOptions = {}
 
 // 获取参与者名称的辅助函数
 const getParticipantName = id => {
-  // 在实际应用中，这会从服务器获取参与者信息
-  const names = {
-    'interviewer-1': 'Caroline',
-    'interviewer-2': 'Jimmy',
-    'interviewer-3': 'Lucy',
-    'interviewer-4': 'Alfredo',
-    'interviewer-5': 'Allon'
+  // 使用实际的面试参与者信息
+  if (id === 'local') return '我'
+  if (interviewData.value.interviewer?.id === id) return interviewData.value.interviewer.username
+  if (interviewData.value.jobSeeker?.id === id) return interviewData.value.jobSeeker.username
+  return '未知用户'
+}
+
+// 验证面试邀请码
+const verifyInvitationCode = async () => {
+  try {
+    loading.value = true
+    const response = await verifyInterviewInvitationCode({
+      invitationCode
+    })
+
+    if (response) {
+      // 更新面试数据
+      interviewData.value = {
+        ...response,
+        title: response.title || `${response.job.title} - 在线面试`,
+        interviewer: response.interviewer,
+        company: response.company,
+        job: response.job,
+        jobSeeker: response.jobSeeker,
+        duration: response.duration,
+        scheduleTime: new Date(response.scheduleTime),
+        canStart: response.canStart
+      }
+
+      console.log('面试数据:', interviewData.value)
+
+      // 检查是否可以开始面试
+      if (!interviewData.value.canStart) {
+        const now = new Date()
+        const scheduleTime = new Date(interviewData.value.scheduleTime)
+        if (now < scheduleTime) {
+          ElMessage.warning(`面试将在 ${scheduleTime.toLocaleString()} 开始，请稍后再试`)
+        } else {
+          ElMessage.warning('面试已结束或已取消')
+        }
+        router.push('/online-interview')
+        return
+      }
+
+      ElMessage.success('验证成功，可以开始面试')
+    }
+  } catch (error) {
+    console.error('验证面试邀请码失败:', error)
+    router.push('/online-interview')
+  } finally {
+    loading.value = false
   }
-  return names[id] || '未知用户'
 }
 
 // 选择要在主视频区域显示的参与者视频
@@ -295,6 +347,11 @@ const fetchInterviewData = async () => {
 
 // 开始视频面试
 const startVideo = async () => {
+  if (!interviewData.value.canStart) {
+    ElMessage.warning('当前时间不在面试时间范围内')
+    return
+  }
+
   try {
     isVideoStarted.value = true
     // 加入WebRTC房间
@@ -729,13 +786,9 @@ const toggleVideoDisplayMode = () => {
 }
 
 // 组件挂载
-onMounted(() => {
-  // 获取面试数据
-  fetchInterviewData()
-  startVideo()
-
-  // 页面离开警告
-  window.addEventListener('beforeunload', handleBeforeUnload)
+onMounted(async () => {
+  // 验证面试邀请码
+  await verifyInvitationCode()
 })
 
 // 组件卸载
@@ -744,16 +797,7 @@ onBeforeUnmount(() => {
   if (isVideoStarted.value) {
     leave()
   }
-
-  // 移除事件监听器
-  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
-
-// 处理页面刷新或关闭
-const handleBeforeUnload = e => {
-  e.preventDefault()
-  e.returnValue = ''
-}
 </script>
 
 <style scoped>

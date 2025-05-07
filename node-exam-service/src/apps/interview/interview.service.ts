@@ -9,6 +9,7 @@ import {
   PrismaClient,
   InterviewStatus,
   JobApplicationStatus,
+  InterviewRound,
 } from '../../../prisma/generated/client';
 import { CreateInterviewDto } from './dto/create-interview.dto';
 import { UpdateInterviewDto } from './dto/update-interview.dto';
@@ -527,6 +528,40 @@ export class InterviewService {
   }
 
   /**
+   * 将面试状态映射到申请状态
+   */
+  private mapInterviewStatusToApplicationStatus(
+    interviewStatus: InterviewStatus,
+  ): JobApplicationStatus {
+    switch (interviewStatus) {
+      case InterviewStatus.PASS:
+        return JobApplicationStatus.OFFER;
+      case InterviewStatus.REJECTED:
+        return JobApplicationStatus.REJECTED;
+      case InterviewStatus.COMPLETED:
+        return JobApplicationStatus.RESUME_SCREENING; // 默认返回到简历筛选状态
+      default:
+        return JobApplicationStatus.RESUME_SCREENING;
+    }
+  }
+
+  /**
+   * 将面试轮次枚举映射为中文文本
+   */
+  private mapInterviewRoundToText(round: InterviewRound): string {
+    switch (round) {
+      case InterviewRound.FIRST_INTERVIEW:
+        return '一面';
+      case InterviewRound.SECOND_INTERVIEW:
+        return '二面';
+      case InterviewRound.HR_INTERVIEW:
+        return 'HR面试';
+      default:
+        return '面试';
+    }
+  }
+
+  /**
    * 验证面试邀请码
    * @param dto 邀请码信息
    * @returns 面试信息
@@ -579,7 +614,7 @@ export class InterviewService {
 
       return {
         interviewId: interview.id,
-        title: `${interview.application.job.title} - ${interview.round}面试`,
+        title: `${interview.application.job.title} - ${this.mapInterviewRoundToText(interview.round)}`,
         scheduleTime: interview.scheduleTime,
         duration: interview.duration,
         canStart,
@@ -591,24 +626,6 @@ export class InterviewService {
     } catch (error) {
       this.logger.error('验证面试邀请码失败', error);
       throw error;
-    }
-  }
-
-  /**
-   * 将面试状态映射到申请状态
-   */
-  private mapInterviewStatusToApplicationStatus(
-    interviewStatus: InterviewStatus,
-  ): JobApplicationStatus {
-    switch (interviewStatus) {
-      case InterviewStatus.PASS:
-        return JobApplicationStatus.OFFER;
-      case InterviewStatus.REJECTED:
-        return JobApplicationStatus.REJECTED;
-      case InterviewStatus.COMPLETED:
-        return JobApplicationStatus.RESUME_SCREENING; // 默认返回到简历筛选状态
-      default:
-        return JobApplicationStatus.RESUME_SCREENING;
     }
   }
 }
