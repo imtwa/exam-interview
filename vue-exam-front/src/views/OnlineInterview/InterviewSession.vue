@@ -261,7 +261,12 @@ const ioOptions = {
   rejectUnauthorized: false,
   transports: ['polling', 'websocket']
 }
-const peerOptions = {}
+const peerOptions = {
+  // trickle: true,
+  // sdpTransform: function (sdp) {
+  //   return sdp
+  // }
+}
 
 // 获取参与者名称的辅助函数
 const getParticipantName = id => {
