@@ -531,6 +531,7 @@ const join = async () => {
         if (peerID == socket.value.id) return
         try {
           console.log('连接到参与者:', peerID)
+          console.log('连接到参与者:', roomId.value, peerOptions)
           const { peer } = await signalClient.value.connect(peerID, roomId.value, peerOptions)
 
           // 为所有对等连接添加本地流

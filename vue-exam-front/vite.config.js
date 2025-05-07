@@ -1,4 +1,6 @@
 import { resolve } from 'path'
+import fs from 'fs'
+import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
@@ -30,7 +32,20 @@ export default ({ command, mode }) => {
       }),
       Components({
         resolvers: [ElementPlusResolver()]
-      })
+      }),
+      {
+        name: 'add-scripts-to-html',
+        transformIndexHtml(html) {
+          const scripts = [
+            '<script src="https://bpmax.oss-cn-shanghai.aliyuncs.com/static_files/pdf.js"></script>',
+            '<script src="https://bpmax.oss-cn-shanghai.aliyuncs.com/static_files/pdf.worker.js"></script>'
+          ];
+          return html.replace(
+            /<\/head>/,
+            `${scripts.join('\n  ')}\n</head>`
+          );
+        }
+      }
     ],
     // 开发或生产环境服务的公共基础路径,此选项也可以通过命令行参数指定（例：vite build --base=/my/public/path/）
     // base: env.NODE_ENV === 'production' ? '/maas/' : '/',
@@ -48,7 +63,10 @@ export default ({ command, mode }) => {
       // 应用端口 (默认:3000)
       port: Number(VITE_APP_PORT),
       // 开启本地https
-      https: false,
+      https: {
+        key: fs.readFileSync(path.join(__dirname, './cert/localhost+1-key.pem')),
+        cert: fs.readFileSync(path.join(__dirname, './cert/localhost+1.pem'))
+      },
       // 运行是否自动打开浏览器
       open: true,
       hotOnly: false, // 热更新（webpack已实现了，这里false即可）
