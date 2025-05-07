@@ -7,7 +7,7 @@ import tailwindcss from '@tailwindcss/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import requireTransform from 'vite-plugin-require-transform'
 
 const pathSrc = resolve(__dirname, 'src')
@@ -36,7 +36,7 @@ export default ({ command, mode }) => {
       }),
       nodePolyfills({
         include: [],
-        exclude: [],
+        exclude: []
       }),
       {
         name: 'add-scripts-to-html',
@@ -44,11 +44,8 @@ export default ({ command, mode }) => {
           const scripts = [
             '<script src="https://bpmax.oss-cn-shanghai.aliyuncs.com/static_files/pdf.js"></script>',
             '<script src="https://bpmax.oss-cn-shanghai.aliyuncs.com/static_files/pdf.worker.js"></script>'
-          ];
-          return html.replace(
-            /<\/head>/,
-            `${scripts.join('\n  ')}\n</head>`
-          );
+          ]
+          return html.replace(/<\/head>/, `${scripts.join('\n  ')}\n</head>`)
         }
       }
     ],
@@ -60,7 +57,7 @@ export default ({ command, mode }) => {
     resolve: {
       alias: {
         '@': pathSrc
-      },
+      }
     },
     server: {
       // 允许IP访问

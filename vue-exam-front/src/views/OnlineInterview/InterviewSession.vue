@@ -209,6 +209,7 @@ import {
   FullScreen,
   ScaleToOriginal
 } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
 import { startInterview, completeInterview, verifyInterviewInvitationCode } from '@/api/interview'
 import { io } from 'socket.io-client'
 import SimpleSignalClient from 'simple-signal-client'
@@ -216,6 +217,8 @@ import SimpleSignalClient from 'simple-signal-client'
 const route = useRoute()
 const router = useRouter()
 const invitationCode = route.params.id
+
+const userStore = useUserStore()
 
 // 状态变量
 const loading = ref(true)
@@ -272,8 +275,8 @@ const peerOptions = {
 const getParticipantName = id => {
   // 使用实际的面试参与者信息
   if (id === 'local') return '我'
-  if (interviewData.value.interviewer?.id === id) return interviewData.value.interviewer.username
-  if (interviewData.value.jobSeeker?.id === id) return interviewData.value.jobSeeker.username
+  if (userStore.isInterviewer) return interviewData.value.jobSeeker.username
+  if (userStore.isJobSeeker) return interviewData.value.interviewer.username
   return '未知用户'
 }
 
