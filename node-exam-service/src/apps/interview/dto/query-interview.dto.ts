@@ -1,64 +1,38 @@
-import { IsOptional, IsEnum, IsInt, Min, IsDate } from 'class-validator';
+import { IsOptional, IsNumber, IsString, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { InterviewStatus } from '../../../../prisma/generated/client';
 import { Type } from 'class-transformer';
 
 export class QueryInterviewDto {
-  @ApiProperty({
-    description: '当前页码',
-    example: 1,
-    required: false,
-  })
+  @ApiProperty({ description: '面试ID', required: false })
   @IsOptional()
-  @IsInt({ message: '页码必须是整数' })
-  @Min(1, { message: '页码必须大于等于1' })
-  page?: number = 1;
+  @IsNumber()
+  @Type(() => Number)
+  id?: number;
 
-  @ApiProperty({
-    description: '每页条数',
-    example: 10,
-    required: false,
-  })
+  @ApiProperty({ description: '当前页码', required: false, default: 1 })
   @IsOptional()
-  @IsInt({ message: '每页条数必须是整数' })
-  @Min(1, { message: '每页条数必须大于等于1' })
-  pageSize?: number = 10;
+  @IsNumber()
+  @Type(() => Number)
+  page?: number;
 
-  @ApiProperty({
-    description: '职位申请ID',
-    example: 1,
-    required: false,
-  })
+  @ApiProperty({ description: '每页条数', required: false, default: 10 })
   @IsOptional()
-  @IsInt({ message: '职位申请ID必须是整数' })
-  applicationId?: number;
+  @IsNumber()
+  @Type(() => Number)
+  pageSize?: number;
 
-  @ApiProperty({
-    description: '面试状态',
-    enum: InterviewStatus,
-    required: false,
-  })
+  @ApiProperty({ description: '面试状态', required: false })
   @IsOptional()
-  @IsEnum(InterviewStatus, { message: '面试状态不是有效的枚举值' })
-  status?: InterviewStatus;
+  @IsString()
+  status?: string;
 
-  @ApiProperty({
-    description: '开始日期',
-    example: '2023-06-01',
-    required: false,
-  })
+  @ApiProperty({ description: '开始日期', required: false })
   @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: '开始日期格式不正确' })
-  startDate?: Date;
+  @IsDateString()
+  startDate?: string;
 
-  @ApiProperty({
-    description: '结束日期',
-    example: '2023-06-30',
-    required: false,
-  })
+  @ApiProperty({ description: '结束日期', required: false })
   @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: '结束日期格式不正确' })
-  endDate?: Date;
+  @IsDateString()
+  endDate?: string;
 }

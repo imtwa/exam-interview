@@ -129,95 +129,83 @@ export class InterviewService {
    * 分页获取面试列表
    * @param query 查询参数
    * @param userId 用户ID
+   * @param isAdmin 是否为管理员
    * @returns 面试列表及总数
    */
-  async findAll(query: QueryInterviewDto, userId: number) {
-    const {
-      page = 1,
-      pageSize = 10,
-      applicationId,
-      status,
-      startDate,
-      endDate,
-    } = query;
+  async findAll(query: QueryInterviewDto, userId: number, isAdmin: boolean) {
+    const { page = 1, pageSize = 10, status, startDate, endDate, id } = query;
     const skip = (page - 1) * pageSize;
-
-    // 获取用户信息
-    const user = await this.prisma.frontUser.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      this.logger.warn(`查询面试列表失败，用户不存在: ${userId}`);
-      throw new NotFoundException('用户不存在');
-    }
 
     // 构建查询条件
     let where: any = {};
 
-    // 根据用户角色构建不同的查询条件
-    if (user.role === UserRole.INTERVIEWER) {
-      // 面试官只能查看自己负责的职位的面试
-      const interviewer = await this.prisma.interviewer.findFirst({
-        where: {
-          userId,
-          deletedAt: null,
-        },
+    // 如果是管理员，可以查看所有面试
+    if (!isAdmin) {
+      // 获取用户信息
+      const user = await this.prisma.frontUser.findUnique({
+        where: { id: userId },
       });
 
-      if (!interviewer) {
-        this.logger.warn(`查询面试列表失败，面试官信息不存在: ${userId}`);
-        throw new NotFoundException('面试官信息不存在');
+      if (!user) {
+        this.logger.warn(`查询面试列表失败，用户不存在: ${userId}`);
+        throw new NotFoundException('用户不存在');
       }
 
-      where = {
-        application: {
-          job: {
-            interviewerId: interviewer.id,
+      // 根据用户角色构建不同的查询条件
+      if (user.role === UserRole.INTERVIEWER) {
+        // 面试官只能查看自己负责的职位的面试
+        const interviewer = await this.prisma.interviewer.findFirst({
+          where: {
+            userId,
+            deletedAt: null,
           },
-        },
-      };
-    } else if (user.role === UserRole.JOB_SEEKER) {
-      // 求职者只能查看自己的面试
-      const jobSeeker = await this.prisma.jobSeeker.findFirst({
-        where: {
-          userId,
-          deletedAt: null,
-        },
-      });
+        });
 
-      if (!jobSeeker) {
-        this.logger.warn(`查询面试列表失败，求职者信息不存在: ${userId}`);
-        throw new NotFoundException('求职者信息不存在');
-      }
+        if (!interviewer) {
+          this.logger.warn(`查询面试列表失败，面试官信息不存在: ${userId}`);
+          throw new NotFoundException('面试官信息不存在');
+        }
 
-      where = {
-        application: {
+        where = {
+          interviewerId: interviewer.id,
+        };
+      } else if (user.role === UserRole.JOB_SEEKER) {
+        // 求职者只能查看自己的面试
+        const jobSeeker = await this.prisma.jobSeeker.findFirst({
+          where: {
+            userId,
+            deletedAt: null,
+          },
+        });
+
+        if (!jobSeeker) {
+          this.logger.warn(`查询面试列表失败，求职者信息不存在: ${userId}`);
+          throw new NotFoundException('求职者信息不存在');
+        }
+
+        where = {
           jobSeekerId: jobSeeker.id,
-        },
-      };
+        };
+      }
     }
 
     // 添加其他查询条件
-    if (applicationId) {
-      where.applicationId = applicationId;
+    if (id) {
+      where.id = id;
     }
-
     if (status) {
       where.status = status;
     }
-
     if (startDate) {
       where.scheduleTime = {
         ...where.scheduleTime,
-        gte: startDate,
+        gte: new Date(startDate),
       };
     }
-
     if (endDate) {
       where.scheduleTime = {
         ...where.scheduleTime,
-        lte: new Date(endDate.setHours(23, 59, 59, 999)),
+        lte: new Date(endDate),
       };
     }
 
@@ -229,25 +217,36 @@ export class InterviewService {
           take: pageSize,
           orderBy: { scheduleTime: 'desc' },
           include: {
-            application: {
+            jobSeeker: {
               include: {
-                jobSeeker: {
-                  include: {
-                    user: {
-                      select: {
-                        username: true,
-                        email: true,
-                      },
-                    },
+                user: {
+                  select: {
+                    username: true,
+                    email: true,
                   },
                 },
+              },
+            },
+            interviewer: {
+              include: {
+                user: {
+                  select: {
+                    username: true,
+                    email: true,
+                  },
+                },
+                company: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            application: {
+              include: {
                 job: {
-                  include: {
-                    company: {
-                      select: {
-                        name: true,
-                      },
-                    },
+                  select: {
+                    title: true,
                   },
                 },
               },
@@ -265,93 +264,6 @@ export class InterviewService {
       this.logger.error(`查询面试列表失败: ${error.message}`, error.stack);
       throw new BadRequestException('查询面试列表失败');
     }
-  }
-
-  /**
-   * 根据ID获取面试信息
-   * @param id 面试ID
-   * @param userId 用户ID
-   * @returns 面试信息
-   */
-  async findOne(id: number, userId: number) {
-    // 获取用户信息
-    const user = await this.prisma.frontUser.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      this.logger.warn(`查询面试失败，用户不存在: ${userId}`);
-      throw new NotFoundException('用户不存在');
-    }
-
-    // 查询面试信息
-    const interview = await this.prisma.interview.findUnique({
-      where: { id },
-      include: {
-        application: {
-          include: {
-            jobSeeker: {
-              include: {
-                user: {
-                  select: {
-                    username: true,
-                    email: true,
-                  },
-                },
-              },
-            },
-            job: {
-              include: {
-                company: {
-                  select: {
-                    name: true,
-                  },
-                },
-                interviewer: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!interview) {
-      this.logger.warn(`查询面试失败，面试不存在: ${id}`);
-      throw new NotFoundException('面试不存在');
-    }
-
-    // 检查用户是否有权限查看该面试
-    if (user.role === UserRole.INTERVIEWER) {
-      const interviewer = await this.prisma.interviewer.findFirst({
-        where: {
-          userId,
-          deletedAt: null,
-        },
-      });
-
-      if (
-        !interviewer ||
-        interviewer.id !== interview.application.job.interviewer.id
-      ) {
-        this.logger.warn(`查询面试失败，面试官无权查看该面试: ${userId}`);
-        throw new ForbiddenException('您无权查看该面试');
-      }
-    } else if (user.role === UserRole.JOB_SEEKER) {
-      const jobSeeker = await this.prisma.jobSeeker.findFirst({
-        where: {
-          userId,
-          deletedAt: null,
-        },
-      });
-
-      if (!jobSeeker || jobSeeker.id !== interview.application.jobSeeker.id) {
-        this.logger.warn(`查询面试失败，求职者无权查看该面试: ${userId}`);
-        throw new ForbiddenException('您无权查看该面试');
-      }
-    }
-
-    this.logger.log(`查询面试成功: ${id}`);
-    return interview;
   }
 
   /**
