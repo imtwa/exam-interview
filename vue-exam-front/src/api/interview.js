@@ -19,6 +19,27 @@ export function createInterview(data) {
  * @returns {Promise}
  */
 export function getInterviewList(params) {
+  // 验证日期格式
+  if (params.startDate && typeof params.startDate === 'string') {
+    // 确保是有效的ISO日期格式
+    try {
+      new Date(params.startDate).toISOString()
+    } catch (e) {
+      console.error('无效的开始日期格式:', params.startDate)
+      delete params.startDate
+    }
+  }
+
+  if (params.endDate && typeof params.endDate === 'string') {
+    // 确保是有效的ISO日期格式
+    try {
+      new Date(params.endDate).toISOString()
+    } catch (e) {
+      console.error('无效的结束日期格式:', params.endDate)
+      delete params.endDate
+    }
+  }
+
   return request({
     url: '/interview/page',
     method: 'get',

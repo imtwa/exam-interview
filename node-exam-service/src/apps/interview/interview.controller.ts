@@ -51,7 +51,7 @@ export class InterviewController {
     return success(result, '创建成功');
   }
 
-  @Get()
+  @Get('/page')
   @ApiOperation({ summary: '获取面试列表（分页）' })
   @ApiQuery({ type: QueryInterviewDto })
   @ApiResponse({ status: 200, description: '获取成功' })
