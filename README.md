@@ -100,6 +100,8 @@ npm install
 
 # 启动开发服务
 npm run dev
+
+mkcert localhost 192.168.100.100
 ```
 
 ### 后端项目启动
