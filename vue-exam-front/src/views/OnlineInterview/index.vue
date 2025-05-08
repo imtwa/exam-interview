@@ -1,29 +1,59 @@
 <template>
-  <div class="online-interview-page">
-    <div class="online-interview-container">
-      <el-card class="welcome-card">
+  <div class="invitation-page">
+    <div class="invitation-container">
+      <el-card class="invitation-card">
         <template #header>
           <div class="card-header">
-            <h2>在线面试系统</h2>
+            <h2>输入面试邀请码</h2>
           </div>
         </template>
 
         <div class="card-content">
-          <p class="welcome-text">欢迎使用在线面试系统，您可以通过以下方式开始面试：</p>
-
-          <div class="options-container">
-            <div class="option-item" @click="goToInvitationPage">
-              <div class="option-icon">
-                <el-icon><Ticket /></el-icon>
-              </div>
-              <div class="option-title">输入邀请码</div>
-              <div class="option-desc">
-                如果您已收到面试邀请码，请点击此处输入邀请码进入面试室。
-              </div>
-              <el-button type="primary" class="option-button" @click.stop="goToInvitationPage"
-                >进入面试室</el-button
-              >
+          <div class="icon-container">
+            <div class="large-icon">
+              <el-icon><VideoCamera /></el-icon>
             </div>
+          </div>
+
+          <p class="guide-text">如果您已收到面试邀请码，请在此处输入以参加在线面试。</p>
+
+          <div class="invitation-form">
+            <el-form ref="formRef" :model="formData" :rules="rules">
+              <el-form-item prop="invitationCode">
+                <div class="code-input-container">
+                  <el-input
+                    v-model="formData.invitationCode"
+                    placeholder="请输入邀请码"
+                    maxlength="60"
+                    :prefix-icon="Ticket"
+                    size="large"
+                    @keyup.enter="handleSubmit"
+                  />
+                </div>
+              </el-form-item>
+
+              <el-form-item>
+                <div class="actions">
+                  <el-button @click="goBack" size="large">返回</el-button>
+                  <el-button type="primary" @click="handleSubmit" :loading="loading" size="large">
+                    进入面试室
+                  </el-button>
+                </div>
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <div class="info-section">
+            <h4>
+              <el-icon><InfoFilled /></el-icon> 请注意
+            </h4>
+            <ul class="notice-list">
+              <li>面试邀请码由HR或招聘方通过邮件发送给您。</li>
+              <li>邀请码是唯一的，请勿泄露给他人。</li>
+              <li>请确保在面试时间前提前5-10分钟进入面试室。</li>
+              <li>请检查您的设备摄像头和麦克风是否正常工作。</li>
+              <li>如果您尚未收到邀请码，请联系相关招聘负责人。</li>
+            </ul>
           </div>
         </div>
       </el-card>
@@ -32,57 +62,85 @@
 </template>
 
 <script setup>
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { Ticket } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { Ticket, InfoFilled, VideoCamera } from '@element-plus/icons-vue'
+import { verifyInterviewInvitationCode } from '@/api/interview'
 
 const router = useRouter()
+const formRef = ref(null)
+const loading = ref(false)
 
-// 跳转到邀请码页面
-const goToInvitationPage = () => {
-  router.push('/online-interview/invitation')
+const formData = reactive({
+  invitationCode: ''
+})
+
+const rules = {
+  invitationCode: [
+    { required: true, message: '请输入邀请码', trigger: 'blur' },
+    { min: 6, message: '邀请码长度不能少于6个字符', trigger: 'blur' }
+  ]
+}
+
+// 确认邀请码
+const handleSubmit = async () => {
+  if (!formRef.value) return
+
+  await formRef.value.validate(async valid => {
+    if (!valid) return
+
+    loading.value = true
+    try {
+      const response = await verifyInterviewInvitationCode({
+        invitationCode: formData.invitationCode
+      })
+      if (response) {
+        // 获取面试信息
+        const canStart = response.canStart
+
+        if (!canStart) {
+          const scheduleTime = response.scheduleTime
+          ElMessage.warning(`该面试尚未开始或已结束，面试时间为：${scheduleTime}`)
+          loading.value = false
+          return
+        }
+
+        ElMessage.success('邀请码验证成功，正在进入面试室...')
+        router.push(`/online-interview/session/${formData.invitationCode}`)
+      } else {
+        ElMessage.warning('验证成功但未返回面试信息，请联系招聘方')
+      }
+    } catch (error) {
+      ElMessage.error('邀请码验证失败，请检查后重试')
+    } finally {
+      loading.value = false
+    }
+  })
+}
+
+// 返回首页
+const goBack = () => {
+  router.push('/online-interview')
 }
 </script>
 
 <style scoped>
-.online-interview-page {
+.invitation-page {
   width: 100%;
-  min-height: calc(100vh - 72px);
   background-color: #f5f9ff;
+  min-height: calc(100vh - 72px);
 }
 
-.online-interview-container {
-  max-width: 1000px;
+.invitation-container {
+  max-width: 600px;
   margin: 0 auto;
-  padding: 60px 20px;
+  padding: 20px;
 }
 
-:deep(.el-card) {
-  border-radius: 8px;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease;
-  overflow: hidden;
-
-  &:hover {
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  .el-card__header {
-    padding: 18px 20px;
-    border-bottom: 1px solid #f0f0f0;
-    background-color: #ffffff;
-  }
-
-  .el-card__body {
-    padding: 20px;
-  }
-}
-
-.welcome-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  margin-bottom: 40px;
-  transition: all 0.3s;
+.invitation-card {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
 }
 
 .card-header {
@@ -92,84 +150,73 @@ const goToInvitationPage = () => {
 }
 
 .card-header h2 {
-  font-size: 1.8rem;
-  font-weight: 600;
   margin: 0;
   color: #303133;
+  font-size: 1.5rem;
 }
 
-.welcome-text {
-  font-size: 16px;
-  color: #606266;
-  margin-bottom: 30px;
-  text-align: center;
-}
-
-.options-container {
+.icon-container {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 30px;
-  margin-bottom: 20px;
+  margin: 20px 0;
 }
 
-.option-item {
-  background: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  width: 100%;
-  max-width: 500px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid #eaeaea;
-  transition: all 0.3s;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.option-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  border-color: #d4e3ff;
-}
-
-.option-icon {
-  font-size: 48px;
+.large-icon {
+  font-size: 64px;
   color: #409eff;
-  margin-bottom: 16px;
 }
 
-.option-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 12px;
-}
-
-.option-desc {
-  font-size: 14px;
+.guide-text {
+  text-align: center;
   color: #606266;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.invitation-form {
+  max-width: 400px;
+  margin: 0 auto 30px;
+}
+
+.code-input-container {
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.info-section {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px 20px;
+  margin-top: 4px;
+}
+
+.info-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #409eff;
+  margin-top: 0;
+}
+
+.notice-list {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: #606266;
+}
+
+.notice-list li {
+  margin-bottom: 8px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
-.option-button {
-  width: 60%;
-}
-
-@media (max-width: 768px) {
-  .online-interview-container {
-    padding: 0 15px;
-  }
-
-  .option-item {
-    padding: 20px;
-  }
-
-  .option-button {
-    width: 100%;
-  }
+.notice-list li:last-child {
+  margin-bottom: 0;
 }
 </style>

@@ -197,12 +197,6 @@ const routes = [
         meta: { title: '在线面试' }
       },
       {
-        path: 'online-interview/invitation',
-        name: 'InterviewInvitation',
-        component: () => import('@/views/OnlineInterview/Invitation.vue'),
-        meta: { title: '面试邀请码' }
-      },
-      {
         path: 'online-interview/feedback/:id',
         name: 'InterviewFeedback',
         component: () => import('@/views/OnlineInterview/InterviewFeedback.vue'),
