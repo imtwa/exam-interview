@@ -42,19 +42,25 @@
               >
                 在线考试
               </router-link>
-            </template>
 
-            <!-- 添加在线面试导航链接，对任何人都可见 -->
-            <router-link
-              to="/online-interview"
-              class="navbar__link"
-              :class="{ 'navbar__link--active': route.path.includes('/online-interview') }"
-            >
-              在线面试
-            </router-link>
+              <router-link
+                to="/online-interview"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path.includes('/online-interview') }"
+              >
+                在线面试
+              </router-link>
+            </template>
 
             <!-- 面试官导航链接 -->
             <template v-if="isInterviewer">
+              <router-link
+                to="/online-interview"
+                class="navbar__link"
+                :class="{ 'navbar__link--active': route.path.includes('/online-interview') }"
+              >
+                在线面试
+              </router-link>
               <router-link
                 to="/job-management"
                 class="navbar__link"
@@ -70,11 +76,11 @@
                 候选人管理
               </router-link>
               <router-link
-                to="/interview-schedule"
+                to="/private-exams"
                 class="navbar__link"
-                :class="{ 'navbar__link--active': route.path.includes('/interview') }"
+                :class="{ 'navbar__link--active': route.path.includes('/private-exams') }"
               >
-                面试安排
+                专属试卷
               </router-link>
               <router-link
                 to="/exam-management"
@@ -84,11 +90,11 @@
                 考试管理
               </router-link>
               <router-link
-                to="/private-exams"
+                to="/interview-schedule"
                 class="navbar__link"
-                :class="{ 'navbar__link--active': route.path.includes('/private-exams') }"
+                :class="{ 'navbar__link--active': route.path.includes('/interview') }"
               >
-                专属试卷
+                面试管理
               </router-link>
             </template>
           </div>
@@ -208,17 +214,15 @@
           </router-link>
         </template>
 
-        <!-- 添加在线面试移动端导航链接，对任何人都可见 -->
-        <router-link
-          to="/online-interview"
-          class="navbar__mobile-link"
-          :class="{ 'navbar__mobile-link--active': route.path.includes('/online-interview') }"
-        >
-          在线面试
-        </router-link>
-
         <!-- 面试官导航链接 -->
         <template v-if="isInterviewer">
+          <router-link
+            to="/online-interview"
+            class="navbar__mobile-link"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/online-interview') }"
+          >
+            在线面试
+          </router-link>
           <router-link
             to="/job-management"
             class="navbar__mobile-link"
@@ -234,12 +238,13 @@
             候选人管理
           </router-link>
           <router-link
-            to="/interview-schedule"
+            to="/private-exams"
             class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path.includes('/interview') }"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/private-exams') }"
           >
-            面试安排
+            专属试卷
           </router-link>
+
           <router-link
             to="/exam-management"
             class="navbar__mobile-link"
@@ -248,11 +253,11 @@
             考试管理
           </router-link>
           <router-link
-            to="/private-exams"
+            to="/interview-schedule"
             class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path.includes('/private-exams') }"
+            :class="{ 'navbar__mobile-link--active': route.path.includes('/interview') }"
           >
-            专属试卷
+            面试安排
           </router-link>
           <router-link
             :to="`/company/${interviewerInfo?.companyId}`"

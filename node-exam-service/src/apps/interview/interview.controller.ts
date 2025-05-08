@@ -25,7 +25,7 @@ import {
 } from '@nestjs/swagger';
 import { LoggerService } from '../../common/logger/logger.service';
 
-@ApiTags('面试管理')
+@ApiTags('interview')
 @Controller('interview')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT')

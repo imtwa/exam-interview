@@ -51,6 +51,7 @@ async function bootstrap() {
     .addTag('interview', '面试相关')
     .addTag('interviewer', '面试官相关')
     .addTag('jobseeker', '求职者相关')
+    .addTag('upload', '上传相关')
     .addTag('job', '职位相关')
     .addBearerAuth(
       {
