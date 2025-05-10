@@ -106,6 +106,11 @@ const routes = [
         name: 'JobSeekerProfileSetup',
         component: () => import('../views/JobSeeker/ProfileSetup.vue')
       },
+      {
+        path: 'job-seeker/user-interview',
+        name: 'UserInterview',
+        component: () => import('../views/JobSeeker/UserInterview.vue')
+      },
       // 面试官相关路由
       {
         path: '/job-management',

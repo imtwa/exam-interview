@@ -203,7 +203,7 @@ const fetchUserInfo = async () => {
       if (userData.role === 'INTERVIEWER' && userData.companyId) {
         await fetchCompanyInfo(userData.companyId)
       }
-      
+
       // 如果是求职者，获取求职者详细信息
       if (userData.role === 'JOB_SEEKER') {
         await fetchJobSeekerInfo(targetUserId)

@@ -47,7 +47,10 @@
       <div class="section-header">
         <h2 class="section-title">教育经历</h2>
       </div>
-      <div v-if="!jobseekerData || !jobseekerData.education || jobseekerData.education.length === 0" class="empty-data">
+      <div
+        v-if="!jobseekerData || !jobseekerData.education || jobseekerData.education.length === 0"
+        class="empty-data"
+      >
         <el-empty description="暂无教育经历" />
       </div>
       <div v-else class="section-content">
@@ -79,7 +82,14 @@
       <div class="section-header">
         <h2 class="section-title">工作经验</h2>
       </div>
-      <div v-if="!jobseekerData || !jobseekerData.workExperience || jobseekerData.workExperience.length === 0" class="empty-data">
+      <div
+        v-if="
+          !jobseekerData ||
+          !jobseekerData.workExperience ||
+          jobseekerData.workExperience.length === 0
+        "
+        class="empty-data"
+      >
         <el-empty description="暂无工作经验" />
       </div>
       <div v-else class="section-content">
@@ -120,7 +130,7 @@ const props = defineProps({
 // 按照结束时间排序的教育经历 (最近的在前面)
 const sortedEducation = computed(() => {
   if (!props.jobseekerData?.education?.length) return []
-  
+
   return [...props.jobseekerData.education].sort((a, b) => {
     // 如果endDate为空或为null，则视为当前正在进行
     const dateA = a.endDate ? new Date(a.endDate) : new Date()
@@ -132,7 +142,7 @@ const sortedEducation = computed(() => {
 // 按照结束时间排序的工作经历 (最近的在前面)
 const sortedWorkExperience = computed(() => {
   if (!props.jobseekerData?.workExperience?.length) return []
-  
+
   return [...props.jobseekerData.workExperience].sort((a, b) => {
     // 如果endDate为空或为null，则视为当前正在工作
     const dateA = a.endDate ? new Date(a.endDate) : new Date()
@@ -142,7 +152,7 @@ const sortedWorkExperience = computed(() => {
 })
 
 // 将学历枚举转换为中文显示
-const getDegreeLabel = (degree) => {
+const getDegreeLabel = degree => {
   const degreeMap = {
     HIGH_SCHOOL: '高中',
     JUNIOR_COLLEGE: '大专',
@@ -155,7 +165,7 @@ const getDegreeLabel = (degree) => {
 }
 
 // 根据学历返回时间线项目的类型
-const getTimelineItemType = (degree) => {
+const getTimelineItemType = degree => {
   const typeMap = {
     HIGH_SCHOOL: '',
     JUNIOR_COLLEGE: '',
@@ -168,23 +178,23 @@ const getTimelineItemType = (degree) => {
 }
 
 // 格式化教育经历的起止时间
-const formatEducationPeriod = (education) => {
+const formatEducationPeriod = education => {
   const startDate = education.startDate ? formatDate(education.startDate) : '未知'
   const endDate = education.endDate ? formatDate(education.endDate) : '至今'
   return `${startDate} - ${endDate}`
 }
 
 // 格式化工作经历的起止时间
-const formatWorkPeriod = (work) => {
+const formatWorkPeriod = work => {
   const startDate = work.startDate ? formatDate(work.startDate) : '未知'
   const endDate = work.endDate ? formatDate(work.endDate) : '至今'
   return `${startDate} - ${endDate}`
 }
 
 // 格式化日期
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return ''
-  
+
   try {
     const date = new Date(dateString)
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -195,19 +205,19 @@ const formatDate = (dateString) => {
 }
 
 // 根据生日计算年龄
-const getAge = (birthday) => {
+const getAge = birthday => {
   if (!birthday) return ''
-  
+
   try {
     const birthDate = new Date(birthday)
     const today = new Date()
     let age = today.getFullYear() - birthDate.getFullYear()
     const monthDiff = today.getMonth() - birthDate.getMonth()
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--
     }
-    
+
     return age
   } catch (error) {
     console.error('年龄计算错误:', error)
@@ -216,9 +226,9 @@ const getAge = (birthday) => {
 }
 
 // 格式化薪资
-const formatSalary = (salary) => {
+const formatSalary = salary => {
   if (!salary) return '面议'
-  
+
   // 如果薪资是数字类型
   if (typeof salary === 'number') {
     if (salary >= 10000) {
@@ -226,13 +236,13 @@ const formatSalary = (salary) => {
     }
     return `${salary}元/月`
   }
-  
+
   // 如果薪资是字符串，直接返回
   return salary
 }
 
 // 将性别枚举转换为中文显示
-const getGenderLabel = (gender) => {
+const getGenderLabel = gender => {
   const genderMap = {
     MALE: '男',
     FEMALE: '女',
@@ -299,33 +309,39 @@ const getGenderLabel = (gender) => {
   }
 }
 
-.education-item, .work-item {
+.education-item,
+.work-item {
   margin-bottom: 16px;
 
-  .school-name, .company-name {
+  .school-name,
+  .company-name {
     font-size: 16px;
     font-weight: 600;
     color: #333;
     margin: 0 0 8px 0;
   }
 
-  .education-details, .work-details {
+  .education-details,
+  .work-details {
     margin-bottom: 8px;
     display: flex;
     gap: 12px;
     align-items: center;
 
-    .degree, .position {
+    .degree,
+    .position {
       font-weight: 500;
       color: #555;
     }
 
-    .major, .department {
+    .major,
+    .department {
       color: #666;
     }
   }
 
-  .education-description, .work-description {
+  .education-description,
+  .work-description {
     color: #666;
     font-size: 14px;
     line-height: 1.6;
@@ -348,4 +364,4 @@ const getGenderLabel = (gender) => {
     grid-template-columns: 1fr;
   }
 }
-</style> 
+</style>
