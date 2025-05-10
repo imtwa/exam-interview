@@ -130,18 +130,18 @@
 
                     <!-- 求职者菜单项 -->
                     <template v-if="isJobSeeker">
-                      <el-dropdown-item @click="router.push('/job-seeker/user-exams')"
-                        >我的考试</el-dropdown-item
-                      >
-                      <el-dropdown-item @click="router.push('/favorites')"
-                        >我的收藏</el-dropdown-item
-                      >
                       <el-dropdown-item @click="router.push('/resume')">我的简历</el-dropdown-item>
                       <el-dropdown-item @click="router.push('/applications')"
                         >应聘进度</el-dropdown-item
                       >
                       <el-dropdown-item @click="router.push('/job-seeker/user-exams')"
                         >我的笔试</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/job-seeker/user-interview')"
+                        >我的面试</el-dropdown-item
+                      >
+                      <el-dropdown-item @click="router.push('/favorites')"
+                        >我的收藏</el-dropdown-item
                       >
                     </template>
 
@@ -310,44 +310,6 @@ const mobileMenuOpen = ref(false)
 
 // 导航菜单类型
 const navActiveIndex = ref('/')
-// 导航菜单项
-const navItems = computed(() => {
-  // 基本菜单项
-  const baseItems = [{ index: '/', name: '首页' }]
-
-  // 根据用户登录状态添加不同菜单
-  if (isLoggedIn.value) {
-    // 所有用户都可以看到题库
-    baseItems.push({ index: '/question-bank', name: '题库' })
-
-    // 添加特定用户菜单
-    if (isJobSeeker.value) {
-      baseItems.push(
-        { index: '/my-exams', name: '我的考试' },
-        { index: '/recruitment', name: '招聘岗位' },
-        { index: '/applications', name: '我的申请' },
-        { index: '/favorites', name: '我的收藏' },
-        { index: '/job-seeker/user-exams', name: '我的笔试' }
-      )
-    } else if (isInterviewer.value) {
-      baseItems.push(
-        { index: '/job-management', name: '岗位管理' },
-        { index: '/candidate-management', name: '候选人管理' },
-        { index: '/interview-schedule', name: '面试安排' },
-        { index: '/exam-management', name: '考试管理' },
-        { index: '/private-exams', name: '专属试卷管理' }
-      )
-    }
-  }
-
-  return baseItems
-})
-
-// 处理菜单点击
-const handleSelect = key => {
-  navActiveIndex.value = key
-  router.push(key)
-}
 
 // 检查用户是否已登录
 const checkLoginStatus = async () => {
