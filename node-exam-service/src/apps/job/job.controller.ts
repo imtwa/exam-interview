@@ -364,4 +364,92 @@ export class JobController {
 
     return pagination(jobs, total, searchParams.page, searchParams.pageSize);
   }
+
+  @ApiOperation({ summary: '获取求职者的职位申请列表' })
+  @ApiQuery({
+    name: 'page',
+    description: '当前页码',
+    required: true,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    required: true,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'status',
+    description: '申请状态',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'keyword',
+    description: '关键词搜索',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    description: '开始日期',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    description: '结束日期',
+    required: false,
+    type: String,
+  })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Get('applications/jobseeker')
+  async getJobseekerApplications(
+    @Query('page') page: string,
+    @Query('pageSize') pageSize: string,
+    @Query('status') status: string,
+    @Query('keyword') keyword: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Request() req,
+  ) {
+    const userId = req.user.userId;
+    this.logger.log(`获取用户${userId}的求职者应用列表`);
+    
+    const { items, total } = await this.jobService.getJobseekerApplications(
+      userId,
+      parseInt(page),
+      parseInt(pageSize),
+      status,
+      keyword,
+      startDate,
+      endDate
+    );
+    
+    return pagination(items, total, parseInt(page), parseInt(pageSize));
+  }
+
+  @ApiOperation({ summary: '撤回职位申请' })
+  @ApiParam({ name: 'applicationId', description: '申请ID', type: Number })
+  @ApiResponse({ status: 200, description: '撤回成功' })
+  @ApiResponse({ status: 404, description: '申请记录不存在' })
+  @ApiResponse({ status: 403, description: '无权限操作此申请' })
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @Post('applications/:applicationId/withdraw')
+  async withdrawApplication(
+    @Param('applicationId') applicationId: string,
+    @Request() req,
+  ) {
+    const userId = req.user.userId;
+    this.logger.log(`用户${userId}撤回申请: ${applicationId}`);
+    
+    await this.jobService.withdrawJobApplication(
+      parseInt(applicationId),
+      userId
+    );
+    
+    return success(null, '申请已成功撤回');
+  }
 }

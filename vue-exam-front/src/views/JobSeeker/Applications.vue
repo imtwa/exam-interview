@@ -5,15 +5,8 @@
       <div class="breadcrumb-container">
         <el-breadcrumb separator="/">
           <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item :to="{ path: '/profile' }">个人中心</el-breadcrumb-item>
           <el-breadcrumb-item>应聘记录</el-breadcrumb-item>
         </el-breadcrumb>
-      </div>
-
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <h1 class="page-title">我的应聘记录</h1>
-        <p class="page-description">这里列出了您所有的应聘申请记录及其状态</p>
       </div>
 
       <!-- 筛选区域 -->
@@ -57,7 +50,32 @@
 
       <!-- 应聘记录列表 -->
       <div v-else class="applications-list">
-        <div v-if="applications.length === 0" class="empty-container">
+        <div v-if="showProfileWarning" class="profile-warning">
+          <el-alert
+            title="需要完善求职者资料"
+            type="warning"
+            description="您需要先完善求职者资料才能查看应聘记录和投递简历"
+            show-icon
+            :closable="false"
+          >
+            <template #default>
+              <div class="alert-content">
+                <div class="warning-text">
+                  <p>系统无法找到您的求职者资料，请先完成以下步骤：</p>
+                  <ol>
+                    <li>完善基本信息</li>
+                    <li>填写教育经历</li>
+                    <li>添加工作经验（可选）</li>
+                    <li>设置求职意向</li>
+                  </ol>
+                  <p>完成资料设置后，您将可以查看应聘记录和投递简历</p>
+                </div>
+                <el-button type="primary" @click="goToProfileSetup">去完善资料</el-button>
+              </div>
+            </template>
+          </el-alert>
+        </div>
+        <div v-else-if="applications.length === 0" class="empty-container">
           <el-empty description="暂无应聘记录">
             <template #description>
               <p>您还没有提交过任何职位申请</p>
@@ -139,12 +157,15 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getUserApplications, withdrawApplication as withdrawApplicationApi } from '@/api/job'
+import { getJobseekerProfile } from '@/api/jobseeker'
 
 const router = useRouter()
 const loading = ref(false)
 const applications = ref([])
 const total = ref(0)
 const dateRange = ref([])
+const showProfileWarning = ref(false)
 
 // 查询参数
 const queryParams = reactive({
@@ -158,83 +179,94 @@ const queryParams = reactive({
 
 // 状态选项
 const statusOptions = [
-  { label: '待处理', value: 'pending' },
-  { label: '筛选中', value: 'screening' },
-  { label: '面试中', value: 'interview' },
-  { label: '已录用', value: 'offer' },
-  { label: '已拒绝', value: 'rejected' },
-  { label: '已撤回', value: 'withdrawn' }
+  { label: '简历筛选', value: 'RESUME_SCREENING' },
+  { label: '笔试中', value: 'WRITTEN_TEST' },
+  { label: '一面中', value: 'FIRST_INTERVIEW' },
+  { label: '二面中', value: 'SECOND_INTERVIEW' },
+  { label: 'HR面试', value: 'HR_INTERVIEW' },
+  { label: '已录用', value: 'OFFER' },
+  { label: '已拒绝', value: 'REJECTED' }
 ]
+
+// 检查用户是否已设置求职者资料
+const checkJobseekerProfile = async () => {
+  try {
+    await getJobseekerProfile()
+    return true
+  } catch (error) {
+    console.error('获取求职者资料失败:', error)
+    return false
+  }
+}
 
 // 获取应聘记录列表
 const fetchApplications = async () => {
   loading.value = true
-  try {
-    // 这里需要实现从API获取应聘记录的功能
-    // const response = await getApplications(queryParams)
-    // applications.value = response.items || []
-    // total.value = response.total || 0
+  showProfileWarning.value = false // 重置警告状态
 
-    // 模拟数据，实际项目中应替换为API调用
-    setTimeout(() => {
-      applications.value = [
-        {
-          id: 1,
-          jobId: 101,
-          jobTitle: '前端开发工程师',
-          companyName: '腾讯科技有限公司',
-          salary: '25k-35k',
-          status: 'pending',
-          applyDate: '2023-08-15T08:30:00',
-          lastUpdateDate: '2023-08-15T08:30:00'
-        },
-        {
-          id: 2,
-          jobId: 102,
-          jobTitle: '后端开发工程师',
-          companyName: '字节跳动有限公司',
-          salary: '30k-45k',
-          status: 'interview',
-          applyDate: '2023-08-10T14:20:00',
-          lastUpdateDate: '2023-08-12T10:15:00'
-        },
-        {
-          id: 3,
-          jobId: 103,
-          jobTitle: '全栈开发工程师',
-          companyName: '百度科技有限公司',
-          salary: '35k-50k',
-          status: 'rejected',
-          applyDate: '2023-08-05T09:15:00',
-          lastUpdateDate: '2023-08-08T16:40:00'
-        },
-        {
-          id: 4,
-          jobId: 104,
-          jobTitle: '资深前端工程师',
-          companyName: '阿里巴巴集团',
-          salary: '40k-60k',
-          status: 'offer',
-          applyDate: '2023-07-20T11:30:00',
-          lastUpdateDate: '2023-08-10T09:20:00'
-        },
-        {
-          id: 5,
-          jobId: 105,
-          jobTitle: '前端架构师',
-          companyName: '京东科技',
-          salary: '50k-70k',
-          status: 'screening',
-          applyDate: '2023-08-18T10:00:00',
-          lastUpdateDate: '2023-08-18T15:45:00'
-        }
-      ]
-      total.value = 5
+  try {
+    // 先检查用户是否已设置求职者资料
+    const hasProfile = await checkJobseekerProfile()
+    if (!hasProfile) {
+      showProfileWarning.value = true
       loading.value = false
-    }, 500)
+      return
+    }
+
+    const response = await getUserApplications(queryParams)
+
+    // 处理返回的数据
+    if (response.list) {
+      applications.value = response.list
+      total.value = response.total || 0
+    } else {
+      // 如果返回格式不符合预期，显示空列表
+      applications.value = []
+      total.value = 0
+      console.warn('API返回格式不符合预期:', response)
+    }
   } catch (error) {
     console.error('获取应聘记录失败:', error)
-    ElMessage.error('获取应聘记录失败，请稍后再试')
+
+    // 处理不同类型的错误
+    if (error.response) {
+      console.error('错误响应:', error.response.data)
+
+      const errorMsg = error.response.data.message || '未知错误'
+
+      // 检查是否是求职者资料相关的错误
+      if (
+        errorMsg === '查询求职者失败' ||
+        errorMsg.includes('求职者不存在') ||
+        errorMsg.includes('jobseeker') ||
+        error.response.status === 404
+      ) {
+        showProfileWarning.value = true
+        ElMessage.warning('您需要先完善求职者资料')
+      } else if (error.response.status === 401) {
+        // 未授权错误
+        ElMessage.error('您的登录已过期，请重新登录')
+        // 可以选择重定向到登录页面
+        // router.push('/login')
+      } else if (error.response.status === 403) {
+        // 权限错误
+        ElMessage.error('您没有权限查看此内容')
+      } else {
+        // 其他API错误
+        ElMessage.error(`获取应聘记录失败: ${errorMsg}`)
+      }
+    } else if (error.request) {
+      // 请求已发送但没有收到响应
+      ElMessage.error('服务器未响应，请检查网络连接')
+    } else {
+      // 请求设置错误
+      ElMessage.error('请求错误，请稍后再试')
+    }
+
+    // 显示一个空列表
+    applications.value = []
+    total.value = 0
+  } finally {
     loading.value = false
   }
 }
@@ -281,28 +313,48 @@ const viewApplicationDetail = applicationId => {
   router.push(`/application/${applicationId}`)
 }
 
-// 撤回应聘申请
+// 撤回申请
 const withdrawApplication = async applicationId => {
   try {
-    await ElMessageBox.confirm('确定要撤回这份应聘申请吗？', '撤回申请', {
-      confirmButtonText: '确定',
+    await ElMessageBox.confirm('确定要撤回该申请吗？', '撤回申请', {
+      confirmButtonText: '确认',
       cancelButtonText: '取消',
       type: 'warning'
     })
 
-    // 这里需要实现撤回应聘申请的API调用
-    // await withdrawApplicationApi(applicationId)
-
-    // 模拟API调用成功
-    ElMessage.success('已成功撤回申请')
-
-    // 更新列表
-    fetchApplications()
+    loading.value = true
+    const response = await withdrawApplicationApi(applicationId)
+    console.log('撤回申请响应:', response)
+    ElMessage.success('申请已成功撤回')
+    await fetchApplications() // 重新加载数据
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('撤回应聘申请失败:', error)
+    if (error === 'cancel') {
+      return // 用户取消操作，不显示错误
+    }
+
+    console.error('撤回申请失败:', error)
+
+    // 处理不同类型的错误
+    if (error.response) {
+      const errorMsg = error.response.data.message || '未知错误'
+      console.error('错误响应:', error.response.data)
+
+      if (error.response.status === 401) {
+        ElMessage.error('您的登录已过期，请重新登录')
+      } else if (error.response.status === 403) {
+        ElMessage.error('您没有权限执行此操作')
+      } else if (errorMsg.includes('求职者不存在') || errorMsg.includes('找不到申请记录')) {
+        ElMessage.error('该申请记录不存在或已被处理')
+      } else {
+        ElMessage.error(`撤回申请失败: ${errorMsg}`)
+      }
+    } else if (error.request) {
+      ElMessage.error('服务器未响应，请检查网络连接')
+    } else {
       ElMessage.error('操作失败，请稍后再试')
     }
+  } finally {
+    loading.value = false
   }
 }
 
@@ -311,15 +363,21 @@ const goToRecruitment = () => {
   router.push('/recruitment')
 }
 
+// 跳转到个人资料设置页面
+const goToProfileSetup = () => {
+  router.push('/job-seeker/profile-setup')
+}
+
 // 获取状态标签
 const getStatusLabel = status => {
   const statusMap = {
-    pending: '待处理',
-    screening: '筛选中',
-    interview: '面试中',
-    offer: '已录用',
-    rejected: '已拒绝',
-    withdrawn: '已撤回'
+    RESUME_SCREENING: '简历筛选',
+    WRITTEN_TEST: '笔试中',
+    FIRST_INTERVIEW: '一面中',
+    SECOND_INTERVIEW: '二面中',
+    HR_INTERVIEW: 'HR面试',
+    OFFER: '已录用',
+    REJECTED: '已拒绝'
   }
   return statusMap[status] || '未知状态'
 }
@@ -327,12 +385,13 @@ const getStatusLabel = status => {
 // 获取状态类型（用于标签颜色）
 const getStatusType = status => {
   const typeMap = {
-    pending: 'info',
-    screening: 'warning',
-    interview: 'primary',
-    offer: 'success',
-    rejected: 'danger',
-    withdrawn: 'info'
+    RESUME_SCREENING: 'info',
+    WRITTEN_TEST: 'warning',
+    FIRST_INTERVIEW: 'primary',
+    SECOND_INTERVIEW: 'primary',
+    HR_INTERVIEW: 'warning',
+    OFFER: 'success',
+    REJECTED: 'danger'
   }
   return typeMap[status] || 'info'
 }
@@ -476,5 +535,43 @@ onMounted(() => {
 .pagination-wrapper {
   margin-top: 20px;
   text-align: right;
+}
+
+.profile-warning {
+  margin-bottom: 24px;
+
+  :deep(.el-alert) {
+    border-radius: 8px;
+  }
+
+  .alert-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+
+    .warning-text {
+      flex: 1;
+
+      p {
+        margin: 0 0 8px 0;
+        line-height: 1.5;
+      }
+
+      ol {
+        margin: 8px 0;
+        padding-left: 20px;
+
+        li {
+          margin-bottom: 4px;
+        }
+      }
+    }
+
+    .el-button {
+      margin-left: 16px;
+      white-space: nowrap;
+    }
+  }
 }
 </style>

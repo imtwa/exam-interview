@@ -139,3 +139,37 @@ export function deleteWorkExperience(id) {
     method: 'post'
   })
 }
+
+/**
+ * 获取求职者的职位申请列表
+ * @param {Object} params 查询参数
+ * @example
+ * {
+ *   page: 1,
+ *   pageSize: 10,
+ *   status: 'pending', // 可选，筛选申请状态
+ *   keyword: '', // 可选，关键词搜索
+ *   startDate: '', // 可选，开始日期
+ *   endDate: '' // 可选，结束日期
+ * }
+ * @returns {Promise} 返回申请列表
+ */
+export function getJobseekerApplications(params) {
+  return request({
+    url: '/jobseeker/applications',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 撤回职位申请
+ * @param {number} applicationId 申请ID
+ * @returns {Promise} 返回操作结果
+ */
+export function withdrawJobApplication(applicationId) {
+  return request({
+    url: `/jobseeker/applications/${applicationId}/withdraw`,
+    method: 'post'
+  })
+}

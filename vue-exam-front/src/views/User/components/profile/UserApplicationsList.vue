@@ -55,7 +55,7 @@
         </el-table>
 
         <!-- 分页 -->
-        <div class="pagination-wrapper">
+        <!-- <div class="pagination-wrapper">
           <el-pagination
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
@@ -65,7 +65,7 @@
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
           />
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -114,10 +114,7 @@ const fetchApplications = async () => {
     const response = await getUserApplications(params)
 
     // 处理响应数据
-    if (response.data && response.data.list) {
-      applications.value = response.data.list
-      total.value = response.data.total
-    } else if (response.list) {
+    if (response) {
       applications.value = response.list
       total.value = response.total
     } else {
@@ -159,12 +156,13 @@ const viewApplicationDetail = applicationId => {
 // 获取状态标签
 const getStatusLabel = status => {
   const statusMap = {
-    PENDING: '待处理',
-    REVIEWING: '审核中',
-    INTERVIEW: '面试中',
+    RESUME_SCREENING: '简历筛选',
+    WRITTEN_TEST: '笔试中',
+    FIRST_INTERVIEW: '一面中',
+    SECOND_INTERVIEW: '二面中',
+    HR_INTERVIEW: 'HR面试',
     OFFER: '已录用',
-    REJECTED: '未通过',
-    WITHDRAWN: '已撤回'
+    REJECTED: '已拒绝'
   }
   return statusMap[status] || '未知状态'
 }
@@ -172,12 +170,13 @@ const getStatusLabel = status => {
 // 获取状态类型（用于标签颜色）
 const getStatusType = status => {
   const typeMap = {
-    PENDING: 'info',
-    REVIEWING: 'warning',
-    INTERVIEW: 'primary',
+    RESUME_SCREENING: 'info',
+    WRITTEN_TEST: 'warning',
+    FIRST_INTERVIEW: 'primary',
+    SECOND_INTERVIEW: 'primary',
+    HR_INTERVIEW: 'warning',
     OFFER: 'success',
-    REJECTED: 'danger',
-    WITHDRAWN: 'info'
+    REJECTED: 'danger'
   }
   return typeMap[status] || 'info'
 }

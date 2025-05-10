@@ -77,7 +77,7 @@ const routes = [
       {
         path: 'applications',
         name: 'Applications',
-        component: () => import('../views/User/Applications.vue')
+        component: () => import('../views/JobSeeker/Applications.vue')
       },
       {
         path: 'profile',

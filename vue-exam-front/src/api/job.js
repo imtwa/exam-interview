@@ -133,25 +133,6 @@ export function applyForJob(jobId) {
 }
 
 /**
- * 获取用户的职位申请列表
- * @param {Object} params 查询参数
- * @example
- * {
- *   page: 1,
- *   pageSize: 10,
- *   status: 'pending' // 可选，筛选申请状态
- * }
- * @returns {Promise} 返回申请列表
- */
-export function getUserApplications(params) {
-  return request({
-    url: '/jobseeker/applications',
-    method: 'get',
-    params
-  })
-}
-
-/**
  * 面试官获取收到的职位申请列表
  * @param {Object} params 查询参数
  * @example
@@ -265,5 +246,39 @@ export function getCompanyJobs(companyId, params = {}) {
     url: `/job/company/${companyId}`,
     method: 'get',
     params
+  })
+}
+
+/**
+ * 获取用户的职位申请列表
+ * @param {Object} params 查询参数
+ * @example
+ * {
+ *   page: 1,
+ *   pageSize: 10,
+ *   status: 'pending', // 可选，筛选申请状态
+ *   keyword: '', // 可选，关键词搜索
+ *   startDate: '', // 可选，开始日期
+ *   endDate: '' // 可选，结束日期
+ * }
+ * @returns {Promise} 返回申请列表
+ */
+export function getUserApplications(params) {
+  return request({
+    url: '/job/applications/jobseeker',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 撤回职位申请
+ * @param {number} applicationId 申请ID
+ * @returns {Promise} 返回操作结果
+ */
+export function withdrawApplication(applicationId) {
+  return request({
+    url: `/job/applications/${applicationId}/withdraw`,
+    method: 'post'
   })
 }

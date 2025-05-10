@@ -5,7 +5,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PrismaClient, JobStatus } from '../../../prisma/generated/client';
+import { PrismaClient, JobStatus, JobApplicationStatus } from '../../../prisma/generated/client';
 import { LoggerService } from '../../common/logger/logger.service';
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
@@ -847,5 +847,201 @@ export class JobService {
     }
 
     return jobSeeker;
+  }
+
+  /**
+   * 获取求职者的职位申请列表
+   * @param userId 用户ID
+   * @param page 页码
+   * @param pageSize 每页大小
+   * @param status 申请状态，可选
+   * @param keyword 关键词，可选
+   * @param startDate 开始日期，可选
+   * @param endDate 结束日期，可选
+   * @returns 申请列表及总数
+   */
+  async getJobseekerApplications(
+    userId: number,
+    page: number,
+    pageSize: number,
+    status?: string,
+    keyword?: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    this.logger.log(`获取用户${userId}的职位申请列表`);
+
+    try {
+      // 先获取求职者信息
+      const jobSeeker = await this.prisma.jobSeeker.findUnique({
+        where: { userId },
+      });
+
+      if (!jobSeeker) {
+        throw new NotFoundException('求职者不存在');
+      }
+
+      // 构建查询条件
+      const where: any = {
+        jobSeekerId: jobSeeker.id,
+      };
+
+      // 状态筛选
+      if (status && status !== 'ALL') {
+        where.status = status;
+      }
+      
+      // 关键词搜索
+      if (keyword) {
+        where.OR = [
+          { job: { title: { contains: keyword } } },
+          { job: { company: { name: { contains: keyword } } } },
+        ];
+      }
+      
+      // 日期筛选
+      if (startDate) {
+        where.appliedAt = {
+          ...(where.appliedAt || {}),
+          gte: new Date(startDate),
+        };
+      }
+      
+      if (endDate) {
+        where.appliedAt = {
+          ...(where.appliedAt || {}),
+          lte: new Date(`${endDate}T23:59:59`),
+        };
+      }
+
+      // 查询申请总数
+      const total = await this.prisma.jobApplication.count({ where });
+
+      // 查询申请列表
+      const applications = await this.prisma.jobApplication.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: {
+          appliedAt: 'desc',
+        },
+        include: {
+          job: {
+            select: {
+              id: true,
+              title: true,
+              city: true,
+              salaryMin: true,
+              salaryMax: true,
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                  size: true,
+                  fundingStage: true,
+                },
+              },
+              subCategory: {
+                select: {
+                  name: true,
+                  category: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          interviews: {
+            orderBy: {
+              scheduleTime: 'desc',
+            },
+            take: 1,
+          },
+        },
+      });
+
+      // 格式化返回数据
+      const formattedApplications = applications.map(app => ({
+        id: app.id,
+        jobId: app.jobId,
+        jobTitle: app.job.title,
+        companyName: app.job.company.name,
+        companyId: app.job.company.id,
+        salary: `${app.job.salaryMin}k-${app.job.salaryMax}k`,
+        city: app.job.city,
+        status: app.status,
+        applyDate: app.appliedAt,
+        lastUpdateDate: app.updatedAt,
+        feedback: app.feedback,
+        categoryName: app.job.subCategory?.category?.name || null,
+        subCategoryName: app.job.subCategory?.name || null,
+        latestInterview: app.interviews.length > 0 ? {
+          scheduleTime: app.interviews[0].scheduleTime,
+          status: app.interviews[0].status,
+          round: app.interviews[0].round,
+        } : null,
+      }));
+
+      return {
+        items: formattedApplications,
+        total,
+      };
+    } catch (error) {
+      this.logger.error(`获取职位申请列表失败: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 撤回职位申请
+   * @param applicationId 申请ID
+   * @param userId 用户ID
+   */
+  async withdrawJobApplication(applicationId: number, userId: number) {
+    try {
+      // 先获取求职者信息
+      const jobSeeker = await this.prisma.jobSeeker.findUnique({
+        where: { userId },
+      });
+
+      if (!jobSeeker) {
+        throw new NotFoundException('求职者不存在');
+      }
+
+      // 检查申请是否存在
+      const application = await this.prisma.jobApplication.findUnique({
+        where: { id: applicationId },
+      });
+
+      if (!application) {
+        throw new NotFoundException('申请记录不存在');
+      }
+
+      // 检查是否是该求职者的申请
+      if (application.jobSeekerId !== jobSeeker.id) {
+        throw new ForbiddenException('无权限操作此申请');
+      }
+
+      // 检查申请状态是否允许撤回
+      if (application.status !== JobApplicationStatus.RESUME_SCREENING) {
+        throw new BadRequestException('当前状态下无法撤回申请');
+      }
+
+      // 更新申请状态为已撤回
+      await this.prisma.jobApplication.update({
+        where: { id: applicationId },
+        data: {
+          status: 'REJECTED', // 假设使用REJECTED状态表示已撤回
+          feedback: '求职者已撤回申请',
+        },
+      });
+
+      this.logger.log(`求职者ID:${jobSeeker.id}成功撤回申请ID:${applicationId}`);
+    } catch (error) {
+      this.logger.error(`撤回申请失败: ${error.message}`, error);
+      throw error;
+    }
   }
 }

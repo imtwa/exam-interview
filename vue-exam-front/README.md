@@ -64,23 +64,27 @@ vue-exam-front/
 ## 功能模块
 
 ### 用户中心
+
 - 用户注册与登录
 - 密码找回功能
 - 用户资料管理
 - 收藏管理
 
 ### 考试系统
+
 - 试题库浏览与搜索
 - 题库上传
 - 自主练习
 - 收藏试题
 
 ### 招聘平台
+
 - 职位搜索与浏览
 - 公司信息详情
 - 职位申请
 
 ### 面试官系统
+
 - 岗位管理
 - 候选人管理
 - 面试安排
@@ -88,16 +92,19 @@ vue-exam-front/
 - 专属试卷管理
 
 ### 求职者系统
+
 - 个人资料设置
 - 申请管理
 - 笔试记录查看
 
 ### 在线考试
+
 - 考试邀请
 - 实时在线考试
 - 考试结果查看
 
 ### 在线面试
+
 - 视频面试系统
 - 实时沟通功能
 - 面试反馈
@@ -105,6 +112,7 @@ vue-exam-front/
 ## 快速开始
 
 ### 安装依赖
+
 ```bash
 npm install
 # 或
@@ -112,6 +120,7 @@ pnpm install
 ```
 
 ### 开发环境启动
+
 ```bash
 npm run dev
 # 或
@@ -119,6 +128,7 @@ pnpm dev
 ```
 
 ### 生产环境构建
+
 ```bash
 npm run build
 # 或
@@ -126,6 +136,7 @@ pnpm build
 ```
 
 ### 代码格式化
+
 ```bash
 npm run lintfix
 # 或
@@ -133,15 +144,20 @@ pnpm lintfix
 ```
 
 ## 本地开启https
+
 - webrtc相关api要求https安全环境
 - 本地开启https可以实现局域网内通过ip访问
 
 ### 一、安装Chocolatey
+
 Chocolatey是Windows上的包管理工具，使用它可以使用命令行安装程序，使用管理员权限打开cmd，再运行如下代码
+
 ```bash
 @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
 ```
+
 ### 二、安装mkcert并生成证书
+
 ```bash
 # 安装mkcert
 choco install  mkcert -y
@@ -150,9 +166,12 @@ mkcert -install
 # 进入vue-exam-front\cert目录，生成域名证书
 mkcert localhost 192.168.x.x
 ```
+
 注意后面一定要是本机ip地址，如果不配置ip将无法在ip环境使用在线面试功能
 可使用`ipconfig`命令查看本机ip
+
 ### 三、vite开启https
+
 ```bash
 import fs from 'fs'
 import path from 'path'
@@ -169,7 +188,9 @@ export default ({ command, mode }) => {
 ```
 
 ## 系统要求
+
 - Node.js: 18.x 或 20.x
 
 ## 相关链接
+
 - [后端服务仓库](../node-exam-service/)
