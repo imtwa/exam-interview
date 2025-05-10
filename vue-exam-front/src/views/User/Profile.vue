@@ -65,7 +65,12 @@
       <!-- 用户组件区域 -->
       <div class="profile-components">
         <!-- 求职者专属组件 -->
-        <UserApplicationsList v-if="isJobSeeker" :user-id="userId" />
+        <template v-if="isJobSeeker">
+          <!-- 求职者详细资料 -->
+          <JobSeekerProfile v-if="jobSeekerData" :jobseeker-data="jobSeekerData" />
+          <!-- 求职者的应聘记录 -->
+          <UserApplicationsList :user-id="userId" />
+        </template>
 
         <!-- 面试官专属组件 -->
         <template v-if="isInterviewer">
@@ -87,6 +92,7 @@ import { Message, Calendar, OfficeBuilding } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getUserProfile, getUserProfileById, getUser } from '@/api/user'
 import { getInterviewerProfile } from '@/api/interviewer'
+import { getJobseeker } from '@/api/jobseeker'
 import { getCompany } from '@/api/company'
 import { generateAvatar } from '@/utils/utils'
 
@@ -94,12 +100,14 @@ import { generateAvatar } from '@/utils/utils'
 import UserFavoritesList from './components/profile/UserFavoritesList.vue'
 import UserApplicationsList from './components/profile/UserApplicationsList.vue'
 import InterviewerJobsList from './components/profile/InterviewerJobsList.vue'
+import JobSeekerProfile from './components/profile/JobSeekerProfile.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const userInfo = ref({})
 const companyInfo = ref(null)
+const jobSeekerData = ref(null)
 const loading = ref(true)
 
 // 获取URL中的用户ID参数，如果没有则使用当前登录用户的ID
@@ -195,6 +203,11 @@ const fetchUserInfo = async () => {
       if (userData.role === 'INTERVIEWER' && userData.companyId) {
         await fetchCompanyInfo(userData.companyId)
       }
+      
+      // 如果是求职者，获取求职者详细信息
+      if (userData.role === 'JOB_SEEKER') {
+        await fetchJobSeekerInfo(targetUserId)
+      }
     } else {
       ElMessage.warning('获取用户信息失败')
       if (!isViewingSelf) {
@@ -213,10 +226,21 @@ const fetchUserInfo = async () => {
 const fetchCompanyInfo = async companyId => {
   try {
     const response = await getCompany(companyId)
-    companyInfo.value = response.data || response
+    companyInfo.value = response
   } catch (error) {
     console.error('获取公司信息失败:', error)
     companyInfo.value = null
+  }
+}
+
+// 获取求职者详细信息
+const fetchJobSeekerInfo = async userId => {
+  try {
+    const response = await getJobseeker(userId)
+    jobSeekerData.value = response
+  } catch (error) {
+    console.error('获取求职者详细信息失败:', error)
+    jobSeekerData.value = null
   }
 }
 

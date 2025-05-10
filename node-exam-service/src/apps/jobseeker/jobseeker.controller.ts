@@ -114,15 +114,15 @@ export class JobSeekerController {
   }
 
   @ApiOperation({ summary: '根据ID获取求职者信息' })
-  @ApiParam({ name: 'id', description: '求职者ID', type: 'number' })
+  @ApiParam({ name: 'userId', description: '求职者的userID', type: 'number' })
   @ApiResponse({ status: 200, description: '返回求职者信息' })
   @ApiResponse({ status: 404, description: '求职者不存在' })
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    this.logger.log(`查询求职者: ${id}`);
-    const result = await this.jobSeekerService.findOne(+id);
+  @Get(':userId')
+  async findOne(@Param('userId') userId: string) {
+    this.logger.log(`查询求职者: ${userId}`);
+    const result = await this.jobSeekerService.findOne(+userId);
     return success(result);
   }
 

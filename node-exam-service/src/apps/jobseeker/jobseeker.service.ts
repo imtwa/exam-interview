@@ -396,14 +396,14 @@ export class JobSeekerService {
   }
 
   /**
-   * 根据ID获取求职者信息
-   * @param id 求职者ID
+   * 根据userID获取求职者信息
+   * @param userId 求职者对应的userID
    * @returns 求职者信息
    */
-  async findOne(id: number) {
+  async findOne(userId: number) {
     try {
       const jobSeeker = await this.prisma.jobSeeker.findUnique({
-        where: { id },
+        where: { userId },
         include: {
           user: {
             select: {
@@ -417,11 +417,11 @@ export class JobSeekerService {
       });
 
       if (!jobSeeker) {
-        this.logger.warn(`查询求职者失败，求职者不存在: ${id}`);
+        this.logger.warn(`查询求职者失败，求职者不存在: ${userId}`);
         throw new NotFoundException('求职者不存在');
       }
 
-      this.logger.log(`查询求职者成功: ${id}`);
+      this.logger.log(`查询求职者成功: ${userId}`);
       return jobSeeker;
     } catch (error) {
       if (error instanceof NotFoundException) {
