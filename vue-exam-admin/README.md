@@ -1,20 +1,4 @@
-简体中文 | [English](./README.en.md)
-
 ## 云面官admin后台管理系统
-
-## 演示图
-
-### 浅色主题
-
-![浅色主题](https://www.qiniu.lingchen.kim/art_design_pro_readme_cover1.png)
-
-![浅色主题](https://www.qiniu.lingchen.kim/art_design_pro_readme_cover2.png)
-
-### 暗黑主题
-
-![暗黑主题](https://www.qiniu.lingchen.kim/art_design_pro_readme_cover3.png)
-
-![暗黑主题](https://www.qiniu.lingchen.kim/art_design_pro_readme_cover4.png)
 
 ## 特点
 
@@ -70,11 +54,6 @@ pnpm dev
 # 生产环境打包
 pnpm build
 ```
-
-![捐赠二维码](https://www.qiniu.lingchen.kim/%E7%BB%84%202%402x%202.png)
-
-# 考试系统后台管理项目
-
 ## 考试系统 API 结构
 
 ### 试卷管理 API
