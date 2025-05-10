@@ -130,7 +130,9 @@
 
                     <!-- 求职者菜单项 -->
                     <template v-if="isJobSeeker">
-                      <el-dropdown-item @click="router.push('/resume')">我的简历</el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/job-seeker/resume')"
+                        >我的简历</el-dropdown-item
+                      >
                       <el-dropdown-item @click="router.push('/applications')"
                         >应聘进度</el-dropdown-item
                       >

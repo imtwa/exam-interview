@@ -5,7 +5,11 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PrismaClient, JobStatus, JobApplicationStatus } from '../../../prisma/generated/client';
+import {
+  PrismaClient,
+  JobStatus,
+  JobApplicationStatus,
+} from '../../../prisma/generated/client';
 import { LoggerService } from '../../common/logger/logger.service';
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
@@ -890,7 +894,7 @@ export class JobService {
       if (status && status !== 'ALL') {
         where.status = status;
       }
-      
+
       // 关键词搜索
       if (keyword) {
         where.OR = [
@@ -898,7 +902,7 @@ export class JobService {
           { job: { company: { name: { contains: keyword } } } },
         ];
       }
-      
+
       // 日期筛选
       if (startDate) {
         where.appliedAt = {
@@ -906,7 +910,7 @@ export class JobService {
           gte: new Date(startDate),
         };
       }
-      
+
       if (endDate) {
         where.appliedAt = {
           ...(where.appliedAt || {}),
@@ -963,7 +967,7 @@ export class JobService {
       });
 
       // 格式化返回数据
-      const formattedApplications = applications.map(app => ({
+      const formattedApplications = applications.map((app) => ({
         id: app.id,
         jobId: app.jobId,
         jobTitle: app.job.title,
@@ -977,11 +981,14 @@ export class JobService {
         feedback: app.feedback,
         categoryName: app.job.subCategory?.category?.name || null,
         subCategoryName: app.job.subCategory?.name || null,
-        latestInterview: app.interviews.length > 0 ? {
-          scheduleTime: app.interviews[0].scheduleTime,
-          status: app.interviews[0].status,
-          round: app.interviews[0].round,
-        } : null,
+        latestInterview:
+          app.interviews.length > 0
+            ? {
+                scheduleTime: app.interviews[0].scheduleTime,
+                status: app.interviews[0].status,
+                round: app.interviews[0].round,
+              }
+            : null,
       }));
 
       return {
@@ -1038,7 +1045,9 @@ export class JobService {
         },
       });
 
-      this.logger.log(`求职者ID:${jobSeeker.id}成功撤回申请ID:${applicationId}`);
+      this.logger.log(
+        `求职者ID:${jobSeeker.id}成功撤回申请ID:${applicationId}`,
+      );
     } catch (error) {
       this.logger.error(`撤回申请失败: ${error.message}`, error);
       throw error;

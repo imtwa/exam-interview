@@ -37,17 +37,17 @@ export default ({ command, mode }) => {
       nodePolyfills({
         include: [],
         exclude: []
-      }),
-      {
-        name: 'add-scripts-to-html',
-        transformIndexHtml(html) {
-          const scripts = [
-            '<script src="https://bpmax.oss-cn-shanghai.aliyuncs.com/static_files/pdf.js"></script>',
-            '<script src="https://bpmax.oss-cn-shanghai.aliyuncs.com/static_files/pdf.worker.js"></script>'
-          ]
-          return html.replace(/<\/head>/, `${scripts.join('\n  ')}\n</head>`)
-        }
-      }
+      })
+      // {
+      //   name: 'add-scripts-to-html',
+      //   transformIndexHtml(html) {
+      //     const scripts = [
+      //       '<script src="https://bpmax.oss-cn-shanghai.aliyuncs.com/static_files/pdf.js"></script>',
+      //       '<script src="https://bpmax.oss-cn-shanghai.aliyuncs.com/static_files/pdf.worker.js"></script>'
+      //     ]
+      //     return html.replace(/<\/head>/, `${scripts.join('\n  ')}\n</head>`)
+      //   }
+      // }
     ],
     // 开发或生产环境服务的公共基础路径,此选项也可以通过命令行参数指定（例：vite build --base=/my/public/path/）
     // base: env.NODE_ENV === 'production' ? '/maas/' : '/',

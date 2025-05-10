@@ -111,6 +111,16 @@ const routes = [
         name: 'UserInterview',
         component: () => import('../views/JobSeeker/UserInterview.vue')
       },
+      {
+        path: 'job-seeker/resume',
+        name: 'UserResume',
+        component: () => import('../views/JobSeeker/UserResume.vue'),
+        meta: {
+          title: '我的简历',
+          requireAuth: true,
+          roles: ['JOB_SEEKER']
+        }
+      },
       // 面试官相关路由
       {
         path: '/job-management',

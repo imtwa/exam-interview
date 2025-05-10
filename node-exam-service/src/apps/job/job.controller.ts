@@ -416,7 +416,7 @@ export class JobController {
   ) {
     const userId = req.user.userId;
     this.logger.log(`获取用户${userId}的求职者应用列表`);
-    
+
     const { items, total } = await this.jobService.getJobseekerApplications(
       userId,
       parseInt(page),
@@ -424,9 +424,9 @@ export class JobController {
       status,
       keyword,
       startDate,
-      endDate
+      endDate,
     );
-    
+
     return pagination(items, total, parseInt(page), parseInt(pageSize));
   }
 
@@ -444,12 +444,12 @@ export class JobController {
   ) {
     const userId = req.user.userId;
     this.logger.log(`用户${userId}撤回申请: ${applicationId}`);
-    
+
     await this.jobService.withdrawJobApplication(
       parseInt(applicationId),
-      userId
+      userId,
     );
-    
+
     return success(null, '申请已成功撤回');
   }
 }

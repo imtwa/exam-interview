@@ -11,10 +11,12 @@ import { CreateEducationDto } from './dto/create-education.dto';
 import { CreateWorkExperienceDto } from './dto/create-work-experience.dto';
 import { UpdateEducationDto } from './dto/update-education.dto';
 import { UpdateWorkExperienceDto } from './dto/update-work-experience.dto';
-import { QueryJobSeekerDto } from './dto/query-jobseeker.dto';
-import { LoggerService } from '../../common/logger/logger.service';
-import { UserRole } from '../../common/enums/user-role.enum';
 import { UpdateJobseekerProfileDto } from './dto/update-jobseeker-profile.dto';
+import { QueryJobSeekerDto } from './dto/query-jobseeker.dto';
+
+import { UserRole } from '../../common/enums/user-role.enum';
+import { ConfigService } from '@nestjs/config';
+import { LoggerService } from '../../common/logger/logger.service';
 
 @Injectable()
 export class JobSeekerService {
@@ -23,6 +25,7 @@ export class JobSeekerService {
   constructor(
     @Inject('PRISMA_CLIENT')
     private prisma: PrismaClient,
+    private configService: ConfigService,
     private loggerService: LoggerService,
   ) {
     this.logger = loggerService;
@@ -77,8 +80,14 @@ export class JobSeekerService {
       };
     }
 
+    const baseUrl =
+      this.configService.get('APP_URL') ||
+      `http://localhost:${this.configService.get('PORT') || 3000}`;
+    const resumeUrl = user.jobSeeker.resumeUrl;
+
     return {
       ...user.jobSeeker,
+      resumeUrl: `${baseUrl}/${resumeUrl.startsWith('/') ? resumeUrl.substring(1) : resumeUrl}`,
       user: {
         username: user.username,
         email: user.email,
