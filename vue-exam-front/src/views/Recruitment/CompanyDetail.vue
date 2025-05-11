@@ -258,17 +258,15 @@ const fetchCompanyDetail = async () => {
   try {
     loading.value = true
     const response = await getCompany(companyId.value)
-    // 处理API返回的数据，确保我们使用正确的格式
-    if (response.data) {
-      company.value = response.data
-    } else if (response) {
+
+    if (response) {
       // 如果response就是数据本身
       company.value = response
     } else {
       company.value = {}
       ElMessage.warning('获取公司信息失败')
     }
-    console.log('获取的公司信息:', company.value)
+    // console.log('获取的公司信息:', company.value)
   } catch (error) {
     console.error('获取公司详情失败:', error)
     ElMessage.error('获取公司详情失败')
@@ -296,7 +294,7 @@ const fetchCompanyJobs = async () => {
       totalJobs.value = 0
       console.warn('未知的响应格式:', response)
     }
-    console.log('获取的职位列表:', jobs.value.length, '总数:', totalJobs.value)
+    // console.log('获取的职位列表:', jobs.value.length, '总数:', totalJobs.value)
   } catch (error) {
     console.error('获取公司职位列表失败:', error)
     ElMessage.error('获取公司职位列表失败')
@@ -324,7 +322,7 @@ const fetchCompanyInterviewers = async () => {
       totalInterviewers.value = 0
       console.warn('未知的HR列表响应格式:', response)
     }
-    console.log('获取的HR列表:', interviewers.value.length, '总数:', totalInterviewers.value)
+    // console.log('获取的HR列表:', interviewers.value.length, '总数:', totalInterviewers.value)
   } catch (error) {
     console.error('获取公司HR列表失败:', error)
     ElMessage.error('获取公司HR列表失败')

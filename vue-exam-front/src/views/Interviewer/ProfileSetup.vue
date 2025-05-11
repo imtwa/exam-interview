@@ -650,7 +650,7 @@ const submitProfile = async () => {
     const response = await updateInterviewerProfile(profileSetupForm)
 
     if (response) {
-      console.log('面试官资料设置成功，返回数据:', response)
+      // console.log('面试官资料设置成功，返回数据:', response)
 
       // 在资料设置成功后直接更新存储
       // 保存面试官信息到Pinia store
@@ -719,12 +719,8 @@ const searchCompany = async query => {
       if (response && response.list) {
         companies.value = response.list
         // console.log('加载的公司列表:', companies.value);
-      } else if (response && response.data && response.data.list) {
-        // 备用情况：如果响应格式是 {data: {list: []}}
-        companies.value = response.data.list
-        // console.log('加载的公司列表(data.list):', companies.value);
       } else {
-        console.error('获取公司列表数据格式不正确:', response)
+        // console.error('获取公司列表数据格式不正确:', response)
         ElMessage.error('获取公司列表失败')
         companies.value = []
       }

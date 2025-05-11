@@ -254,13 +254,13 @@ const fetchCategories = async () => {
     // 检查数据格式并使用
     if (data && Array.isArray(data)) {
       categoryData.value = data
-      console.log('分类数据:', data)
+      // console.log('分类数据:', data)
     } else {
       categoryData.value = []
       ElMessage.warning('获取分类数据失败，请刷新页面重试')
     }
   } catch (error) {
-    console.error('获取分类数据异常:', error)
+    // console.error('获取分类数据异常:', error)
     categoryData.value = []
   } finally {
     loading.value = false
@@ -290,7 +290,7 @@ const fetchQuestionList = async () => {
       params.subCategoryId = activeSecondaryCategory.value
     }
 
-    console.log('试卷列表请求参数:', params)
+    // console.log('试卷列表请求参数:', params)
 
     // 由于响应拦截器已经直接返回了res.data，所以这里直接使用返回值
     const data = await getExamList(params)

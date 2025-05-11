@@ -264,7 +264,7 @@ const fetchExamDetail = async () => {
     // 检查当前用户是否已收藏该试卷
     checkIsCollected()
   } catch (error) {
-    console.error('获取试卷详情失败:', error)
+    // console.error('获取试卷详情失败:', error)
     ElMessage.error('获取试卷详情失败，请稍后再试')
   } finally {
     loading.value = false
@@ -277,7 +277,7 @@ const checkIsCollected = async () => {
     const res = await checkFavorite(examId.value)
     isCollected.value = res.isFavorite || false
   } catch (error) {
-    console.error('检查收藏状态失败:', error)
+    // console.error('检查收藏状态失败:', error)
     isCollected.value = false
   }
 }

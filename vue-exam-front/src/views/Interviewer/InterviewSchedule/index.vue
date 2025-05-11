@@ -458,9 +458,9 @@ const fetchInterviews = async () => {
       }
     })
 
-    console.log('查询参数:', params)
+    // console.log('查询参数:', params)
     const response = await getInterviewList(params)
-    console.log('面试列表响应:', response)
+    // console.log('面试列表响应:', response)
 
     if (response) {
       // 从返回数据中提取面试列表和总数
@@ -476,7 +476,7 @@ const fetchInterviews = async () => {
         total.value = 0
       }
 
-      console.log(`加载了 ${interviews.value.length} 条面试记录，总计 ${total.value} 条`)
+      // console.log(`加载了 ${interviews.value.length} 条面试记录，总计 ${total.value} 条`)
     } else {
       interviews.value = []
       total.value = 0
@@ -495,7 +495,7 @@ const fetchInterviews = async () => {
 const fetchJobs = async () => {
   try {
     const response = await getInterviewerJobs()
-    console.log('职位列表响应:', response)
+    // console.log('职位列表响应:', response)
 
     if (response && response.list) {
       jobs.value = response.list

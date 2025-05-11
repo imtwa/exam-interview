@@ -25,7 +25,6 @@ export function getInterviewList(params) {
     try {
       new Date(params.startDate).toISOString()
     } catch (e) {
-      console.error('无效的开始日期格式:', params.startDate)
       delete params.startDate
     }
   }
@@ -35,7 +34,6 @@ export function getInterviewList(params) {
     try {
       new Date(params.endDate).toISOString()
     } catch (e) {
-      console.error('无效的结束日期格式:', params.endDate)
       delete params.endDate
     }
   }

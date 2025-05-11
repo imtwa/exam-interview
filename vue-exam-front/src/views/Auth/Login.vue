@@ -113,7 +113,7 @@ const refreshCaptcha = async () => {
       try {
         captchaImg.value = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(res.img)))}`
       } catch (e) {
-        console.error('验证码编码失败:', e)
+        // console.error('验证码编码失败:', e)
         // 降级方案，直接使用URI编码
         captchaImg.value = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(res.img)}`
       }
@@ -123,7 +123,7 @@ const refreshCaptcha = async () => {
 
     loginForm.captchaId = captchaId.value
   } catch (error) {
-    console.error('获取验证码失败:', error)
+    // console.error('获取验证码失败:', error)
     ElMessage.error('获取验证码失败，请稍后重试')
   }
 }
@@ -187,12 +187,12 @@ const handleLogin = () => {
             router.push('/')
           }
         } catch (error) {
-          console.error('检查个人资料失败:', error)
+          // console.error('检查个人资料失败:', error)
           // 检查失败也让用户继续使用，跳转到首页
           router.push('/')
         }
       } catch (error) {
-        console.error('登录失败:', error)
+        // console.error('登录失败:', error)
         // 登录失败时刷新验证码
         refreshCaptcha()
       } finally {

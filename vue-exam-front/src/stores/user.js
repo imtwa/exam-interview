@@ -137,7 +137,7 @@ export const useUserStore = defineStore('user', () => {
 
       return Promise.resolve(res)
     } catch (error) {
-      console.error('检查用户个人信息状态失败:', error)
+      // console.error('检查用户个人信息状态失败:', error)
       return Promise.reject(error)
     }
   }
@@ -163,7 +163,7 @@ export const useUserStore = defineStore('user', () => {
 
       return Promise.resolve(response)
     } catch (error) {
-      console.error('获取面试官资料失败:', error)
+      // console.error('获取面试官资料失败:', error)
       setProfileStatus(false)
       return Promise.reject(error)
     }

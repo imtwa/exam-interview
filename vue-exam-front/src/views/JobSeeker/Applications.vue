@@ -230,7 +230,7 @@ const fetchApplications = async () => {
 
     // 处理不同类型的错误
     if (error.response) {
-      console.error('错误响应:', error.response.data)
+      // console.error('错误响应:', error.response.data)
 
       const errorMsg = error.response.data.message || '未知错误'
 
@@ -324,7 +324,7 @@ const withdrawApplication = async applicationId => {
 
     loading.value = true
     const response = await withdrawApplicationApi(applicationId)
-    console.log('撤回申请响应:', response)
+    // console.log('撤回申请响应:', response)
     ElMessage.success('申请已成功撤回')
     await fetchApplications() // 重新加载数据
   } catch (error) {
@@ -332,7 +332,7 @@ const withdrawApplication = async applicationId => {
       return // 用户取消操作，不显示错误
     }
 
-    console.error('撤回申请失败:', error)
+    // console.error('撤回申请失败:', error)
 
     // 处理不同类型的错误
     if (error.response) {

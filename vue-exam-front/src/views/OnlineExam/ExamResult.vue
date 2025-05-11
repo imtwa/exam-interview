@@ -359,7 +359,7 @@ const fetchExamResult = async () => {
   try {
     // 使用真实API调用获取考试结果
     const response = await getOnlineExamResult(invitationCode)
-    console.log('获取到的考试结果:', response)
+    // console.log('获取到的考试结果:', response)
 
     if (!response) {
       throw new Error('未获取到考试结果数据')

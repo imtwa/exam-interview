@@ -70,7 +70,7 @@ export default {
           })
         }
         if (this.pages.length === 0) {
-          console.warn('pdf empty!')
+          // console.warn('pdf empty!')
           return
         }
         this.$nextTick(async () => {
@@ -98,7 +98,7 @@ export default {
                     key: Number(item.id.split('_')[1])
                   })
                 } catch (error) {
-                  console.error(`Error processing page ${item.page}:`, error)
+                  // console.error(`Error processing page ${item.page}:`, error)
                 } finally {
                   this.pdfAllLoaded = --pagesNotLoaded === 0
                 }
@@ -160,7 +160,7 @@ export default {
           // className: `${this.isDownloadable ? '' : 'pdf-reader-preview-only'}`
         })
       } catch (error) {
-        console.error('打开预览时发生错误：', error)
+        // console.error('打开预览时发生错误：', error)
       } finally {
         this.pending = false
       }

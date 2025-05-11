@@ -92,12 +92,12 @@ const handleSubmit = async () => {
 
     loading.value = true
     try {
-      console.log('提交邀请码:', formData.invitationCode)
+      // console.log('提交邀请码:', formData.invitationCode)
       const response = await verifyInvitationCode({
         invitationCode: formData.invitationCode
       })
 
-      console.log('验证结果:', response)
+      // console.log('验证结果:', response)
       if (response) {
         // 获取考试信息
         const examId = response.examId

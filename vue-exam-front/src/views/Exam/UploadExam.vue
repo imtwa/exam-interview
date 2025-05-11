@@ -266,8 +266,8 @@ const submitForm = async () => {
   }
 
   // 添加调试信息，检查登录状态
-  console.log('用户登录状态:', userStore.isLoggedIn)
-  console.log('用户令牌:', userStore.token)
+  // console.log('用户登录状态:', userStore.isLoggedIn)
+  // console.log('用户令牌:', userStore.token)
 
   formRef.value.validate(async valid => {
     if (valid) {
@@ -306,7 +306,7 @@ const submitForm = async () => {
         const res = await uploadExam(data)
 
         ElMessage.success('试卷上传成功')
-        console.log('上传成功返回的数据:', res)
+        // console.log('上传成功返回的数据:', res)
 
         // 确认是否查看详情
         ElMessageBox.confirm('试卷上传成功，是否查看试卷详情？', '上传成功', {
@@ -317,9 +317,9 @@ const submitForm = async () => {
           .then(() => {
             // 跳转到试卷详情页
             // API可能直接返回数据，也可能包裹在data属性中
-            const examId = res.id || (res.data && res.data.id)
+            const examId = res.id
             if (examId) {
-              console.log('跳转到试卷ID:', examId)
+              // console.log('跳转到试卷ID:', examId)
               router.push(`/exam/${examId}`)
             } else {
               ElMessage.warning('无法获取试卷ID，无法跳转到详情页')
@@ -334,9 +334,9 @@ const submitForm = async () => {
         console.error('上传失败', error)
         // 显示详细错误信息
         if (error.response) {
-          console.log('错误状态:', error.response.status)
-          console.log('错误数据:', error.response.data)
-          ElMessage.error(`上传失败: ${error.response.data.message || '请求错误'}`)
+          // console.log('错误状态:', error.response.status)
+          // console.log('错误数据:', error.response.data)
+          ElMessage.error(`上传失败: '请求错误'}`)
         } else {
           ElMessage.error('试卷上传失败，请重试')
         }

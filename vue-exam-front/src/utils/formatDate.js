@@ -23,7 +23,7 @@ export function formatDate(dateString, includeTime = true) {
 
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
   } catch (error) {
-    console.error('日期格式化错误:', error)
+    // console.error('日期格式化错误:', error)
     return dateString || '-'
   }
 }
@@ -50,7 +50,7 @@ export function formatRelativeTime(dateString) {
 
     return `${Math.floor(diffSec / 31536000)}年前`
   } catch (error) {
-    console.error('相对时间格式化错误:', error)
+    // console.error('相对时间格式化错误:', error)
     return dateString || '-'
   }
 }
@@ -87,7 +87,7 @@ export function formatFriendlyDate(dateString) {
 
     return `${year}-${month}-${day}`
   } catch (error) {
-    console.error('友好日期格式化错误:', error)
+    // console.error('友好日期格式化错误:', error)
     return dateString || '-'
   }
 }

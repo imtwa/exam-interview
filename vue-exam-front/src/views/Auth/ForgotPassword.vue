@@ -123,8 +123,8 @@ const sendCaptcha = async () => {
       }
     }, 1000)
   } catch (error) {
-    console.error('发送验证码失败:', error)
-    ElMessage.error(error.response?.data?.message || '发送验证码失败，请稍后重试')
+    // console.error('发送验证码失败:', error)
+    ElMessage.error('发送验证码失败，请稍后重试')
   }
 }
 
@@ -151,8 +151,8 @@ const handleForgotPassword = () => {
 
         ElMessage.success('密码重置成功')
       } catch (error) {
-        console.error('重置密码失败:', error)
-        ElMessage.error(error.response?.data?.message || '重置密码失败，请检查验证码是否正确')
+        // console.error('重置密码失败:', error)
+        ElMessage.error('重置密码失败，请检查验证码是否正确')
       } finally {
         isLoading.value = false
       }

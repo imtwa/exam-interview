@@ -77,7 +77,7 @@ export const formatDateTime = dateString => {
 
     return `${year}-${month}-${day} ${hours}:${minutes}`
   } catch (error) {
-    console.error('日期格式化错误:', error)
+    // console.error('日期格式化错误:', error)
     return dateString
   }
 }

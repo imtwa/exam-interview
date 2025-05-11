@@ -316,9 +316,9 @@ const fetchExamData = async () => {
   loading.value = true
 
   try {
-    // 使用实际API调用，从邀请码获取考试详情
+    // 从邀请码获取考试详情
     const response = await startExam(route.params.id)
-    console.log('获取到的考试数据:', response)
+    // console.log('获取到的考试数据:', response)
 
     // 设置考试数据
     if (!response) {

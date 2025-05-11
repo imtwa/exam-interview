@@ -279,11 +279,11 @@ const fetchJobDetail = async () => {
     return
   }
 
-  console.log('获取职位详情，ID:', jobId)
+  // console.log('获取职位详情，ID:', jobId)
 
   try {
     const result = await getJob(jobId)
-    console.log('API 返回结果:', result)
+    // console.log('API 返回结果:', result)
 
     if (result && result.id) {
       job.value = result

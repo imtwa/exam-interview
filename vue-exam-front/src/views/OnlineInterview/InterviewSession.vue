@@ -302,7 +302,7 @@ const verifyInvitationCode = async () => {
         canStart: response.canStart
       }
 
-      console.log('面试数据:', interviewData.value)
+      // console.log('面试数据:', interviewData.value)
 
       // 检查是否可以开始面试
       if (!interviewData.value.canStart) {
