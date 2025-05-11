@@ -523,40 +523,6 @@ export class JobService {
   }
 
   /**
-   * 获取热门城市列表
-   * @returns 热门城市列表
-   */
-  async getHotCities() {
-    try {
-      // 获取职位数量最多的前10个城市
-      const cities = await this.prisma.jobPosting.groupBy({
-        by: ['city'],
-        where: {
-          deletedAt: null,
-          status: JobStatus.ACTIVE,
-        },
-        _count: {
-          id: true,
-        },
-        orderBy: {
-          _count: {
-            id: 'desc',
-          },
-        },
-        take: 10,
-      });
-
-      return cities.map((item) => ({
-        name: item.city,
-        count: item._count.id,
-      }));
-    } catch (error) {
-      this.logger.error(`获取热门城市列表失败: ${error.message}`, error);
-      throw error;
-    }
-  }
-
-  /**
    * 获取面试官发布的职位列表
    * @param interviewerId 面试官ID
    * @param page 当前页码

@@ -139,3 +139,16 @@ export function deleteWorkExperience(id) {
     method: 'post'
   })
 }
+
+/**
+ * 获取求职申请应用列表
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getApplications(params) {
+  return request({
+    url: '/jobseeker/applications',
+    method: 'get',
+    params
+  })
+}

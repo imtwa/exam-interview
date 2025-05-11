@@ -157,7 +157,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUserApplications, withdrawApplication as withdrawApplicationApi } from '@/api/job'
+import { getJobseekerApplications, withdrawApplication as withdrawApplicationApi } from '@/api/job'
 import { getJobseekerProfile } from '@/api/jobseeker'
 
 const router = useRouter()
@@ -213,7 +213,7 @@ const fetchApplications = async () => {
       return
     }
 
-    const response = await getUserApplications(queryParams)
+    const response = await getJobseekerApplications(queryParams)
 
     // 处理返回的数据
     if (response.list) {

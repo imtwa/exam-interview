@@ -86,7 +86,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowRight, Location, Money } from '@element-plus/icons-vue'
-import { getJobsByInterviewer } from '@/api/job'
+import { getInterviewerJobs } from '@/api/job'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps({
@@ -121,7 +121,7 @@ const fetchInterviewerJobs = async () => {
       pageSize: pageSize.value
     }
 
-    const response = await getJobsByInterviewer(params)
+    const response = await getInterviewerJobs(params)
 
     // 处理响应数据
     if (response.data && response.data.list) {

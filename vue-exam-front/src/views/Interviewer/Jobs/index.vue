@@ -327,7 +327,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
 import {
-  getJobsByInterviewer,
+  getInterviewerJobs,
   createJob as createJobAPI,
   updateJob,
   deleteJob as deleteJobAPI
@@ -388,7 +388,7 @@ const fetchJobs = async () => {
   loading.value = true
 
   try {
-    const response = await getJobsByInterviewer(queryParams)
+    const response = await getInterviewerJobs(queryParams)
 
     // 检查响应结构，兼容后端直接返回数据或嵌套在data字段中的情况
     if (response.list) {

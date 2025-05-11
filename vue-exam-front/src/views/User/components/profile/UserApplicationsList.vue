@@ -76,7 +76,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowRight } from '@element-plus/icons-vue'
-import { getUserApplications } from '@/api/job'
+import { getJobseekerApplications } from '@/api/job'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps({
@@ -111,7 +111,7 @@ const fetchApplications = async () => {
       pageSize: pageSize.value
     }
 
-    const response = await getUserApplications(params)
+    const response = await getJobseekerApplications(params)
 
     // 处理响应数据
     if (response) {

@@ -349,7 +349,7 @@ import {
   scheduleInterview,
   assignExam as assignExamApi
 } from '@/api/interviewer'
-import { getJobsByInterviewer } from '@/api/job'
+import { getInterviewerJobs } from '@/api/job'
 import { getInterviewerPrivateExams } from '@/api/exam'
 import { formatDate } from '@/utils/formatDate'
 import InterviewSchedule from './components/InterviewSchedule.vue'
@@ -438,7 +438,7 @@ const fetchCandidates = async (page = currentPage.value) => {
 // 获取职位列表
 const fetchJobs = async () => {
   try {
-    const response = await getJobsByInterviewer({ pageSize: 100 })
+    const response = await getInterviewerJobs({ pageSize: 100 })
     if (response.list) {
       jobs.value = response.list
     } else if (Array.isArray(response.data)) {

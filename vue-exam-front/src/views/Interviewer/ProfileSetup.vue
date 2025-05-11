@@ -376,7 +376,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { updateInterviewerProfile } from '@/api/interviewer'
+import { setupInterviewerProfile } from '@/api/interviewer'
 import { getCompanyList } from '@/api/company'
 import { getRegionData } from '@/api/region'
 import NumberSteps from '@/components/NumberSteps.vue'
@@ -647,7 +647,7 @@ const prepareSubmitData = () => {
 const submitProfile = async () => {
   try {
     loading.value = true
-    const response = await updateInterviewerProfile(profileSetupForm)
+    const response = await setupInterviewerProfile(profileSetupForm)
 
     if (response) {
       // console.log('面试官资料设置成功，返回数据:', response)

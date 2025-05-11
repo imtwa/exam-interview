@@ -12,20 +12,31 @@ export function getInterviewerProfile() {
 }
 
 /**
- * 更新面试官个人资料
+ * 创建或更新面试官信息
  * @param {Object} data 面试官资料
  * @returns {Promise}
  */
 export function updateInterviewerProfile(data) {
   return request({
-    url: '/interviewer/profile/setup',
+    url: '/interviewer/profile',
     method: 'post',
     data
   })
 }
 
 /**
- * 面试官获取收到的职位申请列表
+ * 获取面试官创建的职位列表
+ * @returns {Promise}
+ */
+export function getInterviewerJobs() {
+  return request({
+    url: '/interviewer/jobs',
+    method: 'get'
+  })
+}
+
+/**
+ * 获取面试官收到的职位申请列表
  * @param {Object} params 查询参数
  * @returns {Promise} 返回申请列表
  */
@@ -38,7 +49,7 @@ export function getInterviewerApplications(params) {
 }
 
 /**
- * 更新职位申请状态
+ * 更新候选申请状态
  * @param {number} applicationId 申请ID
  * @param {Object} data 状态更新数据
  * @returns {Promise} 返回更新结果
@@ -66,7 +77,7 @@ export function scheduleInterview(applicationId, data) {
 }
 
 /**
- * 面试官设置个人资料和公司信息
+ * 更新面试官资料（支持同时设置公司）
  * @param {Object} data 设置数据
  * @returns {Promise}
  */
@@ -79,26 +90,15 @@ export function setupInterviewerProfile(data) {
 }
 
 /**
- * 获取面试官创建的职位列表
- * @returns {Promise}
+ * 分配考试给候选求职者
+ * @param {Object} data 包含试卷ID和笔试说明的数据
+ * @returns {Promise} 返回分配结果
  */
-export function getInterviewerJobs() {
+export function assignExam(data) {
   return request({
-    url: '/interviewer/jobs',
-    method: 'get'
-  })
-}
-
-/**
- * 获取面试官列表
- * @param {Object} params 查询参数
- * @returns {Promise} 返回面试官列表
- */
-export function getInterviewers(params) {
-  return request({
-    url: '/api/interviewer/interviewers',
-    method: 'get',
-    params
+    url: `/interviewer/applications/assign-exam`,
+    method: 'post',
+    data
   })
 }
 
@@ -129,39 +129,26 @@ export function extendExamDeadline(data) {
 }
 
 /**
- * 向考生发送考试提醒邮件
- * @param {number} examAssignmentId 考试分配ID
+ * 发送考试提醒邮件
+ * @param {Object} data 包含考试分配ID的数据
  * @returns {Promise} 返回操作结果
  */
-export function sendExamReminder(examAssignmentId) {
+export function sendExamReminder(data) {
   return request({
     url: '/interviewer/exams/send-reminder',
     method: 'post',
-    data: { examAssignmentId }
+    data
   })
 }
 
 /**
  * 取消考试
- * @param {number} examAssignmentId 考试分配ID
+ * @param {Object} data 包含考试分配ID的数据
  * @returns {Promise} 返回操作结果
  */
-export function cancelExam(examAssignmentId) {
+export function cancelExam(data) {
   return request({
     url: '/interviewer/exams/cancel',
-    method: 'post',
-    data: { examAssignmentId }
-  })
-}
-
-/**
- * 分配笔试试卷并发送邮件通知
- * @param {Object} data 包含试卷ID和笔试说明的数据
- * @returns {Promise} 返回分配结果
- */
-export function assignExam(data) {
-  return request({
-    url: `/interviewer/applications/assign-exam`,
     method: 'post',
     data
   })
@@ -195,12 +182,12 @@ export function getInterviewDetail(interviewId) {
 
 /**
  * 验证面试邀请码
- * @param {string} invitationCode 面试邀请码
+ * @param {string} code 邀请码
  * @returns {Promise} 返回验证结果
  */
-export function verifyInterviewInvitation(invitationCode) {
+export function verifyInterviewCode(code) {
   return request({
-    url: `/interviewer/interviews/verify/${invitationCode}`,
+    url: `/interviewer/interviews/verify/${code}`,
     method: 'get'
   })
 }

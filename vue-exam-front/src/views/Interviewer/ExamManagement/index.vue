@@ -240,7 +240,7 @@ import {
   sendExamReminder,
   cancelExam as cancelExamAPI
 } from '@/api/interviewer'
-import { getJobsByInterviewer } from '@/api/job'
+import { getInterviewerJobs } from '@/api/job'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -328,7 +328,7 @@ const fetchExams = async () => {
 // 获取职位列表
 const fetchJobs = async () => {
   try {
-    const response = await getJobsByInterviewer()
+    const response = await getInterviewerJobs()
     if (response) {
       jobs.value = response.list || []
     } else {

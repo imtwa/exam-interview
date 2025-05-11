@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 /**
- * 上传简历文件
+ * 更新&上传求职者简历
  * @param {File} file 文件对象
  * @returns {Promise} 请求Promise
  */

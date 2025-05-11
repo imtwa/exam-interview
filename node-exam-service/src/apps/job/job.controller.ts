@@ -149,7 +149,7 @@ export class JobController {
     ],
   })
   @ApiResponse({ status: 200, description: '返回招聘信息列表及分页信息' })
-  @Get()
+  @Get('/page')
   async findAll(@Query() query: QueryJobDto) {
     this.logger.log(
       `查询招聘信息列表: 页码${query.page}, 每页${query.pageSize}`,
@@ -206,15 +206,6 @@ export class JobController {
     this.logger.log(`删除招聘信息: ${id}`);
     await this.jobService.remove(+id, req.user.userId);
     return success(null, '删除成功');
-  }
-
-  @ApiOperation({ summary: '获取热门城市列表' })
-  @ApiResponse({ status: 200, description: '返回热门城市列表' })
-  @Get('hot-cities')
-  async getHotCities() {
-    this.logger.log('获取热门城市列表');
-    const result = await this.jobService.getHotCities();
-    return success(result);
   }
 
   @ApiOperation({ summary: '获取公司发布的职位列表' })
