@@ -26,15 +26,16 @@
               题库
             </router-link>
 
+            <router-link
+              to="/recruitment"
+              class="navbar__link"
+              :class="{ 'navbar__link--active': route.path === '/recruitment' }"
+            >
+              招聘
+            </router-link>
+
             <!-- 求职者导航链接 -->
             <template v-if="isJobSeeker">
-              <router-link
-                to="/recruitment"
-                class="navbar__link"
-                :class="{ 'navbar__link--active': route.path === '/recruitment' }"
-              >
-                招聘
-              </router-link>
               <router-link
                 to="/online-exam"
                 class="navbar__link"
@@ -42,39 +43,10 @@
               >
                 在线考试
               </router-link>
-
-              <router-link
-                to="/online-interview"
-                class="navbar__link"
-                :class="{ 'navbar__link--active': route.path.includes('/online-interview') }"
-              >
-                在线面试
-              </router-link>
             </template>
 
             <!-- 面试官导航链接 -->
             <template v-if="isInterviewer">
-              <router-link
-                to="/online-interview"
-                class="navbar__link"
-                :class="{ 'navbar__link--active': route.path.includes('/online-interview') }"
-              >
-                在线面试
-              </router-link>
-              <router-link
-                to="/job-management"
-                class="navbar__link"
-                :class="{ 'navbar__link--active': route.path.includes('/job-management') }"
-              >
-                岗位管理
-              </router-link>
-              <router-link
-                to="/candidate-management"
-                class="navbar__link"
-                :class="{ 'navbar__link--active': route.path.includes('/candidate') }"
-              >
-                候选人管理
-              </router-link>
               <router-link
                 to="/private-exams"
                 class="navbar__link"
@@ -82,21 +54,14 @@
               >
                 专属试卷
               </router-link>
-              <router-link
-                to="/exam-management"
-                class="navbar__link"
-                :class="{ 'navbar__link--active': route.path.includes('/exam-management') }"
-              >
-                考试管理
-              </router-link>
-              <router-link
-                to="/interview-schedule"
-                class="navbar__link"
-                :class="{ 'navbar__link--active': route.path.includes('/interview') }"
-              >
-                面试管理
-              </router-link>
             </template>
+            <router-link
+              to="/online-interview"
+              class="navbar__link"
+              :class="{ 'navbar__link--active': route.path.includes('/online-interview') }"
+            >
+              在线面试
+            </router-link>
           </div>
         </div>
 
@@ -153,9 +118,19 @@
                         @click="router.push(`/company/${interviewerInfo.companyId}`)"
                         >公司信息</el-dropdown-item
                       >
-                      <el-dropdown-item @click="router.push('/account-settings')"
-                        >账号设置</el-dropdown-item
-                      >
+                      <el-dropdown-item @click="route.path.includes('/job-management')">
+                        岗位管理
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/candidate')">
+                        候选管理
+                      </el-dropdown-item>
+
+                      <el-dropdown-item @click="router.push('/exam-management')">
+                        考试管理
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="router.push('/interview')">
+                        面试管理
+                      </el-dropdown-item>
                     </template>
 
                     <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
@@ -197,16 +172,16 @@
         >
           题库
         </router-link>
+        <router-link
+          to="/recruitment"
+          class="navbar__mobile-link"
+          :class="{ 'navbar__mobile-link--active': route.path === '/recruitment' }"
+        >
+          招聘
+        </router-link>
 
         <!-- 求职者导航链接 -->
         <template v-if="isJobSeeker">
-          <router-link
-            to="/recruitment"
-            class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path === '/recruitment' }"
-          >
-            招聘
-          </router-link>
           <router-link
             to="/online-exam"
             class="navbar__mobile-link"
@@ -219,56 +194,20 @@
         <!-- 面试官导航链接 -->
         <template v-if="isInterviewer">
           <router-link
-            to="/online-interview"
-            class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path.includes('/online-interview') }"
-          >
-            在线面试
-          </router-link>
-          <router-link
-            to="/job-management"
-            class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path.includes('/job-management') }"
-          >
-            岗位管理
-          </router-link>
-          <router-link
-            to="/candidate-management"
-            class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path.includes('/candidate') }"
-          >
-            候选人管理
-          </router-link>
-          <router-link
             to="/private-exams"
             class="navbar__mobile-link"
             :class="{ 'navbar__mobile-link--active': route.path.includes('/private-exams') }"
           >
             专属试卷
           </router-link>
-
-          <router-link
-            to="/exam-management"
-            class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path.includes('/exam-management') }"
-          >
-            考试管理
-          </router-link>
-          <router-link
-            to="/interview-schedule"
-            class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path.includes('/interview') }"
-          >
-            面试安排
-          </router-link>
-          <router-link
-            :to="`/company/${interviewerInfo?.companyId}`"
-            class="navbar__mobile-link"
-            :class="{ 'navbar__mobile-link--active': route.path.includes('/company/') }"
-          >
-            公司信息
-          </router-link>
         </template>
+        <router-link
+          to="/online-interview"
+          class="navbar__mobile-link"
+          :class="{ 'navbar__mobile-link--active': route.path.includes('/online-interview') }"
+        >
+          在线面试
+        </router-link>
 
         <!-- Mobile search -->
         <div class="navbar__mobile-search">
