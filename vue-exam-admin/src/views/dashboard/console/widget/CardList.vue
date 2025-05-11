@@ -20,41 +20,43 @@
 <script setup lang="ts">
   import { useSettingStore } from '@/store/modules/setting'
   import { CountTo } from 'vue3-count-to'
+  import { storeToRefs } from 'pinia'
+  import { reactive } from 'vue'
 
   const { showWorkTab } = storeToRefs(useSettingStore())
 
   const dataList = reactive([
     {
-      des: '总访问次数',
+      des: '职位发布数',
       icon: '&#xe721;',
       startVal: 0,
       duration: 1000,
-      num: 9120,
-      change: '+20%'
+      num: 128,
+      change: '+15%'
     },
     {
-      des: '在线访客数',
+      des: '简历投递数',
       icon: '&#xe724;',
       startVal: 0,
       duration: 1000,
-      num: 182,
-      change: '+10%'
+      num: 356,
+      change: '+22%'
     },
     {
-      des: '点击量',
+      des: '面试安排数',
       icon: '&#xe7aa;',
       startVal: 0,
       duration: 1000,
-      num: 9520,
-      change: '-12%'
+      num: 89,
+      change: '+18%'
     },
     {
-      des: '新用户',
+      des: '考试完成数',
       icon: '&#xe82a;',
       startVal: 0,
       duration: 1000,
-      num: 156,
-      change: '+30%'
+      num: 65,
+      change: '+10%'
     }
   ])
 </script>

@@ -60,7 +60,7 @@ export class UserService extends ApiService {
    * @returns Promise 对象
    */
   static async createUser(data: Partial<FrontUser>): Promise<any> {
-    return this.post('', data)
+    return this.post('/auth/register', data)
   }
 
   /**
@@ -88,6 +88,6 @@ export class UserService extends ApiService {
    * @returns Promise 对象
    */
   static async resetPassword(id: number): Promise<any> {
-    return this.post(`/${id}/reset-password`)
+    return this.post(`/auth/reset-password`, { userId: id })
   }
 }

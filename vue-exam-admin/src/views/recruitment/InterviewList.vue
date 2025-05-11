@@ -95,7 +95,7 @@
           currentInterview.interviewerName
         }}</el-descriptions-item>
         <el-descriptions-item label="面试时间">
-          {{ formatDateTime(currentInterview.scheduledTime) }}
+          {{ formatDateTime(currentInterview.scheduleTime) }}
         </el-descriptions-item>
         <el-descriptions-item label="面试地点">{{
           currentInterview.location
@@ -210,11 +210,31 @@
   import { ref, reactive, onMounted, computed } from 'vue'
   import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
   import { useRouter } from 'vue-router'
-  import { InterviewService, InterviewListParams } from '@/api/interview'
-  import { JobService } from '@/api/job'
-  import { UserService } from '@/api/user'
-  import type { Interview, InterviewFeedback } from '@/api/model/userModel'
+  import { InterviewService } from '@/api/interviewService'
+  import { JobPostingService } from '@/api/jobPostingService'
+  import { UserService } from '@/api/userService'
+  import type { Interview } from '@/api/model/userModel'
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
+
+  // 定义 InterviewListParams 接口
+  interface InterviewListParams {
+    page?: number
+    pageSize?: number
+    jobId?: number
+    interviewerId?: number
+    status?: string
+    fromDate?: string
+    toDate?: string
+  }
+
+  // 定义 InterviewFeedback 接口
+  interface InterviewFeedback {
+    technicalScore: number
+    communicationScore: number
+    cultureFitScore: number
+    recommendation: string
+    comments: string
+  }
 
   // 表格列配置
   const columns = [
@@ -224,22 +244,22 @@
     { prop: 'applicantName', label: '应聘者', minWidth: '120' },
     { prop: 'interviewerName', label: '面试官', minWidth: '120' },
     {
-      prop: 'scheduledTime',
+      prop: 'scheduleTime',
       label: '面试时间',
       minWidth: '150',
-      formatter: (row: Interview) => formatDateTime(row.scheduledTime)
+      formatter: (row: any) => formatDateTime(row.scheduleTime)
     },
     {
       prop: 'type',
       label: '面试类型',
       width: '100',
-      formatter: (row: Interview) => interviewTypeMap[row.type]
+      formatter: (row: any) => interviewTypeMap[row.type] || '-'
     },
     {
       prop: 'status',
       label: '状态',
       width: '100',
-      formatter: (row: Interview) => statusMap[row.status]
+      formatter: (row: any) => statusMap[row.status] || '-'
     },
     { slot: 'operation', label: '操作', fixed: 'right', width: '240' }
   ]
@@ -268,12 +288,12 @@
   }
 
   // 数据
-  const interviewList = ref<Interview[]>([])
+  const interviewList = ref<any[]>([])
   const loading = ref(false)
   const pagination = reactive({
     total: 0,
     page: 1,
-    size: 10
+    pageSize: 10
   })
 
   // 下拉选项
@@ -283,7 +303,7 @@
   // 搜索参数
   const searchParams = reactive<InterviewListParams>({
     page: 1,
-    size: 10,
+    pageSize: 10,
     jobId: undefined,
     interviewerId: undefined,
     status: undefined,
@@ -294,7 +314,7 @@
   const dateRange = ref<[string, string] | null>(null)
 
   // 当前选中的面试
-  const currentInterview = ref<Interview>({} as Interview)
+  const currentInterview = ref<any>({})
 
   // 对话框显示状态
   const viewDialogVisible = ref(false)
@@ -353,10 +373,8 @@
     loading.value = true
     try {
       const res = await InterviewService.getInterviewList(searchParams)
-      if (res.success) {
-        interviewList.value = res.data.items
-        pagination.total = res.data.total
-      }
+      interviewList.value = res.data || []
+      pagination.total = res.total || 0
     } catch (error) {
       console.error('获取面试列表失败', error)
       ElMessage.error('获取面试列表失败')
@@ -368,9 +386,9 @@
   // 获取职位选项
   const fetchJobOptions = async () => {
     try {
-      const res = await JobService.getJobList({ page: 1, size: 100 })
-      if (res.success) {
-        jobOptions.value = res.data.items.map((job) => ({
+      const res = await JobPostingService.getJobPostingList({ page: 1, pageSize: 100 })
+      if (res.data) {
+        jobOptions.value = res.data.items.map((job: any) => ({
           id: job.id,
           title: job.title
         }))
@@ -383,11 +401,11 @@
   // 获取面试官选项
   const fetchInterviewerOptions = async () => {
     try {
-      const res = await UserService.getInterviewerList({ page: 1, size: 100 })
-      if (res.success) {
-        interviewerOptions.value = res.data.items.map((interviewer) => ({
+      const res = await UserService.getUserList({ page: 1, pageSize: 100, role: 'INTERVIEWER' })
+      if (res.data) {
+        interviewerOptions.value = res.data.items.map((interviewer: any) => ({
           id: interviewer.id,
-          name: interviewer.name
+          name: interviewer.username
         }))
       }
     } catch (error) {
@@ -408,24 +426,12 @@
   }
 
   // 查看面试详情
-  const handleView = async (row: Interview) => {
+  const handleView = async (row: any) => {
     try {
-      const res = await InterviewService.getInterviewDetail(row.id)
-      if (res.success) {
+      const res = await InterviewService.getInterviewById(row.id)
+      if (res.data) {
         currentInterview.value = res.data
         viewDialogVisible.value = true
-
-        // 如果有反馈，获取反馈信息
-        if (res.data.status === 'COMPLETED') {
-          try {
-            const feedbackRes = await InterviewService.getFeedback(row.id)
-            if (feedbackRes.success) {
-              currentInterview.value.feedback = feedbackRes.data
-            }
-          } catch (error) {
-            console.error('获取面试反馈失败', error)
-          }
-        }
       }
     } catch (error) {
       console.error('获取面试详情失败', error)
@@ -434,7 +440,7 @@
   }
 
   // 提交反馈对话框
-  const handleFeedback = (row: Interview) => {
+  const handleFeedback = (row: any) => {
     currentInterview.value = row
 
     // 重置表单
@@ -452,29 +458,27 @@
   // 提交反馈
   const submitFeedback = async () => {
     if (!feedbackFormRef.value) return
-
     await feedbackFormRef.value.validate(async (valid) => {
-      if (valid) {
-        try {
-          const res = await InterviewService.submitFeedback(currentInterview.value.id, feedbackForm)
-          if (res.success) {
-            // 更新面试状态为已完成
-            await InterviewService.updateInterviewStatus(currentInterview.value.id, 'COMPLETED')
+      if (!valid) return
 
-            ElMessage.success('反馈提交成功')
-            feedbackDialogVisible.value = false
-            fetchInterviewList()
-          }
-        } catch (error) {
-          console.error('提交反馈失败', error)
-          ElMessage.error('提交反馈失败')
-        }
+      try {
+        const res = await InterviewService.submitFeedback(currentInterview.value.id, feedbackForm)
+
+        // 更新面试状态为已完成
+        await InterviewService.updateInterview(currentInterview.value.id, { status: 'COMPLETED' })
+
+        ElMessage.success('反馈提交成功')
+        feedbackDialogVisible.value = false
+        fetchInterviewList()
+      } catch (error) {
+        console.error('提交反馈失败', error)
+        ElMessage.error('提交反馈失败')
       }
     })
   }
 
   // 取消面试对话框
-  const handleCancel = (row: Interview) => {
+  const handleCancel = (row: any) => {
     currentInterview.value = row
     cancelForm.reason = ''
     cancelDialogVisible.value = true
@@ -483,23 +487,17 @@
   // 确认取消面试
   const confirmCancel = async () => {
     if (!cancelFormRef.value) return
-
     await cancelFormRef.value.validate(async (valid) => {
-      if (valid) {
-        try {
-          const res = await InterviewService.cancelInterview(
-            currentInterview.value.id,
-            cancelForm.reason
-          )
-          if (res.success) {
-            ElMessage.success('面试已取消')
-            cancelDialogVisible.value = false
-            fetchInterviewList()
-          }
-        } catch (error) {
-          console.error('取消面试失败', error)
-          ElMessage.error('取消面试失败')
-        }
+      if (!valid) return
+
+      try {
+        const res = await InterviewService.deleteInterview(currentInterview.value.id)
+        ElMessage.success('面试已取消')
+        cancelDialogVisible.value = false
+        fetchInterviewList()
+      } catch (error) {
+        console.error('取消面试失败', error)
+        ElMessage.error('取消面试失败')
       }
     })
   }

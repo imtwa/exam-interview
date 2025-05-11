@@ -264,11 +264,13 @@
   import CommonCrudTable from '@/components/CommonCrudTable.vue'
   import { JobApplicationService } from '@/api/jobApplicationService'
   import { InterviewService } from '@/api/interviewService'
-  import { JobApplication, Interview } from '@/api/model/userModel'
   import { ElMessage, FormInstance, FormRules } from 'element-plus'
 
+  // 过滤参数
+  const filterParams = ref({})
+
   // 数据列表
-  const applicationList = ref<JobApplication[]>([])
+  const applicationList = ref<any[]>([])
   const total = ref(0)
   const loading = ref(false)
   const currentPage = ref(1)
@@ -277,7 +279,7 @@
 
   // 查看详情
   const viewDialogVisible = ref(false)
-  const currentApplication = ref<JobApplication | null>(null)
+  const currentApplication = ref<any>(null)
 
   // 安排面试
   const scheduleDialogVisible = ref(false)
@@ -313,25 +315,22 @@
 
   // 获取数据
   onMounted(() => {
-    fetchApplicationList()
+    fetchApplications()
   })
 
-  const fetchApplicationList = async () => {
+  const fetchApplications = async () => {
     loading.value = true
     try {
       const res = await JobApplicationService.getJobApplicationList({
         page: currentPage.value,
-        size: pageSize.value,
-        keyword: searchKeyword.value
+        pageSize: pageSize.value,
+        keyword: searchKeyword.value,
+        ...filterParams.value
       })
-
-      if (res.code === 200) {
-        applicationList.value = res.data || []
-        total.value = res.total || 0
-      } else {
-        ElMessage.error(res.message || '获取申请列表失败')
-      }
-    } catch (_error) {
+      applicationList.value = res.data.items || []
+      total.value = res.data.total || 0
+    } catch (error) {
+      console.error('获取申请列表失败', error)
       ElMessage.error('获取申请列表失败')
     } finally {
       loading.value = false
@@ -343,33 +342,35 @@
     searchKeyword.value = params.keyword
     currentPage.value = params.page
     pageSize.value = params.pageSize
-    fetchApplicationList()
+    fetchApplications()
   }
 
   // 处理分页
   const handlePageChange = (params: { page: number; pageSize: number }) => {
     currentPage.value = params.page
     pageSize.value = params.pageSize
-    fetchApplicationList()
+    fetchApplications()
   }
 
   const handleSizeChange = (params: { page: number; pageSize: number }) => {
     currentPage.value = params.page
     pageSize.value = params.pageSize
-    fetchApplicationList()
+    fetchApplications()
   }
 
   // 查看详情
-  const handleView = async (row: JobApplication) => {
+  const handleView = async (row) => {
+    if (!row.id) return
+    currentApplication.value = row
+    viewDialogVisible.value = true
+
     try {
-      const res = await JobApplicationService.getJobApplicationDetail(row.id!)
-      if (res.code === 200) {
+      const res = await JobApplicationService.getJobApplicationById(row.id)
+      if (res.data) {
         currentApplication.value = res.data
-        viewDialogVisible.value = true
-      } else {
-        ElMessage.error(res.message || '获取申请详情失败')
       }
-    } catch (_error) {
+    } catch (error) {
+      console.error('获取申请详情失败', error)
       ElMessage.error('获取申请详情失败')
     }
   }
@@ -389,42 +390,32 @@
 
   // 提交面试安排
   const submitScheduleForm = async () => {
-    if (!scheduleFormRef.value || !currentApplication.value) return
-
+    if (!scheduleFormRef.value) return
     await scheduleFormRef.value.validate(async (valid) => {
-      if (valid) {
-        submitLoading.value = true
-        try {
-          const res = await InterviewService.scheduleInterview({
-            applicationId: currentApplication.value.id!,
-            scheduleTime: scheduleForm.value.scheduleTime!,
-            duration: scheduleForm.value.duration,
-            meetingLink: scheduleForm.value.meetingLink
-          })
+      if (!valid) return
 
-          if (res.code === 200) {
-            ElMessage.success('面试安排成功')
-            scheduleDialogVisible.value = false
+      submitLoading.value = true
+      try {
+        const applicationId = currentApplication.value?.id
 
-            // 更新申请状态为"已安排面试"
-            await JobApplicationService.updateApplicationStatus(
-              currentApplication.value.id!,
-              'SCHEDULED'
-            )
+        // 使用InterviewService的scheduleInterview方法
+        const res = await InterviewService.scheduleInterview({
+          applicationId,
+          ...scheduleForm,
+          type: 'ONLINE' // 或根据实际情况设置
+        })
 
-            // 刷新列表和详情
-            fetchApplicationList()
-            if (viewDialogVisible.value) {
-              handleView(currentApplication.value)
-            }
-          } else {
-            ElMessage.error(res.message || '面试安排失败')
-          }
-        } catch (_error) {
-          ElMessage.error('面试安排失败')
-        } finally {
-          submitLoading.value = false
-        }
+        // 更新申请状态为面试中
+        await JobApplicationService.updateApplicationStatus(applicationId, { status: 'INTERVIEW' })
+
+        ElMessage.success('面试安排成功')
+        scheduleDialogVisible.value = false
+        fetchApplications()
+      } catch (error) {
+        console.error('安排面试失败', error)
+        ElMessage.error('安排面试失败: ' + error.message)
+      } finally {
+        submitLoading.value = false
       }
     })
   }
@@ -443,36 +434,23 @@
 
   // 提交状态更新
   const submitStatusForm = async () => {
-    if (!statusFormRef.value || !currentApplication.value) return
-
+    if (!statusFormRef.value) return
     await statusFormRef.value.validate(async (valid) => {
-      if (valid) {
-        submitLoading.value = true
-        try {
-          // 更新申请状态
-          const res = await JobApplicationService.updateApplicationStatus(
-            currentApplication.value.id!,
-            statusForm.value.status,
-            statusForm.value.feedback
-          )
+      if (!valid) return
 
-          if (res.code === 200) {
-            ElMessage.success('状态更新成功')
-            statusDialogVisible.value = false
+      submitLoading.value = true
+      try {
+        const applicationId = currentApplication.value?.id
+        const res = await JobApplicationService.updateApplicationStatus(applicationId, statusForm)
 
-            // 刷新列表和详情
-            fetchApplicationList()
-            if (viewDialogVisible.value) {
-              handleView(currentApplication.value)
-            }
-          } else {
-            ElMessage.error(res.message || '状态更新失败')
-          }
-        } catch (_error) {
-          ElMessage.error('状态更新失败')
-        } finally {
-          submitLoading.value = false
-        }
+        ElMessage.success('状态更新成功')
+        statusDialogVisible.value = false
+        fetchApplications()
+      } catch (error) {
+        console.error('更新状态失败', error)
+        ElMessage.error('更新状态失败: ' + error.message)
+      } finally {
+        submitLoading.value = false
       }
     })
   }

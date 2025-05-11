@@ -6,7 +6,7 @@ import { JobApplication, JobApplicationListParams } from './model/userModel'
  * 处理求职申请相关的 API 调用
  */
 export class JobApplicationService extends ApiService {
-  protected static baseUrl: string = '/job-application'
+  protected static baseUrl: string = '/job'
 
   /**
    * 获取求职申请列表
@@ -14,7 +14,7 @@ export class JobApplicationService extends ApiService {
    * @returns Promise 对象
    */
   static async getJobApplicationList(params: JobApplicationListParams): Promise<any> {
-    return this.getPage('', params)
+    return this.getPage('/applications', params)
   }
 
   /**
@@ -23,7 +23,7 @@ export class JobApplicationService extends ApiService {
    * @returns Promise 对象
    */
   static async getJobApplicationById(id: number): Promise<any> {
-    return this.get(`/${id}`)
+    return this.get(`/applications/${id}`)
   }
 
   /**
@@ -32,46 +32,43 @@ export class JobApplicationService extends ApiService {
    * @param status 申请状态
    * @returns Promise 对象
    */
-  static async updateJobApplicationStatus(
-    id: number,
-    status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'INTERVIEW'
-  ): Promise<any> {
-    return this.post(`/${id}/status`, { status })
+  static async updateApplicationStatus(id: number, data: any): Promise<any> {
+    return this.post(`/applications/${id}/status`, data)
   }
 
   /**
-   * 获取面试官收到的求职申请列表
+   * 获取面试官收到的职位申请列表
    * @param params 查询参数
    * @returns Promise 对象
    */
-  static async getInterviewerApplications(params: JobApplicationListParams): Promise<any> {
-    return this.getPage('/interviewer/applications', params)
+  static async getInterviewerApplications(params: JobApplicationListParams = {}): Promise<any> {
+    return this.get('/interviewer/applications', params)
   }
 
   /**
-   * 获取求职者发送的求职申请列表
+   * 获取求职者的职位申请列表
    * @param params 查询参数
    * @returns Promise 对象
    */
-  static async getJobSeekerApplications(params: JobApplicationListParams): Promise<any> {
-    return this.getPage('/jobseeker/applications', params)
+  static async getJobseekerApplications(params: JobApplicationListParams = {}): Promise<any> {
+    return this.get('/applications/jobseeker', params)
   }
 
   /**
-   * 创建求职申请
-   * @param data 求职申请数据
+   * 申请职位
+   * @param jobId 职位ID
    * @returns Promise 对象
    */
-  static async createJobApplication(data: Partial<JobApplication>): Promise<any> {
-    return this.post('', data)
+  static async applyForJob(jobId: number): Promise<any> {
+    return this.post(`/${jobId}/apply`)
   }
 
   /**
-   * 取消求职申请
-   * @param id 求职申请 ID
+   * 撤回职位申请
+   * @param applicationId 申请ID
    * @returns Promise 对象
    */
-  static async cancelJobApplication(id: number): Promise<any> {
-    return this.post(`/${id}/cancel`)
+  static async withdrawApplication(applicationId: number): Promise<any> {
+    return this.post(`/applications/${applicationId}/withdraw`)
   }
 }

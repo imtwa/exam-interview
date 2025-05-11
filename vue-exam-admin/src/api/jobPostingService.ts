@@ -14,7 +14,7 @@ export class JobPostingService extends ApiService {
    * @returns Promise 对象
    */
   static async getJobPostingList(params: JobPostingListParams): Promise<any> {
-    return this.getPage('', params)
+    return this.getPage('/page', params)
   }
 
   /**
@@ -60,7 +60,53 @@ export class JobPostingService extends ApiService {
    * @returns Promise 对象
    */
   static async getJobsByInterviewer(params?: Partial<JobPostingListParams>): Promise<any> {
-    return this.getPage('/interviewer/jobs', params)
+    return this.get('/interviewer/jobs', params)
+  }
+
+  /**
+   * 获取面试官发布的职位列表(带筛选)
+   * @param params 查询参数
+   * @returns Promise 对象
+   */
+  static async searchJobsByInterviewer(params?: Partial<JobPostingListParams>): Promise<any> {
+    return this.get('/interviewer/jobs/search', params)
+  }
+
+  /**
+   * 获取公司发布的职位列表
+   * @param companyId 公司ID
+   * @param params 查询参数
+   * @returns Promise 对象
+   */
+  static async getCompanyJobs(companyId: number, params = {}): Promise<any> {
+    return this.get(`/company/${companyId}`, params)
+  }
+
+  /**
+   * 申请职位
+   * @param jobId 职位ID
+   * @returns Promise 对象
+   */
+  static async applyForJob(jobId: number): Promise<any> {
+    return this.post(`/${jobId}/apply`)
+  }
+
+  /**
+   * 获取求职者的职位申请列表
+   * @param params 查询参数
+   * @returns Promise 对象
+   */
+  static async getJobseekerApplications(params = {}): Promise<any> {
+    return this.get('/applications/jobseeker', params)
+  }
+
+  /**
+   * 撤回职位申请
+   * @param applicationId 申请ID
+   * @returns Promise 对象
+   */
+  static async withdrawApplication(applicationId: number): Promise<any> {
+    return this.post(`/applications/${applicationId}/withdraw`)
   }
 
   /**

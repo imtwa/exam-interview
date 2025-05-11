@@ -26,6 +26,9 @@ export { SubCategoryService } from './subCategoryService'
 export { QuestionService } from './questionService'
 export { ExamPaperService } from './examPaperService'
 
+// 上传服务
+export { UploadService } from './uploadService'
+
 // 导出模型
 export * from './model/baseModel'
 export * from './model/userModel'

@@ -14,7 +14,7 @@ export class InterviewService extends ApiService {
    * @returns Promise 对象
    */
   static async getInterviewList(params: InterviewListParams): Promise<any> {
-    return this.getPage('', params)
+    return this.getPage('/page', params)
   }
 
   /**
@@ -27,7 +27,7 @@ export class InterviewService extends ApiService {
   }
 
   /**
-   * 创建面试
+   * 创建面试安排
    * @param data 面试数据
    * @returns Promise 对象
    */
@@ -46,44 +46,70 @@ export class InterviewService extends ApiService {
   }
 
   /**
+   * 删除面试
+   * @param id 面试 ID
+   * @returns Promise 对象
+   */
+  static async deleteInterview(id: number): Promise<any> {
+    return this.post(`/delete/${id}`)
+  }
+
+  /**
+   * 安排面试
+   * @param applicationId 申请ID
+   * @param data 面试安排数据
+   * @returns Promise 对象
+   */
+  static async scheduleInterview(data: any): Promise<any> {
+    const { applicationId, ...interviewData } = data
+    return this.post(`/interviewer/applications/${applicationId}/schedule`, interviewData)
+  }
+
+  /**
+   * 提交面试评价
+   * @param interviewId 面试ID
+   * @param data 评价数据
+   * @returns Promise 对象
+   */
+  static async submitFeedback(interviewId: number, data: any): Promise<any> {
+    return this.post(`/interviewer/interviews/${interviewId}/feedback`, data)
+  }
+
+  /**
+   * 获取面试反馈
+   * @param interviewId 面试ID
+   * @returns Promise 对象
+   */
+  static async getFeedback(interviewId: number): Promise<any> {
+    return this.get(`/${interviewId}/feedback`)
+  }
+
+  /**
+   * 更新面试状态
+   * @param interviewId 面试ID
+   * @param status 状态
+   * @returns Promise 对象
+   */
+  static async updateInterviewStatus(interviewId: number, status: string): Promise<any> {
+    return this.post(`/update/${interviewId}`, { status })
+  }
+
+  /**
    * 取消面试
-   * @param id 面试 ID
+   * @param interviewId 面试ID
+   * @param reason 取消原因
    * @returns Promise 对象
    */
-  static async cancelInterview(id: number): Promise<any> {
-    return this.post(`/${id}/cancel`)
+  static async cancelInterview(interviewId: number, reason?: string): Promise<any> {
+    return this.post(`/delete/${interviewId}`, { reason })
   }
 
   /**
-   * 完成面试
-   * @param id 面试 ID
-   * @param result 面试结果
-   * @param feedback 面试反馈
+   * 验证面试邀请码
+   * @param code 邀请码
    * @returns Promise 对象
    */
-  static async completeInterview(
-    id: number,
-    result: 'PASS' | 'FAIL',
-    feedback: string
-  ): Promise<any> {
-    return this.post(`/${id}/complete`, { result, feedback })
-  }
-
-  /**
-   * 获取面试官的面试列表
-   * @param params 查询参数
-   * @returns Promise 对象
-   */
-  static async getInterviewerInterviews(params: InterviewListParams): Promise<any> {
-    return this.getPage('/interviewer', params)
-  }
-
-  /**
-   * 获取求职者的面试列表
-   * @param params 查询参数
-   * @returns Promise 对象
-   */
-  static async getJobSeekerInterviews(params: InterviewListParams): Promise<any> {
-    return this.getPage('/jobseeker', params)
+  static async verifyInvitationCode(code: string): Promise<any> {
+    return this.get(`/invitation/verify?code=${code}`)
   }
 }

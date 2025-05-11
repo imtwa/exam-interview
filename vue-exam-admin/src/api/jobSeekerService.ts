@@ -19,21 +19,37 @@ export class JobSeekerService extends ApiService {
 
   /**
    * 获取求职者详情
-   * @param id 求职者 ID
+   * @param userId 用户 ID
    * @returns Promise 对象
    */
-  static async getJobSeekerById(id: number): Promise<any> {
-    return this.get(`/${id}`)
+  static async getJobSeekerById(userId: number): Promise<any> {
+    return this.get(`/${userId}`)
   }
 
   /**
-   * 更新求职者信息
-   * @param id 求职者 ID
-   * @param data 求职者数据
+   * 获取当前用户的求职者资料
    * @returns Promise 对象
    */
-  static async updateJobSeeker(id: number, data: Partial<JobSeeker>): Promise<any> {
-    return this.post(`/update/${id}`, data)
+  static async getCurrentJobSeekerProfile(): Promise<any> {
+    return this.get('/profile')
+  }
+
+  /**
+   * 更新求职者基本资料
+   * @param data 求职者基本资料
+   * @returns Promise 对象
+   */
+  static async updateJobSeekerProfile(data: Partial<JobSeeker>): Promise<any> {
+    return this.post('/profile/update', data)
+  }
+
+  /**
+   * 同步更新求职者完整资料（包括基本信息、教育经历、工作经历和求职意向）
+   * @param data 求职者完整资料
+   * @returns Promise 对象
+   */
+  static async syncJobSeekerProfile(data: any): Promise<any> {
+    return this.post('/profile/sync', data)
   }
 
   /**
@@ -108,5 +124,14 @@ export class JobSeekerService extends ApiService {
    */
   static async deleteEducation(id: number): Promise<any> {
     return this.post(`/education/delete/${id}`)
+  }
+
+  /**
+   * 获取求职申请应用列表
+   * @param params 查询参数
+   * @returns Promise 对象
+   */
+  static async getApplications(params = {}): Promise<any> {
+    return this.get('/applications', params)
   }
 }

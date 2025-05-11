@@ -62,6 +62,13 @@ export const asyncRoutes: MenuListType[] = [
         component: () => import('@/views/recruitment/CompanyList.vue'),
         meta: { title: '公司管理', keepAlive: true, icon: '&#xe620;' }
       },
+
+      {
+        path: '/recruitment/industry',
+        name: 'IndustryList',
+        component: () => import('@/views/industry/IndustryList.vue'),
+        meta: { title: '行业分类', keepAlive: true, icon: '&#xe663;' }
+      },
       {
         path: '/recruitment/jobs',
         name: 'JobList',
@@ -85,12 +92,6 @@ export const asyncRoutes: MenuListType[] = [
         name: 'InterviewerList',
         component: () => import('@/views/recruitment/InterviewerList.vue'),
         meta: { title: '面试官管理', keepAlive: true, icon: '&#xe7ae;' }
-      },
-      {
-        path: '/recruitment/industry',
-        name: 'IndustryList',
-        component: () => import('@/views/industry/IndustryList.vue'),
-        meta: { title: '行业分类', keepAlive: true, icon: '&#xe663;' }
       }
     ]
   },

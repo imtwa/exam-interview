@@ -3,57 +3,69 @@
     <CardList></CardList>
 
     <div class="column column2">
-      <ActiveUser></ActiveUser>
-      <SalesOverview></SalesOverview>
+      <ExamOverview></ExamOverview>
+      <InterviewStats></InterviewStats>
     </div>
 
     <div class="column column3">
-      <NewUser></NewUser>
-      <Dynamic></Dynamic>
-      <TodoList></TodoList>
+      <RecentCandidates></RecentCandidates>
+      <RecentActivities></RecentActivities>
+      <UpcomingInterviews></UpcomingInterviews>
     </div>
 
     <div class="bottom-wrap art-custom-card">
       <div>
-        <h2 class="box-title">关于项目</h2>
-        <p>{{ systemName }} 是一款专注于用户体验和视觉设计的后台管理系统模版</p>
-        <p>使用了 Vue3、TypeScript、Vite、Element Plus 等前沿技术</p>
+        <h2 class="box-title">关于云面官系统</h2>
+        <p>云面官是一款专业的在线招聘与面试管理系统，帮助企业高效管理招聘流程</p>
+        <p>系统集成了简历筛选、在线考试、面试安排、候选人评估等多项功能</p>
 
-        <div class="button-wrap">
-          <div class="btn art-custom-card" @click="goPage(WEB_LINKS.DOCS)">
-            <span>项目官网</span>
-            <i class="iconfont-sys">&#xe703;</i>
+        <div class="feature-list">
+          <div class="feature">
+            <i class="el-icon-document"></i>
+            <div>
+              <h3>简历管理</h3>
+              <p>高效筛选和管理求职者简历</p>
+            </div>
           </div>
-          <div class="btn art-custom-card" @click="goPage(WEB_LINKS.INTRODUCE)">
-            <span>文档</span>
-            <i class="iconfont-sys">&#xe703;</i>
+          <div class="feature">
+            <i class="el-icon-edit-outline"></i>
+            <div>
+              <h3>在线考试</h3>
+              <p>自定义专业技能测评</p>
+            </div>
           </div>
-          <div class="btn art-custom-card" @click="goPage(WEB_LINKS.GITHUB_HOME)">
-            <span>Github</span>
-            <i class="iconfont-sys">&#xe703;</i>
+          <div class="feature">
+            <i class="el-icon-video-camera"></i>
+            <div>
+              <h3>视频面试</h3>
+              <p>便捷的远程面试体验</p>
+            </div>
           </div>
-          <div class="btn art-custom-card" @click="goPage(WEB_LINKS.BLOG)">
-            <span>博客</span>
-            <i class="iconfont-sys">&#xe703;</i>
+          <div class="feature">
+            <i class="el-icon-data-analysis"></i>
+            <div>
+              <h3>数据分析</h3>
+              <p>全面的招聘数据报告</p>
+            </div>
           </div>
         </div>
       </div>
-      <img class="right-img" src="@imgs/draw/draw1.png" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+  import { computed, watch } from 'vue'
   import CardList from './widget/CardList.vue'
-  import ActiveUser from './widget/ActiveUser.vue'
-  import SalesOverview from './widget/SalesOverview.vue'
-  import NewUser from './widget/NewUser.vue'
-  import Dynamic from './widget/Dynamic.vue'
+  import RecentCandidates from './widget/RecentCandidates.vue'
+  import RecentActivities from './widget/RecentActivities.vue'
+  import ExamOverview from './widget/ExamOverview.vue'
+  import InterviewStats from './widget/InterviewStats.vue'
+  import UpcomingInterviews from './widget/UpcomingInterviews.vue'
   import AppConfig from '@/config'
-  import TodoList from './widget/TodoList.vue'
   import { useSettingStore } from '@/store/modules/setting'
-  import { WEB_LINKS } from '@/utils/links'
   import { useCommon } from '@/composables/useCommon'
+
   const settingStore = useSettingStore()
   const currentGlopTheme = computed(() => settingStore.systemThemeType)
 
@@ -64,11 +76,6 @@
 
   const systemName = AppConfig.systemInfo.name
   useCommon().scrollToTop()
-
-  const goPage = (url: string) => {
-    // 跳转到新页面
-    window.open(url)
-  }
 </script>
 
 <style lang="scss" scoped>
@@ -127,8 +134,8 @@
     .bottom-wrap {
       box-sizing: border-box;
       display: flex;
-      justify-content: space-between;
-      height: 300px;
+      flex-direction: column;
+      justify-content: flex-start;
       padding: 20px;
       margin-top: var(--console-margin);
       background: var(--art-main-bg-color);
@@ -145,31 +152,76 @@
         color: var(--art-gray-600);
       }
 
-      .button-wrap {
+      .feature-list {
         display: flex;
         flex-wrap: wrap;
-        width: 600px;
-        margin-top: 35px;
+        margin-top: 25px;
 
-        .btn {
+        .feature {
           display: flex;
-          justify-content: space-between;
-          width: 240px;
-          height: 50px;
-          padding: 0 15px;
-          margin: 0 15px 15px 0;
-          font-size: 14px;
-          line-height: 50px;
-          color: var(--art-gray-800);
-          text-align: center;
-          cursor: pointer;
+          align-items: center;
+          width: 48%;
+          padding: 15px;
+          margin-bottom: 15px;
           background: var(--art-bg-color);
-          border-radius: calc(var(--custom-radius) / 2 + 2px) !important;
+          border-radius: 8px;
           transition: all 0.3s;
 
           &:hover {
-            box-shadow: 0 5px 10px rgb(0 0 0 / 5%);
             transform: translateY(-4px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+          }
+
+          i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            font-size: 24px;
+            color: var(--el-color-primary);
+            background-color: var(--el-color-primary-light-9);
+            border-radius: 8px;
+          }
+
+          div {
+            margin-left: 15px;
+
+            h3 {
+              font-size: 16px;
+              font-weight: 500;
+              color: var(--art-gray-900);
+            }
+
+            p {
+              margin-top: 5px;
+              font-size: 13px;
+              color: var(--art-gray-600);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @media screen and (max-width: $device-ipad-pro) {
+    .console {
+      .column2 {
+        margin-top: 15px;
+      }
+
+      .column3 {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 15px;
+      }
+
+      .bottom-wrap {
+        margin-top: 15px;
+
+        .feature-list {
+          .feature {
+            width: 100%;
           }
         }
       }
@@ -180,60 +232,6 @@
 <!-- 移动端处理 -->
 <style lang="scss" scoped>
   .console {
-    @media screen and (max-width: $device-ipad-pro) {
-      .column2 {
-        margin-top: 15px;
-
-        :deep(.active-user) {
-          width: 50%;
-        }
-
-        :deep(.sales-overview) {
-          width: calc(50% - 15px);
-        }
-      }
-
-      .column3 {
-        display: flex;
-        flex-wrap: wrap;
-        margin-top: 15px;
-
-        :deep(.new-user) {
-          width: 100%;
-          margin-top: 0;
-        }
-
-        :deep(.dynamic) {
-          flex: 1;
-          margin: 15px 0 0;
-        }
-
-        :deep(.todo-list) {
-          flex: 1;
-          margin: 15px 0 0 15px;
-        }
-      }
-
-      .bottom-wrap {
-        height: auto;
-        margin-top: 15px;
-
-        .button-wrap {
-          width: 470px;
-          margin-top: 20px;
-
-          .btn {
-            width: 180px;
-          }
-        }
-
-        .right-img {
-          width: 300px;
-          height: 230px;
-        }
-      }
-    }
-
     @media screen and (max-width: $device-ipad-vertical) {
       :deep(.card-list) {
         width: calc(100% + 15px);
@@ -249,11 +247,12 @@
         display: block;
         margin-top: 0;
 
-        :deep(.active-user) {
+        :deep(.exam-overview) {
           width: 100%;
+          margin-top: 15px;
         }
 
-        :deep(.sales-overview) {
+        :deep(.interview-stats) {
           width: 100%;
           margin-top: 15px;
         }
@@ -263,19 +262,19 @@
         display: block;
         margin-top: 15px;
 
-        :deep(.new-user) {
+        :deep(.recent-candidates) {
           width: 100%;
           margin-top: 15px;
         }
 
-        :deep(.dynamic) {
+        :deep(.recent-activities) {
           width: 100%;
-          margin: 15px 0 0;
+          margin-top: 15px;
         }
 
-        :deep(.todo-list) {
+        :deep(.upcoming-interviews) {
           width: 100%;
-          margin: 15px 0 0;
+          margin-top: 15px;
         }
       }
 
@@ -283,19 +282,10 @@
         height: auto;
         margin-top: 15px;
 
-        .button-wrap {
-          width: 100%;
-          margin-top: 20px;
-
-          .btn {
-            width: 190px;
-            height: 50px;
-            line-height: 50px;
+        .feature-list {
+          .feature {
+            width: 100%;
           }
-        }
-
-        .right-img {
-          display: none;
         }
       }
     }
@@ -311,31 +301,47 @@
         }
       }
 
-      :deep(.active-user) {
-        .chart {
-          padding: 10px;
+      .column2 {
+        display: block;
+        margin-top: 0;
+
+        :deep(.exam-overview) {
+          width: 100%;
+          margin-top: 15px;
+        }
+
+        :deep(.interview-stats) {
+          width: 100%;
+          margin-top: 15px;
         }
       }
 
-      .sales-overview {
-        height: 300px;
-        padding: 20px 15px;
+      .column3 {
+        display: block;
+        margin-top: 15px;
 
-        :deep(.card-header) {
-          padding: 0 0 0 5px !important;
+        :deep(.recent-candidates) {
+          width: 100%;
+          margin-top: 15px;
+        }
+
+        :deep(.recent-activities) {
+          width: 100%;
+          margin-top: 15px;
+        }
+
+        :deep(.upcoming-interviews) {
+          width: 100%;
+          margin-top: 15px;
         }
       }
 
       .bottom-wrap {
         padding: 0 15px;
 
-        .button-wrap {
-          width: 100%;
-          margin-top: 20px;
-
-          .btn {
+        .feature-list {
+          .feature {
             width: 100%;
-            margin-right: 0;
           }
         }
       }
