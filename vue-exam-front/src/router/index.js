@@ -1,228 +1,31 @@
 import { createWebHashHistory, createRouter } from 'vue-router'
-import Navbar from '../views/Layouts/Navbar/index.vue'
-import Home from '../views/Home/index.vue'
-import PrivateExams from '@/views/Interviewer/PrivateExams.vue'
+import layoutRoutes, { homeRoute } from './layout'
+import authRoutes from './auth'
+import userRoutes from './user'
+import jobSeekerRoutes from './jobSeeker'
+import interviewerRoutes from './interviewer'
+import examRoutes from './exam'
+import recruitmentRoutes from './recruitment'
+import onlineInterviewRoutes from './onlineInterview'
 
-const routes = [
-  {
-    path: '/',
-    component: Navbar,
-    children: [
-      {
-        path: '',
-        name: 'Home',
-        component: Home
-      },
-      {
-        path: 'question-bank',
-        name: 'QuestionBank',
-        component: () => import('../views/Exam/index.vue')
-      },
-      {
-        path: 'question-bank/upload',
-        name: 'UploadExam',
-        component: () => import('../views/Exam/UploadExam.vue')
-      },
-      {
-        path: 'exam/:id',
-        name: 'ExamDetail',
-        component: () => import('../views/Exam/ExamDetail.vue')
-      },
-      {
-        path: 'job/:id',
-        name: 'RecruitmentJobDetail',
-        component: () => import('@/views/Recruitment/JobDetail.vue')
-      },
-      {
-        path: 'company/:id',
-        name: 'CompanyDetail',
-        component: () => import('@/views/Recruitment/CompanyDetail.vue')
-      },
-      {
-        path: 'practice-exam/:id',
-        name: 'PracticeExam',
-        component: () => import('../views/Exam/PracticeExam.vue')
-      },
-      {
-        path: 'recruitment',
-        name: 'Recruitment',
-        component: () => import('@/views/Recruitment/index.vue')
-      },
-      {
-        path: 'login',
-        name: 'Login',
-        component: () => import('../views/Auth/Login.vue')
-      },
-      {
-        path: 'register',
-        name: 'Register',
-        component: () => import('../views/Auth/Register.vue')
-      },
-      {
-        path: 'forgot-password',
-        name: 'ForgotPassword',
-        component: () => import('../views/Auth/ForgotPassword.vue')
-      },
-      {
-        path: 'favorites',
-        name: 'Favorites',
-        component: () => import('../views/User/Favorites.vue')
-      },
-      // 用户相关路由
-      {
-        path: 'applications',
-        name: 'Applications',
-        component: () => import('../views/JobSeeker/Applications.vue')
-      },
-      {
-        path: 'profile',
-        name: 'Profile',
-        component: () => import('../views/User/Profile.vue')
-      },
-      {
-        path: 'profile/:id',
-        name: 'ProfileWithId',
-        component: () => import('../views/User/Profile.vue')
-      },
-      // HR相关路由
-      {
-        path: 'interviewer/profile-setup',
-        name: 'InterviewerProfileSetup',
-        component: () => import('../views/Interviewer/ProfileSetup.vue')
-      },
-      {
-        path: 'interviewer/jobs',
-        name: 'InterviewerJobs',
-        component: () => import('../views/Interviewer/Jobs/index.vue')
-      },
-      // 求职者相关路由
-      {
-        path: 'job-seeker/profile-setup',
-        name: 'JobSeekerProfileSetup',
-        component: () => import('../views/JobSeeker/ProfileSetup.vue')
-      },
-      {
-        path: 'job-seeker/user-interview',
-        name: 'UserInterview',
-        component: () => import('../views/JobSeeker/UserInterview.vue')
-      },
-      {
-        path: 'job-seeker/resume',
-        name: 'UserResume',
-        component: () => import('../views/JobSeeker/UserResume.vue'),
-        meta: {
-          title: '我的简历',
-          requireAuth: true,
-          roles: ['JOB_SEEKER']
-        }
-      },
-      // 面试官相关路由
-      {
-        path: '/job-management',
-        name: 'JobManagement',
-        component: () => import('../views/Interviewer/Jobs/index.vue'),
-        meta: {
-          title: '岗位管理',
-          requireAuth: true,
-          roles: ['INTERVIEWER']
-        }
-      },
-      {
-        path: '/candidate-management',
-        name: 'CandidateManagement',
-        component: () => import('../views/Interviewer/Candidates/index.vue'),
-        meta: {
-          title: '候选人管理',
-          requireAuth: true,
-          roles: ['INTERVIEWER']
-        }
-      },
-      {
-        path: '/interview-schedule',
-        name: 'InterviewSchedule',
-        component: () => import('../views/Interviewer/InterviewSchedule/index.vue'),
-        meta: {
-          title: '面试安排',
-          requireAuth: true,
-          roles: ['INTERVIEWER']
-        }
-      },
-      {
-        path: '/exam-management',
-        name: 'ExamManagement',
-        component: () => import('../views/Interviewer/ExamManagement/index.vue'),
-        meta: {
-          title: '考试管理',
-          requireAuth: true,
-          roles: ['INTERVIEWER']
-        }
-      },
-      {
-        path: '/private-exams',
-        component: PrivateExams,
-        name: 'PrivateExams',
-        meta: {
-          title: '专属试卷管理',
-          requireAuth: true,
-          roles: ['INTERVIEWER'] // 只允许面试官/HR访问
-        }
-      },
-      // 在线考试路由
-      {
-        path: 'online-exam',
-        name: 'OnlineExam',
-        component: () => import('@/views/OnlineExam/index.vue'),
-        meta: { title: '在线笔试' }
-      },
-      {
-        path: 'online-exam/invitation',
-        name: 'ExamInvitation',
-        component: () => import('@/views/OnlineExam/Invitation.vue'),
-        meta: { title: '考试邀请码' }
-      },
-      {
-        path: 'job-seeker/user-exams',
-        name: 'UserExams',
-        component: () => import('@/views/JobSeeker/UserExams.vue'),
-        meta: { title: '我的笔试', requireAuth: true }
-      },
-      {
-        path: 'online-exam/session/:id',
-        name: 'ExamSession',
-        component: () => import('@/views/OnlineExam/ExamSession.vue'),
-        meta: { title: '在线考试', keepAlive: true }
-      },
-      {
-        path: 'online-exam/result/:id',
-        name: 'ExamResult',
-        component: () => import('@/views/OnlineExam/ExamResult.vue'),
-        meta: { title: '考试结果' }
-      },
+// 获取主布局路由
+const mainLayoutRoute = layoutRoutes[0]
 
-      // 在线面试路由
-      {
-        path: 'online-interview',
-        name: 'OnlineInterview',
-        component: () => import('@/views/OnlineInterview/index.vue'),
-        meta: { title: '在线面试' }
-      },
-      {
-        path: 'online-interview/feedback/:id',
-        name: 'InterviewFeedback',
-        component: () => import('@/views/OnlineInterview/InterviewFeedback.vue'),
-        meta: { title: '面试反馈' }
-      }
-    ]
-  },
-  {
-    path: '/online-interview/session/:id',
-    name: 'InterviewSession',
-    component: () => import('@/views/OnlineInterview/InterviewSession.vue'),
-    meta: { title: '在线面试', keepAlive: true }
-  }
+// 将所有子路由添加到主布局
+mainLayoutRoute.children = [
+  homeRoute,
+  ...authRoutes,
+  ...userRoutes,
+  ...jobSeekerRoutes,
+  ...interviewerRoutes,
+  ...examRoutes,
+  ...recruitmentRoutes,
+  ...onlineInterviewRoutes.navbarChildren
 ]
 
-// 在线考试路由
+// 合并所有路由
+const routes = [mainLayoutRoute, ...onlineInterviewRoutes.standaloneRoutes]
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes

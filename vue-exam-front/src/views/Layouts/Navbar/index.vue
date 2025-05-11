@@ -2,14 +2,14 @@
   <div class="navbar" :class="{ 'navbar--with-bg': backgroundFlag, 'navbar--hidden': !isNavbar }">
     <div class="navbar__container">
       <div class="navbar__content">
-        <!-- Logo and navigation links -->
+        <!-- Logo和导航链接 -->
         <div class="navbar__left">
           <!-- Logo -->
           <div class="navbar__logo" @click="router.push('/')">
             <span class="navbar__logo-text">云面官</span>
           </div>
 
-          <!-- Desktop Navigation Menu -->
+          <!-- 桌面端导航菜单 -->
           <div class="navbar__links">
             <router-link
               to="/"
@@ -65,9 +65,9 @@
           </div>
         </div>
 
-        <!-- Search and User Controls -->
+        <!-- 搜索框和用户控件 -->
         <div class="navbar__right">
-          <!-- Search Box -->
+          <!-- 搜索框 -->
           <div class="navbar__search">
             <div class="search-box">
               <el-input v-model="searchQuery" placeholder="搜索" class="search-input" clearable>
@@ -78,7 +78,7 @@
             </div>
           </div>
 
-          <!-- Login/User Profile -->
+          <!-- 登录/用户资料 -->
           <div class="navbar__user">
             <template v-if="isLoggedIn">
               <el-dropdown trigger="click">
@@ -107,9 +107,6 @@
                       <el-dropdown-item @click="router.push('/job-seeker/user-interview')"
                         >我的面试</el-dropdown-item
                       >
-                      <el-dropdown-item @click="router.push('/favorites')"
-                        >我的收藏</el-dropdown-item
-                      >
                     </template>
 
                     <!-- 面试官菜单项 - 只保留个人中心相关的选项，移除导航栏已有的选项 -->
@@ -118,7 +115,7 @@
                         @click="router.push(`/company/${interviewerInfo.companyId}`)"
                         >公司信息</el-dropdown-item
                       >
-                      <el-dropdown-item @click="route.path.includes('/job-management')">
+                      <el-dropdown-item @click="router.push('/job-management')">
                         岗位管理
                       </el-dropdown-item>
                       <el-dropdown-item @click="router.push('/candidate')">
@@ -145,7 +142,7 @@
             </template>
           </div>
 
-          <!-- Mobile menu button -->
+          <!-- 移动端菜单按钮 -->
           <div class="navbar__mobile-menu">
             <el-button type="text" @click="toggleMobileMenu" class="navbar__hamburger">
               <el-icon><Menu /></el-icon>
@@ -155,7 +152,7 @@
       </div>
     </div>
 
-    <!-- Mobile menu -->
+    <!-- 移动端菜单 -->
     <div class="navbar__mobile-dropdown" v-show="mobileMenuOpen">
       <div class="navbar__mobile-links">
         <router-link
@@ -209,7 +206,7 @@
           在线面试
         </router-link>
 
-        <!-- Mobile search -->
+        <!-- 移动端搜索框 -->
         <div class="navbar__mobile-search">
           <div class="search-box">
             <el-input v-model="searchQuery" placeholder="搜索" class="search-input" clearable>
@@ -223,7 +220,7 @@
     </div>
   </div>
 
-  <!-- Page content -->
+  <!-- 页面内容 -->
   <div class="main-content">
     <router-view />
   </div>
@@ -266,12 +263,12 @@ const checkLoginStatus = async () => {
   }
 }
 
-// Toggle mobile menu
+// 切换移动端菜单
 const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
-// Logout function - 使用 Pinia store 的登出方法
+// 退出登录函数 - 使用 Pinia store 的登出方法
 const logout = () => {
   userStore.logout() // 这个方法会清除token并重定向
 }
@@ -281,10 +278,10 @@ const goToLogin = () => {
   router.push('/login')
 }
 
-// Navigation bar scroll animation
-const isNavbar = ref(true) // Control navbar visibility
-const lastScrollTop = ref(0) // Record last scroll position
-const backgroundFlag = ref(false) // Control navbar background color
+// 导航栏滚动动画
+const isNavbar = ref(true) // 控制导航栏可见性
+const lastScrollTop = ref(0) // 记录上一次滚动位置
+const backgroundFlag = ref(false) // 控制导航栏背景颜色
 
 const handleScroll = () => {
   const scrollTop = window.scrollY

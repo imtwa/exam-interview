@@ -27,8 +27,9 @@ const publicRoutes = ['Login', 'Register', 'ForgotPassword', 'Home']
 router.beforeEach((to, from, next) => {
   const hasToken = getToken()
 
-  // 检查路由是否需要身份验证
-  const requiresAuth = !publicRoutes.includes(to.name)
+  // 检查路由的meta字段是否需要认证
+  const requiresAuth =
+    to.meta.requireAuth || (!publicRoutes.includes(to.name) && to.name !== undefined)
 
   if (requiresAuth && !hasToken) {
     ElMessage({
@@ -37,12 +38,27 @@ router.beforeEach((to, from, next) => {
     })
     next({ name: 'Login' })
   } else {
-    // 对于需要特定角色的路由进行额外检查
-    if (to.name === 'HRProfileSetup' || to.name === 'JobSeekerProfileSetup') {
+    // 检查路由是否需要特定角色
+    if (to.meta.roles && to.meta.roles.length > 0) {
+      const userStore = useUserStore()
+      const userRole = userStore.userInfo?.role
+
+      if (!userRole || !to.meta.roles.includes(userRole)) {
+        ElMessage({
+          message: '您没有权限访问此页面',
+          type: 'warning'
+        })
+        next({ name: 'Home' })
+        return
+      }
+    }
+
+    // 对于特定设置页面的额外检查
+    if (to.name === 'InterviewerProfileSetup' || to.name === 'JobSeekerProfileSetup') {
       const userStore = useUserStore()
 
       // 检查用户角色
-      if (to.name === 'HRProfileSetup' && !userStore.isInterviewer) {
+      if (to.name === 'InterviewerProfileSetup' && !userStore.isInterviewer) {
         ElMessage({
           message: '此页面仅供HR访问',
           type: 'warning'
