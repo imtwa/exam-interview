@@ -1,0 +1,399 @@
+@startuml
+' ER Diagram for Recruitment System
+' 招聘系统ER图
+
+entity AdminUser {
+  id [PK]
+  username '用户名'
+  password '密码'
+  email '邮箱'
+  role '角色'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+}
+note bottom of AdminUser : 管理员用户表：存储后台管理系统用户信息
+
+entity FrontUser {
+  id [PK]
+  username '用户名'
+  password '密码'
+  email '邮箱'
+  role '角色'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  examPapers '试卷'
+  favorites '收藏'
+  questions '问题'
+  jobSeeker '求职者'
+  interviewer '面试官'
+}
+note bottom of FrontUser : 用户表：存储系统用户信息，包括求职者和面试官
+
+entity Category {
+  id [PK]
+  name '名称'
+  description '描述'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  subCategories '子分类'
+  examPapers '试卷'
+}
+note bottom of Category : 一级分类表：管理试卷和题目的顶级分类，如"计算机"、"大学考试"等
+
+entity SubCategory {
+  id [PK]
+  name '名称'
+  description '描述'
+  categoryId [FK]
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  category '分类'
+  examPapers '试卷'
+}
+note bottom of SubCategory : 二级分类表：一级分类下的子分类，如"计算机"下的"前端"、"Java"等
+
+entity Question {
+  id [PK]
+  qtype '题型'
+  question '题目'
+  options '选项'
+  answer '答案'
+  ai_analysis 'AI分析'
+  difficulty '难度'
+  userId [FK]
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  user '用户'
+  examQuestions '试题'
+}
+note bottom of Question : 题目表：存储所有考试题目
+
+entity ExamPaper {
+  id [PK]
+  name '名称'
+  description '描述'
+  categoryId [FK]
+  subCategoryId [FK]
+  userId [FK]
+  isPublic '是否公开'
+  favoriteCount '收藏数'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  category '分类'
+  subCategory '子分类'
+  user '用户'
+  examQuestions '试题'
+  favorites '收藏'
+  examAssignments '考试分配'
+}
+note bottom of ExamPaper : 试卷表：存储考试试卷信息
+
+entity ExamQuestion {
+  examId [PK, FK]
+  questionId [PK, FK]
+  order '顺序'
+  score '分值'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  examPaper '试卷'
+  question '题目'
+}
+note bottom of ExamQuestion : 试卷题目关联表：维护试卷和题目之间的多对多关系
+
+entity Favorite {
+  userId [PK, FK]
+  examPaperId [PK, FK]
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  user '用户'
+  examPaper '试卷'
+}
+note bottom of Favorite : 用户收藏表：记录用户收藏的试卷
+
+entity JobSeeker {
+  id [PK]
+  userId [FK]
+  user '用户'
+  address '地址'
+  birthday '生日'
+  gender '性别'
+  currentSalary '当前薪资'
+  expectedSalary '期望薪资'
+  expectedPosition '期望职位'
+  expectedWorkCity '期望工作城市'
+  resumeUrl '简历URL'
+  resumeFileName '简历文件名'
+  workExperience '工作经验'
+  education '教育背景'
+  applications '申请'
+  interviews '面试'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+}
+note bottom of JobSeeker : 求职者表：存储求职者详细信息
+
+entity WorkExperience {
+  id [PK]
+  jobSeekerId [FK]
+  jobSeeker '求职者'
+  company '公司'
+  position '职位'
+  startDate '开始日期'
+  endDate '结束日期'
+  description '描述'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+}
+note bottom of WorkExperience : 工作经验表：记录求职者的工作经历
+
+entity Education {
+  id [PK]
+  jobSeekerId [FK]
+  jobSeeker '求职者'
+  school '学校'
+  degree '学位'
+  major '专业'
+  startDate '开始日期'
+  endDate '结束日期'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+}
+note bottom of Education : 教育经历表：记录求职者的教育背景
+
+entity Company {
+  id [PK]
+  name '名称'
+  description '描述'
+  address '地址'
+  fundingStage '融资阶段'
+  size '规模'
+  industryId [FK]
+  foundedYear '成立年份'
+  verificationStatus '验证状态'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  industry '行业'
+  interviewers '面试官'
+  jobPostings '职位发布'
+}
+note bottom of Company : 公司表：存储招聘公司信息
+
+entity Interviewer {
+  id [PK]
+  userId [FK]
+  gender '性别'
+  position '职位'
+  companyId [FK]
+  verificationStatus '验证状态'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  user '用户'
+  company '公司'
+  jobPostings '职位发布'
+  interviews '面试'
+}
+note bottom of Interviewer : 面试官表：存储面试官详细信息
+
+entity IndustryCategory {
+  id [PK]
+  name '名称'
+  description '描述'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  subCategories '子分类'
+  companies '公司'
+}
+note bottom of IndustryCategory : 行业一级分类表：管理行业顶级分类
+
+entity IndustrySubCategory {
+  id [PK]
+  categoryId [FK]
+  name '名称'
+  description '描述'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  category '分类'
+  jobPostings '职位发布'
+}
+note bottom of IndustrySubCategory : 行业二级分类表：一级分类下的子分类
+
+entity JobPosting {
+  id [PK]
+  title '标题'
+  companyId [FK]
+  interviewerId [FK]
+  subCategoryId [FK]
+  description '描述'
+  requirements '要求'
+  city '城市'
+  address '地址'
+  salaryMin '最低薪资'
+  salaryMax '最高薪资'
+  experienceReq '经验要求'
+  educationReq '教育要求'
+  isRemote '是否远程'
+  status '状态'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  company '公司'
+  interviewer '面试官'
+  subCategory '子分类'
+  applications '申请'
+}
+note bottom of JobPosting : 招聘信息表：存储职位招聘信息
+
+entity Interview {
+  id [PK]
+  applicationId [FK]
+  jobSeekerId [FK]
+  interviewerId [FK]
+  scheduleTime '安排时间'
+  duration '时长'
+  invitationCode '邀请码'
+  location '地点'
+  round '轮次'
+  status '状态'
+  type '类型'
+  notes '备注'
+  feedback '反馈'
+  feedbackRating '反馈评分'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+  deletedAt '删除时间'
+  application '申请'
+  jobSeeker '求职者'
+  interviewer '面试官'
+}
+note bottom of Interview : 面试安排表：记录面试时间和状态
+
+entity JobApplication {
+  id [PK]
+  jobSeekerId [FK]
+  jobId [FK]
+  job '职位'
+  status '状态'
+  appliedAt '申请时间'
+  updatedAt '更新时间'
+  feedback '反馈'
+  interviews '面试'
+  examAssignments '考试分配'
+}
+note bottom of JobApplication : 职位申请表：求职者申请职位的记录
+
+entity ExamAssignment {
+  id [PK]
+  applicationId [FK]
+  application '申请'
+  jobSeekerId [FK]
+  examId [FK]
+  note '备注'
+  assignedBy '分配人'
+  status '状态'
+  score '分数'
+  invitationCode '邀请码'
+  examStartTime '考试开始时间'
+  examEndTime '考试结束时间'
+  duration '时长'
+  completed '是否完成'
+  answers '答案'
+  createdAt '创建时间'
+  updatedAt '更新时间'
+}
+note bottom of ExamAssignment : 笔试分配表：记录笔试试卷分配信息
+
+' 关系定义
+' 一对一关系用 "--"，一对多关系用 "--|>"，多对多关系用 "--|--"
+
+' FrontUser与JobSeeker的一对一关系
+FrontUser -- JobSeeker : "一对一: 拥有"
+
+' FrontUser与Interviewer的一对一关系
+FrontUser -- Interviewer : "一对一: 拥有"
+
+' JobSeeker与WorkExperience的一对多关系
+JobSeeker --|> WorkExperience : "一对多: 拥有"
+
+' JobSeeker与Education的一对多关系
+JobSeeker --|> Education : "一对多: 拥有"
+
+' JobSeeker与JobApplication的一对多关系
+JobSeeker --|> JobApplication : "一对多: 提交"
+
+' Interviewer与Company的多对一关系
+Interviewer }|-- Company : "多对一: 属于"
+
+' Interviewer与JobPosting的一对多关系
+Interviewer --|> JobPosting : "一对多: 发布"
+
+' Interviewer与Interview的一对多关系
+Interviewer --|> Interview : "一对多: 主持"
+
+' Category与SubCategory的一对多关系
+Category --|> SubCategory : "一对多: 包含"
+
+' Category与ExamPaper的一对多关系
+Category --|> ExamPaper : "一对多: 拥有"
+
+' SubCategory与ExamPaper的一对多关系
+SubCategory --|> ExamPaper : "一对多: 拥有"
+
+' FrontUser与ExamPaper的一对多关系
+FrontUser --|> ExamPaper : "一对多: 创建"
+
+' FrontUser与Question的一对多关系
+FrontUser --|> Question : "一对多: 创建"
+
+' ExamPaper与ExamQuestion的一对多关系
+ExamPaper --|> ExamQuestion : "一对多: 包含"
+
+' Question与ExamQuestion的一对多关系
+Question --|> ExamQuestion : "一对多: 被包含于"
+
+' FrontUser与Favorite的一对多关系
+FrontUser --|> Favorite : "一对多: 创建"
+
+' ExamPaper与Favorite的一对多关系
+ExamPaper --|> Favorite : "一对多: 被收藏"
+
+' ExamPaper与ExamAssignment的一对多关系
+ExamPaper --|> ExamAssignment : "一对多: 被分配"
+
+' IndustryCategory与IndustrySubCategory的一对多关系
+IndustryCategory --|> IndustrySubCategory : "一对多: 包含"
+
+' IndustryCategory与Company的一对多关系
+IndustryCategory --|> Company : "一对多: 分类"
+
+' IndustrySubCategory与JobPosting的一对多关系
+IndustrySubCategory --|> JobPosting : "一对多: 分类"
+
+' Company与JobPosting的一对多关系
+Company --|> JobPosting : "一对多: 发布"
+
+' JobPosting与JobApplication的一对多关系
+JobPosting --|> JobApplication : "一对多: 收到"
+
+' JobApplication与Interview的一对多关系
+JobApplication --|> Interview : "一对多: 安排"
+
+' JobApplication与ExamAssignment的一对多关系
+JobApplication --|> ExamAssignment : "一对多: 分配"
+
+' JobSeeker与Interview的一对多关系
+JobSeeker --|> Interview : "一对多: 参与"
+
+@enduml

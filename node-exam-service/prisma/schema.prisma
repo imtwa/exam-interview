@@ -402,22 +402,6 @@ model ExamAssignment {
   @@map("exam_recruitment_exam_assignments")
 }
 
-/// 消息通知表：系统内各类通知
-model Notification {
-  id              Int       @id @default(autoincrement()) /// 通知ID，自增主键
-  userId          Int /// 接收通知的用户ID
-  title           String /// 通知标题
-  content         String    @db.Text /// 通知内容
-  isRead          Boolean   @default(false) /// 是否已读
-  type            NotificationType /// 通知类型：申请状态更新/面试安排/职位邀请/系统消息
-  targetId        Int? /// 相关联对象ID
-  createdAt       DateTime  @default(now()) /// 创建时间
-  updatedAt       DateTime  @updatedAt /// 更新时间
-  deletedAt       DateTime? /// 删除时间，用于软删除
-
-  @@map("exam_recruitment_notifications")
-}
-
 // ==================== 枚举类型 ====================
 
 /// 用户角色枚举：定义系统中的用户角色类型
@@ -503,14 +487,6 @@ enum InterviewStatus {
   PASS       /// 通过：面试通过
   PENDING    /// 待定：面试结果待定
   REJECTED   /// 拒绝：面试未通过
-}
-
-/// 通知类型枚举：定义系统通知的不同类型
-enum NotificationType {
-  APPLICATION_STATUS  /// 申请状态更新：求职申请状态变更通知
-  INTERVIEW_SCHEDULED /// 面试安排：面试时间和地点安排通知
-  JOB_INVITATION      /// 职位邀请：招聘方主动邀请求职者应聘的通知
-  SYSTEM_MESSAGE      /// 系统消息：平台公告或其他系统通知
 }
 
 /// 工作经验枚举：定义工作经验年限范围
