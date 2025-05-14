@@ -18,7 +18,17 @@
     "noImplicitAny": false,
     "noEmitOnError": false,
     "allowJs": true,
-    "checkJs": false
+    "checkJs": false,
+    "suppressImplicitAnyIndexErrors": true,
+    "ignoreDeprecations": "5.0",
+    "useDefineForClassFields": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "isolatedModules": false,
+    "allowUmdGlobalAccess": true
   },
   "include": ["src/**/*", "src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
   "exclude": ["node_modules", "dist", "**/*.js"]
