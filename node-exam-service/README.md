@@ -119,7 +119,6 @@ node-exam-service/
 - `exam_recruitment_job_applications`: 职位申请表
 - `exam_recruitment_exam_assignments`: 笔试分配表
 - `exam_recruitment_interviews`: 面试安排表
-- `exam_recruitment_notifications`: 通知表
 
 ### 用户资料相关表
 - `exam_recruitment_job_seekers`: 求职者详情表

@@ -21,7 +21,6 @@ import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
 import { AssignExamDto } from './dto/assign-exam.dto';
 import { ExamStatus } from '../../common/enums/exam-status.enum';
-import { NotificationType } from '../../common/enums/notification-type.enum';
 import { ScheduleInterviewDto } from './dto/schedule-interview.dto';
 
 @Injectable()
@@ -530,17 +529,6 @@ export class InterviewerService {
       where: { id: applicationId },
       data: {
         status: this.mapRoundToApplicationStatus(interviewData.round),
-      },
-    });
-
-    // 创建系统通知
-    await this.prisma.notification.create({
-      data: {
-        userId: application.jobSeeker.userId,
-        title: '面试邀请',
-        content: `您申请的 ${application.job.title} 职位已安排${this.getInterviewRoundText(interviewData.round)}，请于 ${new Date(interviewData.scheduleTime).toLocaleString()} 准时参加。面试邀请码: ${interview.invitationCode}`,
-        type: 'INTERVIEW_SCHEDULED',
-        targetId: interview.id,
       },
     });
 
@@ -1308,18 +1296,6 @@ export class InterviewerService {
       `,
     });
 
-    // 记录提醒操作
-    await this.prisma.notification.create({
-      data: {
-        userId: candidate.id,
-        type: NotificationType.SYSTEM_MESSAGE,
-        title: `考试提醒: ${examTitle}`,
-        content: `您有一个考试需要完成，请在截止时间前完成。`,
-        targetId: examAssignmentId,
-        isRead: false,
-      },
-    });
-
     return { success: true };
   }
 
@@ -1403,18 +1379,6 @@ export class InterviewerService {
       );
       // 不因邮件发送失败而影响主流程
     }
-
-    // 记录取消操作
-    await this.prisma.notification.create({
-      data: {
-        userId: candidate.id,
-        type: NotificationType.SYSTEM_MESSAGE,
-        title: `考试取消: ${examTitle}`,
-        content: `您的考试已被取消。`,
-        targetId: examAssignmentId,
-        isRead: false,
-      },
-    });
 
     return updatedAssignment;
   }
@@ -1502,38 +1466,6 @@ export class InterviewerService {
       where: { id: interview.applicationId },
       data: {
         status: newStatus,
-      },
-    });
-
-    // 创建系统通知
-    let notificationTitle = '';
-    let notificationContent = '';
-    if (feedbackData.status === 'PASS') {
-      if (feedbackData.scheduleNextRound) {
-        notificationTitle = '面试通过';
-        notificationContent = `恭喜您！您申请的 ${interview.application.job.title} 职位的${this.getInterviewRoundText(interview.round)}已通过，将进入${this.getInterviewRoundText(feedbackData.scheduleNextRound)}。`;
-      } else if (interview.round === 'HR_INTERVIEW') {
-        notificationTitle = 'Offer通知';
-        notificationContent = `恭喜您！您申请的 ${interview.application.job.title} 职位的所有面试环节已通过，HR将尽快联系您发放Offer。`;
-      } else {
-        notificationTitle = '面试通过';
-        notificationContent = `恭喜您！您申请的 ${interview.application.job.title} 职位的${this.getInterviewRoundText(interview.round)}已通过。`;
-      }
-    } else if (feedbackData.status === 'REJECTED') {
-      notificationTitle = '面试未通过';
-      notificationContent = `很遗憾，您申请的 ${interview.application.job.title} 职位的${this.getInterviewRoundText(interview.round)}未通过。感谢您的参与，祝您求职顺利！`;
-    } else {
-      notificationTitle = '面试状态更新';
-      notificationContent = `您申请的 ${interview.application.job.title} 职位的${this.getInterviewRoundText(interview.round)}评估已更新，HR将进一步确认结果。`;
-    }
-
-    await this.prisma.notification.create({
-      data: {
-        userId: interview.application.jobSeeker.userId,
-        title: notificationTitle,
-        content: notificationContent,
-        type: 'APPLICATION_STATUS',
-        targetId: interview.applicationId,
       },
     });
 

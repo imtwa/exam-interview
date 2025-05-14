@@ -212,7 +212,8 @@ import {
 import { useUserStore } from '@/stores/user'
 import { startInterview, completeInterview, verifyInterviewInvitationCode } from '@/api/interview'
 import { io } from 'socket.io-client'
-import SimpleSignalClient from 'simple-signal-client'
+// import SimpleSignalClient from 'simple-signal-client'
+const SimpleSignalClient = require('simple-signal-client')
 
 const route = useRoute()
 const router = useRouter()
