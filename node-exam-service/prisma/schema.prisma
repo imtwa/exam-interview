@@ -188,6 +188,9 @@ model JobSeeker {
   updatedAt         DateTime         @updatedAt /// 更新时间
   deletedAt         DateTime? /// 删除时间，用于软删除
 
+  // 关联表
+  roomParticipations JobSeekerRoomParticipant[] /// 参与的面试房间
+
   @@map("exam_recruitment_job_seekers")
 }
 
@@ -265,6 +268,10 @@ model Interviewer {
   jobPostings     JobPosting[] /// 该HR发布的招聘信息，一对多关系
   interviews      Interview[] /// 该HR负责的面试，一对多关系
 
+  // 添加关联
+  createdRooms        InterviewRoom[] /// 创建的面试房间
+  roomParticipations  InterviewerRoomParticipant[] /// 参与的面试房间
+
   @@map("exam_recruitment_interviewers")
 }
 
@@ -328,7 +335,77 @@ model JobPosting {
   subCategory     IndustrySubCategory @relation(fields: [subCategoryId], references: [id]) /// 所属行业分类，多对一关系
   applications    JobApplication[] /// 该职位收到的申请，一对多关系
 
+  // 添加关联
+  interviewRooms     InterviewRoom[] /// 关联的面试房间
+
   @@map("exam_recruitment_job_postings")
+}
+
+/// 面试房间：支持多对多面试场景
+model InterviewRoom {
+  id              Int       @id @default(autoincrement()) /// 房间ID，自增主键
+  roomCode        String    @unique @default(uuid()) /// 房间唯一码
+  title           String /// 房间标题/名称
+  jobId           Int? /// 关联的职位ID
+  scheduleTime    DateTime /// 面试时间
+  duration        Int /// 面试时长(分钟)
+  status          InterviewRoomStatus @default(WAITING) /// 房间状态
+  notes           String?   @db.Text /// 面试说明/备注
+  type            String    @default("VIDEO") /// 面试类型：视频/电话
+  creatorId       Int /// 创建人ID(HR/面试官)
+  createdAt       DateTime  @default(now()) /// 创建时间
+  updatedAt       DateTime  @updatedAt /// 更新时间
+  deletedAt       DateTime? /// 删除时间，用于软删除
+  
+  // 关联表
+  job             JobPosting? @relation(fields: [jobId], references: [id]) /// 关联的职位
+  creator         Interviewer @relation(fields: [creatorId], references: [id]) /// 房间创建者
+  
+  // 多对多关系
+  interviewers    InterviewerRoomParticipant[] /// 参与的面试官
+  jobSeekers      JobSeekerRoomParticipant[] /// 参与的求职者
+  interviews      Interview[] /// 关联的具体面试记录
+
+  @@map("exam_recruitment_interview_rooms")
+}
+
+/// 面试官参与房间关联表
+model InterviewerRoomParticipant {
+  id              Int       @id @default(autoincrement()) /// ID
+  roomId          Int /// 房间ID
+  interviewerId   Int /// 面试官ID
+  role            String    @default("INTERVIEWER") /// 角色：主面试官/副面试官
+  joinTime        DateTime? /// 加入时间
+  leaveTime       DateTime? /// 离开时间
+  isOnline        Boolean   @default(false) /// 是否在线
+  createdAt       DateTime  @default(now()) /// 创建时间
+  
+  // 关联表
+  room            InterviewRoom @relation(fields: [roomId], references: [id]) /// 关联的房间
+  interviewer     Interviewer @relation(fields: [interviewerId], references: [id]) /// 关联的面试官
+  
+  @@unique([roomId, interviewerId])
+  @@map("exam_recruitment_interviewer_room_participants")
+}
+
+/// 求职者参与房间关联表
+model JobSeekerRoomParticipant {
+  id              Int       @id @default(autoincrement()) /// ID
+  roomId          Int /// 房间ID
+  jobSeekerId     Int /// 求职者ID
+  applicationId   Int? /// 关联的职位申请ID
+  joinTime        DateTime? /// 加入时间
+  leaveTime       DateTime? /// 离开时间
+  isOnline        Boolean   @default(false) /// 是否在线
+  createdAt       DateTime  @default(now()) /// 创建时间
+  
+  // 关联表
+  room            InterviewRoom @relation(fields: [roomId], references: [id]) /// 关联的房间
+  jobSeeker       JobSeeker @relation(fields: [jobSeekerId], references: [id]) /// 关联的求职者
+  application     JobApplication? @relation(fields: [applicationId], references: [id]) /// 关联的职位申请
+  
+  @@unique([roomId, jobSeekerId])
+  @@map("exam_recruitment_jobseeker_room_participants")
 }
 
 /// 面试安排表：记录面试时间和状态
@@ -337,6 +414,7 @@ model Interview {
   applicationId   Int /// 关联的职位申请ID
   jobSeekerId     Int /// 关联的求职者ID
   interviewerId   Int /// 安排面试的HR/面试官ID
+  roomId          Int? /// 关联的面试房间ID
   scheduleTime    DateTime /// 面试时间
   duration        Int /// 面试时长(分钟)
   invitationCode  String    @unique @default(uuid()) /// 面试邀请码，用于验证身份
@@ -355,25 +433,27 @@ model Interview {
   application     JobApplication @relation(fields: [applicationId], references: [id]) /// 关联的职位申请，多对一关系
   jobSeeker       JobSeeker      @relation(fields: [jobSeekerId], references: [id]) /// 关联的求职者，多对一关系
   interviewer     Interviewer    @relation(fields: [interviewerId], references: [id]) /// 关联的面试官，多对一关系
+  room            InterviewRoom? @relation(fields: [roomId], references: [id]) /// 关联的面试房间，可选字段
 
   @@map("exam_recruitment_interviews")
 }
 
 /// 职位申请表：求职者申请职位的记录
 model JobApplication {
-  id             Int                 @id @default(autoincrement()) /// 申请ID，自增主键
-  jobSeekerId    Int /// 申请的求职者ID
-  jobSeeker      JobSeeker       @relation(fields: [jobSeekerId], references: [id]) /// 申请的求职者，多对一关系
-  jobId          Int /// 申请的职位ID
-  job            JobPosting      @relation(fields: [jobId], references: [id]) /// 申请的职位，多对一关系
-  status         JobApplicationStatus @default(RESUME_SCREENING) /// 申请状态：简历筛选/笔试/一面/二面/HR面试/Offer/拒绝
-  appliedAt      DateTime        @default(now()) /// 申请时间
-  updatedAt      DateTime        @updatedAt /// 更新时间
-  feedback       String?         @db.Text /// 申请反馈
+  id                     Int                 @id @default(autoincrement()) /// 申请ID，自增主键
+  jobSeekerId            Int /// 申请的求职者ID
+  jobSeeker              JobSeeker       @relation(fields: [jobSeekerId], references: [id]) /// 申请的求职者，多对一关系
+  jobId                  Int /// 申请的职位ID
+  job                    JobPosting      @relation(fields: [jobId], references: [id]) /// 申请的职位，多对一关系
+  status                 JobApplicationStatus @default(RESUME_SCREENING) /// 申请状态：简历筛选/笔试/一面/二面/HR面试/Offer/拒绝
+  appliedAt              DateTime        @default(now()) /// 申请时间
+  updatedAt              DateTime        @updatedAt /// 更新时间
+  feedback               String?         @db.Text /// 申请反馈
 
   // 关联表
-  interviews     Interview[]     /// 该申请的面试安排，一对多关系
-  examAssignments ExamAssignment[] /// 该申请的笔试分配，一对多关系
+  interviews             Interview[]     /// 该申请的面试安排，一对多关系
+  examAssignments        ExamAssignment[] /// 该申请的笔试分配，一对多关系
+  roomParticipations     JobSeekerRoomParticipant[] /// 参与的面试房间
   
   @@map("exam_recruitment_job_applications")
 }
@@ -516,4 +596,12 @@ enum JobApplicationStatus {
   HR_INTERVIEW      /// HR面试：人力资源部门面试
   OFFER             /// Offer：已通过所有面试，收到录用通知
   REJECTED          /// 拒绝：求职申请被拒绝
+}
+
+/// 面试房间状态枚举
+enum InterviewRoomStatus {
+  WAITING    /// 等待中：房间已创建但面试未开始
+  ONGOING    /// 进行中：面试正在进行
+  COMPLETED  /// 已完成：面试已结束
+  CANCELLED  /// 已取消：面试被取消
 }
