@@ -32,7 +32,7 @@
         </el-input-number>
       </el-form-item>
 
-      <el-form-item label="考试时间" prop="timeRange">
+      <el-form-item label="考试时间" prop="timeRange" class="datetime-picker-container">
         <el-date-picker
           v-model="form.timeRange"
           type="datetimerange"
@@ -41,6 +41,8 @@
           end-placeholder="结束时间"
           style="width: 100%"
           value-format="YYYY-MM-DD HH:mm:ss"
+          :shortcuts="dateShortcuts"
+          popper-class="moved-up-datepicker"
         />
       </el-form-item>
 
@@ -86,6 +88,28 @@ const loading = ref(false)
 const submitting = ref(false)
 const examOptions = ref([])
 const userStore = useUserStore()
+
+// 日期快捷选项
+const dateShortcuts = [
+  {
+    text: '未来3天',
+    value: () => {
+      const start = new Date()
+      const end = new Date()
+      end.setTime(start.getTime() + 3600 * 1000 * 24 * 3)
+      return [start, end]
+    }
+  },
+  {
+    text: '未来一周',
+    value: () => {
+      const start = new Date()
+      const end = new Date()
+      end.setTime(start.getTime() + 3600 * 1000 * 24 * 7)
+      return [start, end]
+    }
+  }
+]
 
 const form = reactive({
   examId: undefined,
@@ -197,6 +221,14 @@ const submitForm = async () => {
 searchExams('')
 </script>
 
+<style>
+/* 全局样式，不使用scoped，确保能修改日期选择器弹窗 */
+.moved-up-datepicker {
+  margin-top: -50px !important; /* 上移弹窗 */
+  transform: translateY(-50px);
+}
+</style>
+
 <style scoped>
 .assign-exam-form {
   padding: 20px 0;
@@ -218,5 +250,10 @@ searchExams('')
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.datetime-picker-container {
+  position: relative;
+  z-index: 10;
 }
 </style>
