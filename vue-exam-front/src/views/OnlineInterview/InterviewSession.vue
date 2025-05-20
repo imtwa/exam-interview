@@ -263,6 +263,7 @@ const roomId = computed(() => 'interview-' + invitationCode)
 const socketURL = 'https://weston-vue-webrtc-lobby.azurewebsites.net' // 实际环境中应替换为你自己的信令服务器
 const ioOptions = {
   rejectUnauthorized: false,
+  // 优先使用 WebSocket 连接，否则回退到长轮询
   transports: ['polling', 'websocket']
 }
 const peerOptions = {
@@ -480,7 +481,7 @@ const join = async () => {
     // 获取可用的媒体设备
     await getMediaDevices()
 
-    // 获取本地媒体流 - 优化后的方法
+    // 获取本地媒体流
     try {
       // 基本约束条件
       let constraints = {
@@ -611,7 +612,7 @@ const onPeer = (peer, localStream) => {
   })
 }
 
-// 修改加入房间方法
+// 加入房间方法
 const joinedRoom = (stream, isLocal) => {
   console.log('加入房间:', stream.id, isLocal ? '(本地)' : '(远程)')
 

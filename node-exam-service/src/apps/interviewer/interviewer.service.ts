@@ -561,7 +561,7 @@ export class InterviewerService {
             interviewType: this.getInterviewTypeText(interviewData.type),
             interviewLocation: interviewData.location || '线上面试',
             interviewNotes: interviewData.notes || '无',
-            verificationLink: `${this.configService.get('FRONTEND_URL')}/interview/join/${interview.invitationCode}`,
+            verificationLink: `${this.configService.get('FRONTEND_URL') || 'http://localhost:3001'}/online-interview/session/${interview.invitationCode}`,
             round: this.getInterviewRoundText(interviewData.round),
           });
           this.logger.log(`成功发送面试邀请邮件至 ${jobSeekerUser.email}`);
@@ -897,7 +897,7 @@ export class InterviewerService {
 
     // 生成考试链接
     const baseUrl =
-      this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+      this.configService.get('FRONTEND_URL') || 'http://127.0.0.1:5173';
     const examUrl = `${baseUrl}/exam-session/${invitationCode}`;
 
     // 获取求职者信息
