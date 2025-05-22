@@ -157,7 +157,7 @@ const handleCurrentChange = page => {
 
 // 查看面试列表
 const viewApplications = jobId => {
-  router.push(`/candidate-management?jobId=${jobId}`)
+  router.push(`/candidate?jobId=${jobId}`)
 }
 
 // 查看岗位详情

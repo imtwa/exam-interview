@@ -123,13 +123,18 @@ export function completeInterview(invitationCode) {
 /**
  * 提交面试反馈
  * @param {string} invitationCode 邀请码
- * @param {Object} feedback 反馈内容
+ * @param {string} comments 反馈内容
+ * @param {number} feedbackRating 反馈评分
  * @returns {Promise}
  */
-export function submitInterviewFeedback(invitationCode, feedback) {
+export function submitInterviewFeedback(invitationCode, comments, feedbackRating) {
   return request({
     url: '/interview/feedback',
     method: 'post',
-    data: { invitationCode, feedback }
+    data: { 
+      invitationCode,
+      comments,
+      feedbackRating
+    }
   })
 }

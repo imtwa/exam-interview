@@ -105,10 +105,21 @@
                 </button>
               </div>
 
-              <button class="control-btn exit-btn" @click="exitInterview">
-                <el-icon><Close /></el-icon>
-                <span>退出面试</span>
-              </button>
+              <div class="exit-controls">
+                <!-- 添加结束面试按钮，只有面试官可见 -->
+                <button
+                  v-if="userStore.isInterviewer"
+                  class="control-btn end-btn"
+                  @click="endInterview"
+                >
+                  <el-icon><CircleCheck /></el-icon>
+                  <span>结束面试</span>
+                </button>
+                <button class="control-btn exit-btn" @click="exitInterview">
+                  <el-icon><Close /></el-icon>
+                  <span>退出面试</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -187,6 +198,17 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 结束面试确认弹窗 -->
+    <el-dialog v-model="endDialogVisible" title="确认结束面试" width="30%">
+      <span>确定要结束面试并前往填写反馈吗？</span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="endDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmEndInterview">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -207,7 +229,8 @@ import {
   Close,
   Switch,
   FullScreen,
-  ScaleToOriginal
+  ScaleToOriginal,
+  CircleCheck
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { startInterview, completeInterview, verifyInterviewInvitationCode } from '@/api/interview'
@@ -796,6 +819,33 @@ const toggleVideoDisplayMode = () => {
   videoDisplayMode.value = videoDisplayMode.value === 'contain' ? 'cover' : 'contain'
 }
 
+// 添加结束面试相关变量
+const endDialogVisible = ref(false)
+
+// 结束面试函数
+const endInterview = () => {
+  endDialogVisible.value = true
+}
+
+// 确认结束面试
+const confirmEndInterview = async () => {
+  try {
+    // 离开房间，清理资源
+    if (isVideoStarted.value) {
+      leave()
+    }
+
+    // 关闭对话框
+    endDialogVisible.value = false
+
+    // 导航到反馈页面
+    router.push(`/online-interview/feedback/${invitationCode}`)
+  } catch (error) {
+    console.error('结束面试失败:', error)
+    ElMessage.error('结束面试失败，请稍后重试')
+  }
+}
+
 // 组件挂载
 onMounted(async () => {
   // 验证面试邀请码
@@ -1061,6 +1111,23 @@ onBeforeUnmount(() => {
 .control-btn.secondary {
   color: #909399;
   margin-left: 5px;
+}
+
+.exit-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.end-btn {
+  background-color: rgba(64, 158, 255, 0.1);
+  color: #409eff;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.end-btn:hover {
+  background-color: rgba(64, 158, 255, 0.2);
 }
 
 .exit-btn {

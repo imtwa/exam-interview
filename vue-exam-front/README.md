@@ -17,13 +17,13 @@
 - **UI组件**: Element Plus 2.9 + @element-plus/icons-vue
 - **HTTP客户端**: Axios
 - **构建工具**: Vite 6.2
-- **CSS技术**: 
+- **CSS技术**:
   - Less 4.3 (CSS预处理器)
   - Tailwind CSS 4.1 (原子化CSS框架)
 - **图表可视化**: ECharts 5.6
 - **工具库**: Lodash-es
 - **自动导入**: unplugin-auto-import, unplugin-vue-components
-- **实时通信**: 
+- **实时通信**:
   - Socket.io-client (WebSocket客户端)
   - simple-signal-client (WebRTC信令客户端)
   - WebRTC原生API (音视频传输)
@@ -233,6 +233,7 @@ export default defineConfig({
 ## 视频面试功能使用说明
 
 1. **面试官操作流程**：
+
    - 登录面试官账号
    - 进入"面试管理"
    - 选择候选人并安排面试

@@ -789,7 +789,7 @@ const viewJobDetail = jobId => {
 
 // 查看应聘者
 const viewApplications = jobId => {
-  router.push(`/candidate-management?jobId=${jobId}`)
+  router.push(`/candidate?jobId=${jobId}`)
 }
 
 // 查看面试安排

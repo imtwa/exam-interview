@@ -13,6 +13,7 @@ import { CreateInterviewDto } from './dto/create-interview.dto';
 import { UpdateInterviewDto } from './dto/update-interview.dto';
 import { QueryInterviewDto } from './dto/query-interview.dto';
 import { VerifyInvitationCodeDto } from './dto/verify-invitation-code.dto';
+import { InterviewFeedbackDto } from './dto/interview-feedback.dto';
 import { success } from '../../common/utils/response.util';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
@@ -153,5 +154,50 @@ export class InterviewController {
   async verifyInvitation(@Body() dto: VerifyInvitationCodeDto) {
     const result = await this.interviewService.verifyInvitation(dto);
     return success(result);
+  }
+
+  @ApiOperation({ summary: '开始面试' })
+  @ApiParam({
+    name: 'invitationCode',
+    description: '面试邀请码',
+    type: 'string',
+  })
+  @ApiResponse({ status: 200, description: '获取成功' })
+  @ApiResponse({ status: 404, description: '面试不存在' })
+  @Get('start/:invitationCode')
+  async startInterview(@Param('invitationCode') invitationCode: string) {
+    const result = await this.interviewService.verifyInvitation({
+      invitationCode,
+    });
+    return success(result);
+  }
+
+  @ApiOperation({ summary: '提交面试反馈' })
+  @ApiResponse({ status: 200, description: '提交成功' })
+  @ApiResponse({ status: 404, description: '面试不存在' })
+  @Post('feedback')
+  async submitFeedback(
+    @Body() feedbackDto: InterviewFeedbackDto,
+    @Request() req,
+  ) {
+    this.logger.log(`提交面试反馈: ${feedbackDto.invitationCode}`);
+
+    // 验证邀请码并获取面试ID
+    const interviewInfo = await this.interviewService.verifyInvitation({
+      invitationCode: feedbackDto.invitationCode,
+    });
+
+    // 更新面试信息
+    const result = await this.interviewService.update(
+      interviewInfo.interviewId,
+      {
+        status: 'COMPLETED', // 更新为已完成状态
+        feedback: feedbackDto.comments,
+        feedbackRating: feedbackDto.feedbackRating,
+      },
+      req.user.userId,
+    );
+
+    return success(result, '反馈提交成功');
   }
 }
