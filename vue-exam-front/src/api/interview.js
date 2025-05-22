@@ -131,7 +131,7 @@ export function submitInterviewFeedback(invitationCode, comments, feedbackRating
   return request({
     url: '/interview/feedback',
     method: 'post',
-    data: { 
+    data: {
       invitationCode,
       comments,
       feedbackRating

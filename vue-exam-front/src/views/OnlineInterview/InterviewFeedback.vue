@@ -147,11 +147,7 @@ const submitFeedback = async () => {
     submitting.value = true
 
     // 将反馈提交到后端 - 只传递必要的三个字段
-    await submitInterviewFeedback(
-      invitationCode, 
-      form.comments, 
-      form.feedbackRating
-    )
+    await submitInterviewFeedback(invitationCode, form.comments, form.feedbackRating)
 
     // 更新面试状态为已完成
     await updateInterview(interviewData.value.interviewId, {
