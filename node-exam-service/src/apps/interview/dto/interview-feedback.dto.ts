@@ -32,3 +32,4 @@ export class InterviewFeedbackDto {
   @Max(5, { message: '面试评分最高为5' })
   feedbackRating: number;
 }
+ 

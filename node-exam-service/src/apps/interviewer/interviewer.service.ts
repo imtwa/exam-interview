@@ -387,73 +387,134 @@ export class InterviewerService {
     applicationId: number,
     status: string,
     userId: number,
-    feedback?: string,
+    feedback: string,
     examId?: number,
     note?: string,
   ) {
-    // 查找面试官ID以验证权限
-    const interviewer = await this.getInterviewerByUserId(userId);
+    // 验证用户是否是面试官
+    const interviewer = await this.prisma.interviewer.findFirst({
+      where: { userId },
+      include: {
+        company: true,
+      },
+    });
 
-    // 查找申请
+    if (!interviewer) {
+      throw new ForbiddenException('只有面试官可以更新申请状态');
+    }
+
+    // 查找申请记录
     const application = await this.prisma.jobApplication.findUnique({
       where: { id: applicationId },
       include: {
-        job: true,
+        job: {
+          include: {
+            company: true,
+          },
+        },
+        jobSeeker: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 
     if (!application) {
-      throw new NotFoundException(`申请不存在 ID: ${applicationId}`);
+      throw new NotFoundException('申请记录不存在');
     }
 
-    // 确认该申请属于此面试官负责的职位
-    if (application.job.interviewerId !== interviewer.id) {
-      throw new ForbiddenException('您无权更新此申请的状态');
-    }
-
-    // 构建更新数据
-    const updateData: any = {
-      status: status as JobApplicationStatus,
-    };
-
-    // 如果有反馈信息，添加到更新数据中
-    if (feedback) {
-      updateData.feedback = feedback;
+    // 验证面试官是否属于该公司
+    if (application.job.companyId !== interviewer.companyId) {
+      throw new ForbiddenException('无权更新其他公司的申请状态');
     }
 
     // 更新申请状态
     const updatedApplication = await this.prisma.jobApplication.update({
       where: { id: applicationId },
-      data: updateData,
+      data: {
+        status: status as JobApplicationStatus,
+        feedback,
+        updatedAt: new Date(),
+      },
+      include: {
+        job: {
+          include: {
+            company: true,
+          },
+        },
+        jobSeeker: {
+          include: {
+            user: true,
+          },
+        },
+      },
     });
 
-    // 如果状态是笔试，检查是否提供了笔试试卷ID
-    if (status === JobApplicationStatus.WRITTEN_TEST && examId) {
-      // 验证试卷是否存在
-      const exam = await this.prisma.examPaper.findUnique({
-        where: { id: examId },
-      });
-
-      if (!exam) {
-        throw new NotFoundException(`试卷不存在 ID: ${examId}`);
-      }
-
-      // 创建笔试记录
+    // 如果状态是笔试且提供了试卷ID，创建笔试分配
+    if (status === 'WRITTEN_TEST' && examId) {
       await this.prisma.examAssignment.create({
         data: {
           applicationId,
           examId,
           note: note || '',
           assignedBy: userId,
-          status: 'PENDING', // 初始状态为待完成
-          jobSeekerId: application.jobSeekerId, // 使用申请中的jobSeekerId
+          status: 'PENDING',
+          jobSeekerId: application.jobSeekerId,
+          examStartTime: new Date(),
+          examEndTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 默认7天后过期
+          duration: 60, // 默认60分钟
         },
       });
-
-      this.logger.log(`为申请ID:${applicationId}分配笔试试卷ID:${examId}`);
     }
 
-    // 如果还有其他相关业务逻辑，比如发送通知等，可以在这里添加
+    // 发送邮件通知
+    try {
+      const candidateEmail = application.jobSeeker.user.email;
+      const candidateName = application.jobSeeker.user.username;
+      const jobTitle = application.job.title;
+      const companyName = application.job.company.name;
+
+      if (status === 'REJECTED') {
+        // 发送拒绝通知
+        await this.emailService.sendMail({
+          to: candidateEmail,
+          subject: `[申请结果] ${companyName} - ${jobTitle}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2>申请结果通知</h2>
+              <p>尊敬的 ${candidateName}：</p>
+              <p>感谢您申请 ${companyName} 的 ${jobTitle} 职位。</p>
+              <p>经过慎重考虑，我们很遗憾地通知您，您未能通过本次选拔。</p>
+              ${feedback ? `<p><strong>反馈意见：</strong></p><p>${feedback}</p>` : ''}
+              <p>感谢您对我们公司的关注，祝您求职顺利！</p>
+              <p style="margin-top: 20px;">此致，<br>${companyName} 招聘团队</p>
+            </div>
+          `
+        });
+      } else if (status === 'OFFER') {
+        // 发送Offer通知
+        await this.emailService.sendMail({
+          to: candidateEmail,
+          subject: `[录用通知] ${companyName} - ${jobTitle}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2>录用通知</h2>
+              <p>尊敬的 ${candidateName}：</p>
+              <p>恭喜您！我们很高兴地通知您，您已成功通过 ${companyName} ${jobTitle} 职位的所有面试环节。</p>
+              <p>我们诚挚地邀请您加入我们的团队！</p>
+              ${note ? `<p><strong>录用说明：</strong></p><p>${note}</p>` : ''}
+              ${feedback ? `<p><strong>面试反馈：</strong></p><p>${feedback}</p>` : ''}
+              <p>我们期待您的加入！如有任何问题，请随时与我们联系。</p>
+              <p style="margin-top: 20px;">此致，<br>${companyName} 招聘团队</p>
+            </div>
+          `
+        });
+      }
+    } catch (error) {
+      this.logger.error(`发送申请状态更新邮件失败: ${error.message}`, error);
+      // 不因邮件发送失败而影响主流程
+    }
 
     return updatedApplication;
   }

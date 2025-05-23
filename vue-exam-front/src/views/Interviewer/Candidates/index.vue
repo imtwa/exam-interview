@@ -732,8 +732,7 @@ const rejectApplication = application => {
   )
     .then(async () => {
       try {
-        const res = await updateApplicationStatus({
-          id: application.id,
+        const res = await updateApplicationStatus(application.id, {
           status: 'REJECTED',
           feedback: '很遗憾，您的条件与我们的要求不符。'
         })
