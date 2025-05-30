@@ -1,6 +1,5 @@
 # 在线面试平台 - 云面官
 
-![版本](https://img.shields.io/badge/版本-1.0.0-blue)
 ![开源协议](https://img.shields.io/badge/协议-MIT-green)
 
 ## 项目简介
